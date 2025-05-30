@@ -75,7 +75,7 @@ select = ["E", "F", "I", "B", "C4", "ARG", "N", "UP", "ANN", "S", "A", "ANN401"]
 "e2e/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002"]
 
 [project.urls]
-Homepage = "https://github.com/selvage-team/selvage"
-Repository = "https://github.com/selvage-team/selvage"
-Documentation = "https://github.com/selvage-team/selvage#readme"
-"Bug Tracker" = "https://github.com/selvage-team/selvage/issues"
+Homepage = "https://github.com/anomie7/selvage/"
+Repository = "https://github.com/anomie7/selvage/"
+Documentation = "https://github.com/anomie7/selvage/#readme"
+"Bug Tracker" = "https://github.com/anomie7/selvage//issues"

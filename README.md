@@ -67,7 +67,7 @@ Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드
 pip install selvage
 
 # 또는 개발 버전 설치
-git clone https://github.com/selvage-team/selvage.git
+git clone https://github.com/anomie7/selvage.git
 cd selvage
 pip install -e .
 ```
@@ -320,7 +320,7 @@ Selvage는 오픈소스 프로젝트이며, 여러분의 기여를 언제나 환
 
 **기여 방법:**
 
-- 🐛 [GitHub Issues](https://github.com/selvage-team/selvage/issues)에서 버그 리포트 또는 기능 제안
+- 🐛 [GitHub Issues](https://github.com/anomie7/selvage/issues)에서 버그 리포트 또는 기능 제안
 - 🔧 Pull Request를 통한 코드 기여
 - 📚 문서 개선 및 번역
 
@@ -332,7 +332,7 @@ Selvage는 [MIT License](LICENSE) 하에 배포됩니다. 이 라이선스는 �
 
 ## 📞 문의 및 커뮤니티
 
-- **🐛 버그 리포트 및 기능 요청**: [GitHub Issues](https://github.com/selvage-team/selvage/issues)
+- **🐛 버그 리포트 및 기능 요청**: [GitHub Issues](https://github.com/anomie7/selvage/issues)
 - **📧 직접 문의**: anomie7777@gmail.com
 
 ---
