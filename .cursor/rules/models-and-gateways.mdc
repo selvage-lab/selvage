@@ -1,0 +1,117 @@
+---
+description: LLM 모델 및 게이트웨이 구조
+globs: 
+alwaysApply: false
+---
+# Selvage LLM 모델 및 게이트웨이
+
+## 지원 모델 목록
+
+**최신 지원 모델 목록은 `selvage/resources/models.yml` 파일을 참고하세요.**
+
+현재 지원하는 제공자:
+- **OpenAI**: GPT-4 시리즈, o4-mini 시리즈
+- **Anthropic**: Claude Sonnet 4 시리즈 (recommend)
+- **Google**: Gemini 2.5 Pro/Flash 시리즈 (recommend)
+
+## 게이트웨이 아키텍처
+
+Selvage는 각 LLM 제공업체의 API와 통신하기 위한 게이트웨이 클래스들을 구현했습니다. 이 게이트웨이 시스템은 팩토리 패턴을 통해 구현되었습니다.
+
+### 게이트웨이 클래스 구조
+
+```
+BaseGateway (추상 클래스)
+├── OpenAIGateway
+├── ClaudeGateway
+└── GoogleGateway
+```
+
+- [BaseGateway](mdc:selvage/src/llm_gateway/base_gateway.py): 모든 게이트웨이의 기본 기능을 정의한 추상 클래스
+- [OpenAIGateway](mdc:selvage/src/llm_gateway/openai_gateway.py): OpenAI API와 통신하기 위한 게이트웨이
+- [ClaudeGateway](mdc:selvage/src/llm_gateway/claude_gateway.py): Anthropic Claude API와 통신하기 위한 게이트웨이
+- [GoogleGateway](mdc:selvage/src/llm_gateway/google_gateway.py): Google AI Studio API와 통신하기 위한 게이트웨이
+
+### 팩토리 패턴
+
+[GatewayFactory](mdc:selvage/src/llm_gateway/gateway_factory.py) 클래스는 모델 이름에 따라 적절한 게이트웨이 인스턴스를 생성합니다:
+
+```python
+# 게이트웨이 생성 예시
+factory = GatewayFactory()
+gateway = factory.create("gpt-4o")  # OpenAIGateway 인스턴스 반환
+gateway = factory.create("claude-3.7-sonnet")  # ClaudeGateway 인스턴스 반환
+gateway = factory.create("gemini-2.5-pro")  # GoogleGateway 인스턴스 반환
+```
+
+## 모델 정보 관리
+
+[available_models.py](mdc:selvage/src/available_models.py) 모듈은 지원되는 모든 모델의 정보를 관리합니다:
+
+```python
+# 모델 정보 예시
+AVAILABLE_MODELS: dict[str, ModelInfoDict] = {
+    "gpt-4o": {
+        "full_name": "gpt-4o",
+        "aliases": [],
+        "description": "GPT-4 Omni 모델",
+        "provider": "openai",
+        "params": {
+            "temperature": 0.0,
+        },
+    },
+    # 기타 모델 정보...
+}
+```
+
+- `full_name`: 모델의 정식 이름
+- `aliases`: 모델의 별칭 목록
+- `description`: 모델 설명
+- `provider`: 모델 제공자 ("openai", "claude", "google" 중 하나)
+- `params`: 모델별 파라미터 (temperature, reasoning_effort 등)
+
+## 게이트웨이 핵심 기능
+
+각 게이트웨이는 다음과 같은 공통 기능을 제공합니다:
+
+1. **모델 설정**: 모델 이름, 파라미터 설정
+2. **API 키 관리**: 각 제공자별 API 키 검증 및 관리
+3. **프롬프트 생성**: 코드 리뷰를 위한 프롬프트 생성
+4. **API 요청**: 각 제공자의 API에 맞는 요청 생성 및 전송
+5. **응답 처리**: API 응답을 파싱하고 구조화된 형식으로 변환
+6. **에러 처리**: API 오류, 타임아웃 등의 예외 처리
+
+## 코드 리뷰 프로세스
+
+게이트웨이를 사용한 코드 리뷰 프로세스는 다음과 같습니다:
+
+1. 사용자가 특정 모델을 지정하여 코드 리뷰 요청
+2. `GatewayFactory`를 통해 적절한 게이트웨이 인스턴스 생성
+3. 게이트웨이 객체가 코드 diff와 메타데이터를 사용하여 프롬프트 생성
+4. 해당 모델의 API에 요청 전송
+5. API 응답을 파싱하여 구조화된 리뷰 결과 생성
+6. 결과를 사용자에게 반환
+
+## 사용 예시
+
+```python
+from selvage.src.llm_gateway.gateway_factory import GatewayFactory
+from selvage.src.utils.models import ReviewRequest
+
+# 리뷰 요청 생성
+request = ReviewRequest(
+    diff_content="...",
+    file_paths=["main.py", "utils.py"],
+    language="python"
+)
+
+# 팩토리를 통한 게이트웨이 생성
+factory = GatewayFactory()
+gateway = factory.create("gpt-4o")  # OpenAI 모델 사용
+
+# 코드 리뷰 실행
+review_result = gateway.review_code(request)
+
+# 결과 출력
+print(review_result.suggestions)
+```

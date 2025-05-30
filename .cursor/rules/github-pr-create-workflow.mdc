@@ -1,0 +1,48 @@
+---
+description: GitHub PR 생성 가이드라인
+globs: 
+alwaysApply: false
+---
+# GitHub 저장소 작업 및 PR 생성 가이드라인
+
+## 1. 저장소 정보 확인
+- GitHub 작업 시작 전에 항상 저장소 경로 확인하기
+  ```bash
+  git remote -v
+  ```
+- 출력된 URL에서 'github.com/' 이후 부분이 '{owner}/{repo}' 형식의 저장소 경로
+
+## 2. PR 생성 전 준비사항
+- 현재 브랜치 확인 (PR의 'head' 값)
+  ```bash
+  git branch --show-current
+  ```
+- 목표 브랜치 확인 (PR의 'base' 값, 일반적으로 'main' 또는 'master')
+- 변경사항이 모두 원격에 푸시되었는지 확인
+  ```bash
+  git status
+  ```
+
+## 3. PR 내용 작성
+- title: 간결하고 명확하게 (prefix는 "[{현재 브랜치명}]"으로 예) ([CR-1]))
+- body: 변경사항, 영향 범위, 기타 정보 등 구조화
+- commit message 참조하여 title, body 작성 ("Refs: {현재 브랜치명}" 텍스트가 포함된 commit message 검색하면 주요 변경 사항 알 수 있음)
+
+## 4. PR 생성 방법
+- 자동화 도구 사용 시:
+  ```
+  mcp_github_create_pull_request
+  owner: {저장소 소유자 이름}  # git remote -v에서 확인
+  repo: {저장소 이름}          # git remote -v에서 확인
+  title: {PR 제목}
+  body: {PR 설명}
+  head: {소스 브랜치}          # 현재 작업 브랜치
+  base: {대상 브랜치}          # 일반적으로 main
+  ```
+
+## 5. 오류 처리
+- 저장소 경로 오류 발생 시 즉시 수정하여 재시도
+- 권한 문제 발생 시 웹 인터페이스 사용 대안 제공:
+  ```
+  https://github.com/{owner}/{repo}/compare/{base}...{head}
+  ```

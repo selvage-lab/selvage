@@ -1,0 +1,52 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: pytest - 모든 테스트",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "-v",
+                "tests/"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "${workspaceFolder}/venv/bin/python"
+        },
+        {
+            "name": "Python: pytest - 현재 파일",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "-v",
+                "${file}"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "${workspaceFolder}/venv/bin/python"
+        },
+        {
+            "name": "Python: pytest - 특정 함수",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "-v",
+                "${file}::${input:testFunction}"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "${workspaceFolder}/venv/bin/python"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testFunction",
+            "type": "promptString",
+            "description": "테스트할 함수 이름을 입력하세요",
+            "default": "test_split_git_diff_multiple_hunks"
+        }
+    ]
+} 

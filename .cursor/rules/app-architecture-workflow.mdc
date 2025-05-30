@@ -1,0 +1,885 @@
+---
+description: architecture and workflow
+globs: 
+alwaysApply: false
+---
+# Selvage 앱 아키텍처 및 워크플로우
+
+Selvage는 LLM(대규모 언어 모델)을 활용한 코드 리뷰 CLI 도구입니다. 이 도구는 Git diff를 분석하고, LLM에 전송하여 코드 리뷰 피드백을 받는 워크플로우를 구현합니다.
+
+## 핵심 컴포넌트 및 워크플로우
+
+### 1. Git Diff 파싱 및 메타데이터 처리
+
+코드 리뷰 프로세스는 Git diff 파싱으로 시작됩니다:
+
+- [parse_git_diff](mdc:selvage/src/diff_parser/parser.py) 함수는 Git diff 텍스트를 받아 구조화된 데이터로 변환합니다.
+- 이 과정에서 파일 콘텐츠, 언어 타입, 변경된 코드 블록(hunks) 등의 메타데이터가 추가됩니다.
+- `use_full_context` 파라미터에 따라 전체 파일 내용을 포함할지 결정합니다.
+
+#### Git Diff 획득 과정
+
+Selvage는 [GitDiffUtility](mdc:selvage/src/utils/git_utils.py) 클래스를 통해 다양한 모드로 Git diff를 획득합니다.
+
+```python
+class GitDiffMode(str, Enum):
+    """git diff 동작 모드 열거형"""
+    STAGED = "staged"        # 스테이징된 변경사항 (git add로 추가된 내용)
+    TARGET_COMMIT = "target_commit"  # 특정 커밋과 HEAD 사이의 차이 
+    TARGET_BRANCH = "target_branch"  # 특정 브랜치와 현재 브랜치 사이의 차이
+    UNSTAGED = "unstaged"    # 워킹 디렉토리의 변경사항 (스테이징되지 않은 내용)
+```
+
+CLI에서는 `get_diff_content` 함수를 통해 사용자 옵션에 따라 적절한 모드의 diff를 획득합니다:
+
+```python
+def get_diff_content(args: argparse.Namespace) -> str:
+    """Git diff 내용을 가져옵니다."""
+    try:
+        git_diff = GitDiffUtility.from_args(args)
+        return git_diff.get_diff()
+    except ValueError as e:
+        logger.error(str(e))
+        return ""
+```
+
+GitDiffUtility의 `get_diff` 메서드는 모드에 맞는 Git 명령을 구성합니다:
+
+```python
+def get_diff(self) -> str:
+    """Git diff 명령을 실행하고 결과를 반환합니다."""
+    cmd = ["git", "-C", self.repo_path, "diff", "--unified=5"]
+
+    if self.mode == GitDiffMode.STAGED:
+        cmd.append("--cached")  # 스테이징된 변경사항
+    elif self.mode == GitDiffMode.TARGET_COMMIT:
+        # 특정 커밋과 HEAD 사이 비교
+        cmd.append(f"{self.target}..HEAD")
+    elif self.mode == GitDiffMode.TARGET_BRANCH:
+        # 특정 브랜치와 HEAD 사이 비교
+        cmd.append(f"{self.target}..HEAD")
+    # UNSTAGED는 추가 옵션 없이 기본 명령 사용
+
+    # 명령 실행 및 결과 반환
+    process_result = subprocess.run(cmd, capture_output=True, text=True)
+    return process_result.stdout
+```
+
+이를 통해 사용자는 다양한 Git 비교 모드로 코드 리뷰를 수행할 수 있습니다:
+
+- `selvage review --staged`: 스테이징된 변경사항 리뷰
+- `selvage review --target-commit abcd1234`: 특정 커밋(abcd1234)과 HEAD 사이의 변경사항 리뷰
+- `selvage review --target-branch develop`: develop 브랜치와 현재 브랜치 사이의 변경사항 리뷰
+- `selvage review`: 현재 워킹 디렉토리의 변경사항(unstaged) 리뷰
+
+#### Git Diff 형식과 파싱 과정
+
+표준 Git diff 형식은 다음과 같습니다:
+
+```
+diff --git a/file.py b/file.py
+index abc123..def456 100644
+--- a/file.py
++++ b/file.py
+@@ -10,7 +10,7 @@ def example_function():
+     # 이전 코드
+-    old_code = "old"
++    new_code = "new"
+     # 나머지 코드
+```
+
+이 diff 형식은 다음과 같은 구조로 파싱됩니다:
+
+1. **DiffResult**: 전체 diff를 나타내는 컨테이너 객체
+   ```python
+   class DiffResult:
+       files: list[FileDiff]
+       # 기타 메타데이터
+   ```
+
+2. **FileDiff**: 변경된 각 파일을 나타내는 객체
+   ```python
+   class FileDiff:
+       filename: str
+       hunks: list[Hunk]
+       language: str
+       file_content: str  # use_full_context가 True일 때만 포함
+       additions: int = 0    # 추가된 라인 수
+       deletions: int = 0    # 삭제된 라인 수
+   ```
+
+3. **Hunk**: 파일 내의 변경된 각 코드 블록
+   ```python
+   class Hunk:
+       start_line_original: int
+       line_count_original: int
+       start_line_modified: int
+       line_count_modified: int
+       content: str  # 변경 내용을 포함하는 텍스트
+   ```
+
+파싱 과정:
+1. diff 텍스트를 줄 단위로 분석
+2. 파일 헤더(`diff --git`) 식별 및 새 FileDiff 객체 생성
+3. 변경 블록 헤더(`@@ -10,7 +10,7 @@`) 식별 및 Hunk 객체 생성
+4. 변경 줄 식별:
+   - `-`로 시작: 제거된 줄
+   - `+`로 시작: 추가된 줄
+   - 공백으로 시작: 변경되지 않은 줄
+5. `use_full_context`가 True인 경우, 현재 저장소에서 전체 파일 내용을 로드
+6. 파일 확장자에 기반하여 언어 감지 및 설정
+
+파싱 결과는 `ReviewRequest` 객체의 `processed_diff` 필드에 저장되어 프롬프트 생성에 활용됩니다.
+
+#### 파싱된 결과 예시 (JSON)
+
+예를 들어, 위의 간단한 diff 예시는 다음과 같은 JSON 구조로 변환됩니다:
+
+```json
+{
+  "files": [
+    {
+      "filename": "file.py",
+      "language": "python",
+      "additions": 1,
+      "deletions": 1,
+      "hunks": [
+        {
+          "start_line_original": 10,
+          "line_count_original": 7,
+          "start_line_modified": 10,
+          "line_count_modified": 7,
+          "content": "def example_function():\n    # 이전 코드\n-    old_code = \"old\"\n+    new_code = \"new\"\n    # 나머지 코드",
+          "before_code": "def example_function():\n    # 이전 코드\n    old_code = \"old\"\n    # 나머지 코드",
+          "after_code": "def example_function():\n    # 이전 코드\n    new_code = \"new\"\n    # 나머지 코드"
+        }
+      ],
+      "file_content": "# file.py\n\ndef example_function():\n    # 이전 코드\n    new_code = \"new\"\n    # 나머지 코드\n\n# 파일의 나머지 내용..."
+    }
+  ]
+}
+```
+
+이 구조화된 데이터를 통해 각 파일의 변경 사항과 전체 컨텍스트를 명확히 이해할 수 있습니다:
+
+1. **filename**: 변경된 파일 이름
+2. **language**: 파일의 프로그래밍 언어
+3. **additions**: 추가된 라인 수
+4. **deletions**: 삭제된 라인 수
+5. **hunks**: 변경된 코드 블록 목록
+   - **start_line_original**: 원본 파일에서 변경이 시작된 줄 번호
+   - **line_count_original**: 원본 파일에서 변경된 줄 수
+   - **start_line_modified**: 수정된 파일에서 변경이 시작된 줄 번호
+   - **line_count_modified**: 수정된 파일에서 변경된 줄 수
+   - **content**: 변경 내용(기호 포함: +, -)
+   - **before_code**: 변경 전 코드(기호 제외)
+   - **after_code**: 변경 후 코드(기호 제외)
+6. **file_content**: 전체 파일 내용(use_full_context=True일 때)
+
+이 구조화된 데이터는 `create_code_review_prompt` 메서드에서 LLM에 전송할 프롬프트 생성에 사용됩니다.
+
+### 2. 리뷰 요청 데이터 구조화
+
+파싱된 diff는 [ReviewRequest](mdc:selvage/src/utils/token/models.py) 모델로 구조화됩니다:
+
+```python
+class ReviewRequest(BaseModel):
+    """코드 리뷰 요청 모델"""
+    diff_content: str
+    processed_diff: DiffResult
+    file_paths: list[str] = Field(default_factory=list)
+    use_full_context: bool = True
+    model: str
+    repo_path: str
+```
+
+#### ReviewRequest 모델 상세 설명
+
+`ReviewRequest` 클래스는 코드 리뷰에 필요한 모든 정보를 캡슐화하는 Pydantic 모델입니다:
+
+1. **diff_content**: 원본 Git diff 텍스트
+   ```
+   diff --git a/main.py b/main.py
+   index abc123..def456 100644
+   ...
+   ```
+
+2. **processed_diff**: 파싱된 DiffResult 객체
+   ```python
+   DiffResult(
+       files=[
+           FileDiff(
+               filename="main.py",
+               language="python",
+               hunks=[...],
+               file_content="def main():\n    print('Hello, World!')\n"
+           )
+       ]
+   )
+   ```
+
+3. **file_paths**: 리뷰 대상 파일 경로 목록
+   ```python
+   ["main.py", "utils.py"]
+   ```
+
+4. **use_full_context**: 전체 파일 내용 포함 여부
+   ```python
+   True  # 전체 파일 내용 포함
+   ```
+
+5. **model**: 사용할 LLM 모델 식별자
+   ```python
+   "gpt-4o"  # OpenAI의 GPT-4o 모델 사용
+   ```
+
+6. **repo_path**: Git 저장소 경로
+   ```python
+   "/path/to/repository"
+   ```
+
+#### 사용 예시
+
+CLI 명령에서 ReviewRequest 객체 생성:
+
+```python
+# CLI에서 Git diff 획득
+diff_text = get_diff_content(args)  # GitDiffUtility 사용
+
+# diff 파싱
+processed_diff = parse_git_diff(
+    diff_text=diff_text,
+    use_full_context=args.full_context,
+    repo_path=repo_path
+)
+
+# ReviewRequest 객체 생성
+review_request = ReviewRequest(
+    diff_content=diff_text,
+    processed_diff=processed_diff,
+    use_full_context=args.full_context,
+    model=args.model,
+    repo_path=repo_path
+)
+```
+
+이 객체는 프롬프트 생성, 비용 계산, LLM 요청 전송 등의 후속 단계에서 사용됩니다.
+
+### 3. 프롬프트 생성 프로세스
+
+[PromptGenerator](mdc:selvage/src/utils/prompts/prompt_generator.py) 클래스는 리뷰 요청 데이터를 LLM이 이해할 수 있는 프롬프트로 변환합니다:
+
+- `create_code_review_prompt` 메서드는 `use_full_context` 옵션에 따라 다른 타입의 프롬프트를 생성합니다:
+  - `True`: `ReviewPromptWithFileContent` (전체 파일 내용 포함)
+  - `False`: `ReviewPrompt` (변경된 코드 블록만 포함)
+
+#### 프롬프트 생성 과정 상세
+
+`PromptGenerator`는 `_get_code_review_system_prompt` 메서드를 통해 `selvage.resources.prompt.v2/code_review_system_prompt_v2.txt` 파일에서 시스템 프롬프트를 로드하여 사용합니다.
+
+프롬프트 생성은 두 가지 경로로 진행됩니다:
+
+1. **간소화된 프롬프트 (_create_simple_code_review_prompt)**:
+   - 변경된 코드 블록(hunks)만 포함
+   - 각 hunk마다 개별 UserPrompt 객체 생성
+
+2. **전체 컨텍스트 프롬프트 (_create_full_context_code_review_prompt)**:
+   - 전체 파일 내용과 함께 변경 사항 포함
+   - 파일별로 UserPromptWithFileContent 객체 생성
+
+#### 프롬프트 구조 예시
+
+**시스템 프롬프트 (SystemPrompt)**: 
+```python
+SystemPrompt(
+    role="system",
+    content="당신은 코드 리뷰 전문가입니다. 제공된 코드 차이(diff)를 분석하여 품질, 가독성, 성능, 보안 등의 관점에서 리뷰해주세요..."
+)
+```
+
+**일반 사용자 프롬프트 (UserPrompt - use_full_context=False 경우)**: 
+```python
+UserPrompt(
+    hunk_idx="1",
+    file_name="main.py",
+    before_code="```python\ndef old_function():\n    return 'old'\n```",
+    after_code="```python\ndef new_function():\n    return 'new'\n```",
+    after_code_start_line_number=10,
+    language="python"
+)
+```
+
+**파일 내용 포함 사용자 프롬프트 (UserPromptWithFileContent - use_full_context=True 경우)**:
+
+`UserPromptWithFileContent` (`selvage/src/utils/prompts/models/user_prompt_with_file_content.py`): 전체 파일 내용과 함께 변경 사항을 포함하는 사용자 프롬프트 데이터 클래스입니다.
+
+**주요 구조 및 동작:**
+- `@dataclass`로 정의된 데이터 클래스
+- 필드: `file_name` (str), `file_content` (str), `formatted_hunks` (list[FormattedHunk])
+- `__init__` 메서드에서 원본 `Hunk` 리스트를 받아 내부적으로 `FormattedHunk` 객체들로 변환
+- `to_message()` 메서드를 통해 LLM API 메시지 형식(JSON)으로 변환
+
+`FormattedHunk` (`selvage/src/utils/prompts/models/formatted_hunk.py`): 원본 `Hunk` 객체를 프롬프트에 적합한 형태로 가공하는 중간 데이터 클래스입니다. `before_code`와 `after_code`를 마크다운 코드 블록으로 감싸고, 줄 번호 정보(`after_code_start_line_number`, `after_code_line_numbers`) 등을 포함합니다.
+
+**사용 예시:**
+```python
+# 객체 생성 (생성 시에는 Hunk 리스트를 전달)
+user_prompt = UserPromptWithFileContent(
+    file_name="main.py",
+    file_content="# 전체 파일 내용\n\ndef new_function():\n    return 'new'\n\n# 파일의 나머지 내용...",
+    hunks=[hunk1, hunk2],  # 원본 Hunk 객체들
+    language="python"
+)
+
+# 내부적으로 formatted_hunks 필드에 FormattedHunk 객체들이 저장됨
+# user_prompt.formatted_hunks = [FormattedHunk(...), FormattedHunk(...)]
+
+# LLM API 메시지 형식으로 변환
+message = user_prompt.to_message()
+# {"role": "user", "content": "{\"file_name\": \"main.py\", \"file_content\": \"...\", \"formatted_hunks\": [...]}"}
+```
+
+#### 구현 예시
+
+```python
+def _create_simple_code_review_prompt(self, review_request: ReviewRequest) -> ReviewPrompt:
+    system_prompt = SystemPrompt(role="system", content=self._get_code_review_system_prompt())
+    user_prompts = []
+    
+    for file in review_request.processed_diff.files:
+        # 각 파일의 각 hunk마다 UserPrompt 생성
+        for hunk_idx, hunk in enumerate(file.hunks):
+            user_prompt = UserPrompt(
+                hunk_idx=str(hunk_idx + 1),
+                file_name=file.filename,
+                before_code=f"```{file.language}\n{hunk.get_safe_before_code()}\n```",
+                after_code=f"```{file.language}\n{hunk.get_safe_after_code()}\n```",
+                after_code_start_line_number=hunk.start_line_modified,
+                language=file.language,
+            )
+            user_prompts.append(user_prompt)
+    
+    return ReviewPrompt(system_prompt=system_prompt, user_prompts=user_prompts)
+```
+
+최종 결과인 `ReviewPrompt` 또는 `ReviewPromptWithFileContent` 객체는 LLM 게이트웨이로 전달되어 API 요청을 생성하는 데 사용됩니다.
+
+### 4. LLM 게이트웨이 시스템
+
+[LLM 게이트웨이](mdc:models-and-gateways)는 다양한 LLM 제공자(OpenAI, Anthropic, Google)와의 통신을 추상화합니다:
+
+- `BaseGateway`를 상속받는 각 게이트웨이 클래스가 구현되어 있습니다.
+- `GatewayFactory`는 모델 이름에 따라 적절한 게이트웨이 인스턴스를 생성합니다.
+- 각 게이트웨이는 프롬프트 처리, API 요청, 응답 파싱을 담당합니다.
+
+#### 게이트웨이 아키텍처 상세
+
+게이트웨이 시스템은 팩토리 패턴과 전략 패턴을 활용하여 다양한 LLM 제공자를 처리합니다:
+
+1. **BaseGateway (추상 클래스)**:
+   ```python
+   class BaseGateway(ABC):
+       def review_code(self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent) -> ReviewResponse:
+           """코드 리뷰 실행 - 완전히 구현됨"""
+           # 1. 컨텍스트 제한 확인
+           self.validate_review_request(review_prompt)
+           # 2. 메시지 변환
+           messages = review_prompt.to_messages()
+           # 3. 클라이언트 생성 및 API 호출
+           client = self._create_client()
+           params = self._create_request_params(messages)
+           # 4. API 응답 처리 및 비용 계산
+           # 5. 구조화된 응답 반환
+           
+       def estimate_cost(self, raw_response) -> EstimatedCost:
+           """API 응답의 usage 정보를 이용하여 비용을 계산"""
+           pass
+           
+       def validate_review_request(self, review_prompt) -> None:
+           """리뷰 요청 전 유효성 검사를 수행 """
+           pass
+           
+       @abstractmethod
+       def _load_api_key(self) -> str:
+           """각 프로바이더별 API 키 로드"""
+           pass
+           
+       @abstractmethod
+       def _set_model(self, model_info: ModelInfoDict) -> None:
+           """모델 설정 및 유효성 검증"""
+           pass
+           
+       def _create_client(self) -> instructor.Instructor | genai.Client | anthropic.Anthropic:
+           """현재 프로바이더에 맞는 LLM 클라이언트를 생성합니다.
+           LLMClientFactory.create_client를 호출하여 클라이언트를 가져옵니다.
+           프로바이더 및 특정 조건(예: Claude의 thinking_mode)에 따라 반환되는 클라이언트 타입이 다를 수 있습니다.
+           """
+           pass
+           
+       @abstractmethod
+       def _create_request_params(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
+           """각 프로바이더별 API 요청 파라미터 생성"""
+           pass
+   ```
+
+2. **BaseGateway를 확장한 Provider 게이트웨이 구현**:
+   ```python
+   class OpenAIGateway(BaseGateway):
+       def _load_api_key(self) -> str:
+           # OpenAI API 키 로드
+           
+       def _set_model(self, model_info: ModelInfoDict) -> None:
+           # OpenAI 모델 설정 및 검증
+           
+       def _create_request_params(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
+           # OpenAI API 요청 파라미터 생성
+           
+   class ClaudeGateway(BaseGateway):
+       def _load_api_key(self) -> str:
+           # Claude API 키 로드
+           
+       def _set_model(self, model_info: ModelInfoDict) -> None:
+           # Claude 모델 설정 및 검증
+           
+       def _create_request_params(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
+           # Claude API 요청 파라미터 생성
+   ```
+
+3. **GatewayFactory (팩토리 클래스)**:
+   ```python
+   class GatewayFactory:
+       @staticmethod
+       def create(model: str) -> BaseGateway:
+           # 모델 정보 조회
+           model_info = get_model_info(model)
+           provider = model_info["provider"]
+           
+           # 적절한 게이트웨이 생성
+           if provider == ModelProvider.OPENAI:
+               return OpenAIGateway(model_info)
+           elif provider == ModelProvider.CLAUDE:
+               return ClaudeGateway(model_info)
+           elif provider == ModelProvider.GOOGLE:
+               return GoogleGateway(model_info)
+           else:
+               raise ValueError(f"지원하지 않는 provider: {provider}")
+   ```
+
+#### 게이트웨이 사용 예시
+
+```python
+# 팩토리를 통한 게이트웨이 생성
+llm_gateway = GatewayFactory.create("gpt-4o")  # OpenAIGateway 인스턴스
+
+# 프롬프트 생성기 인스턴스화
+prompt_generator = PromptGenerator()
+
+# 리뷰 요청으로부터 프롬프트 생성
+review_prompt = prompt_generator.create_code_review_prompt(review_request)
+
+# 코드 리뷰 실행 (BaseGateway.review_code에서 모든 처리를 담당)
+review_response = llm_gateway.review_code(review_prompt)
+
+print(f"총 {len(review_response.issues)}개의 이슈가 발견되었습니다.")
+```
+
+각 게이트웨이는 해당 제공자의 API 요구사항에 맞게 추상 메서드들을 구현하고, `BaseGateway`의 `review_code` 메서드가 전체 리뷰 프로세스를 관리합니다.
+
+### 5. SSOT 기반 모델 정보 관리
+
+Selvage는 모든 모델 정보를 중앙에서 관리하는 SSOT(Single Source of Truth) 원칙을 따릅니다.
+
+#### models.yml 중앙 설정 파일
+
+모든 지원 모델의 정보는 [models.yml](mdc:selvage/resources/models.yml) 파일에서 중앙 관리됩니다:
+
+```yaml
+models:
+  gpt-4o:
+    full_name: "gpt-4o"
+    aliases: []
+    description: "GPT-4 Omni 모델"
+    provider: "openai"
+    params:
+      temperature: 0.0
+    pricing:
+      input: 2.5   # USD per 1M tokens
+      output: 10.0 # USD per 1M tokens
+    context_limit: 128000
+    
+  claude-sonnet-4-20250514:
+    full_name: "claude-sonnet-4-20250514"
+    aliases: ["claude-sonnet-4"]
+    description: "명령 수행 정확도 최적화 및 프로덕션 안정성 향상 (recommend)"
+    provider: "claude"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 3.0
+      output: 15.0
+      description: "$3.00/$15.00 per 1M tokens"
+    context_limit: 200000
+```
+
+#### ModelConfig를 통한 정보 조회
+
+[ModelConfig](mdc:selvage/src/model_config.py) 클래스는 이 설정 파일을 활용하여 모델 정보를 제공합니다:
+
+```python
+def get_model_info(model_name: str) -> ModelInfoDict:
+    """models.yml에서 모델의 전체 정보를 반환합니다."""
+    config = ModelConfig()
+    return config.get_model_info(model_name)
+
+def get_model_pricing(model_name: str) -> PricingDict:
+    """models.yml에서 모델의 가격 정보를 반환합니다."""
+    config = ModelConfig()
+    return config.get_model_pricing(model_name)
+```
+
+#### SSOT의 장점
+
+1. **일관성**: 모든 모델 정보가 단일 소스에서 관리되어 일관성 보장
+2. **유지보수성**: 새 모델 추가나 기존 모델 정보 수정 시 models.yml만 수정하면 됨
+3. **확장성**: 새로운 프로바이더나 모델 추가가 용이
+4. **투명성**: 지원 모델과 가격 정보를 명확히 파악 가능
+
+### 6. LLM 클라이언트 팩토리와 Instructor 라이브러리
+
+[LLMClientFactory](mdc:selvage/src/utils/llm_factory.py) 클래스는 LLM 제공자에 맞는 클라이언트를 생성합니다:
+
+```python
+def create_client(provider: str, api_key: str) -> instructor.Instructor | genai.Client:
+    """프로바이더에 맞는, 구조화된 응답을 지원하는 클라이언트를 생성합니다."""
+```
+
+#### Instructor 라이브러리 상세 설명
+
+Instructor 라이브러리는 LLM에서 구조화된 Pydantic 모델 기반의 출력을 얻기 위해 주로 사용됩니다. Selvage에서는 OpenAI 및 Anthropic Claude 일반 모드에 대해 이 라이브러리를 활용합니다.
+
+**Instructor 사용 사례:**
+- **OpenAI**: `instructor.from_openai()`를 통해 클라이언트를 래핑하여 사용합니다.
+- **Anthropic (일반 모드)**: `instructor.from_anthropic()`를 통해 클라이언트를 래핑하여 사용합니다.
+
+**직접 SDK 사용 사례:**
+특정 경우에는 LLM 프로바이더의 SDK를 직접 사용하고, 응답 처리는 `BaseGateway`의 `review_code` 메서드 내에서 수행됩니다:
+- **Anthropic (Thinking Mode)**: `model_info`에 `thinking_mode`가 활성화된 경우, `Anthropic` SDK 클라이언트를 직접 사용합니다. (이때는 `BaseGateway`에서 `JSONExtractor`를 사용하여 응답을 파싱합니다.)
+- **Google (Gemini)**: `genai.Client` SDK 클라이언트를 직접 사용합니다. (`BaseGateway`에서 `response.text`를 `StructuredReviewResponse.model_validate_json`으로 파싱합니다.)
+
+이처럼 Selvage는 Instructor의 편리함과 특정 프로바이더/모드에 대한 직접 제어의 유연성을 조합하여 사용합니다.
+
+주요 기능:
+
+1. **Pydantic 모델 기반 출력**: 
+   - 원하는 응답 형식을 Pydantic 모델로 정의
+   - LLM에게 해당 구조로 응답하도록 요청
+
+2. **응답 검증 및 수정**:
+   - 응답이 정의된 스키마와 일치하는지 검증
+   - 누락되거나 잘못된 필드를 수정하도록 LLM에 요청
+
+3. **OpenAI 함수 호출 활용**:
+   - OpenAI 모델의 경우 Function Calling API 활용
+   - Anthropic의 경우 구조화된 프롬프팅 사용
+4. **재요청**
+
+#### Instructor로 구조화된 응답 얻기
+
+```python
+# Pydantic 모델 정의 (ReviewIssue, ReviewResponse 등)
+class StructuredReviewResponse(BaseModel):
+    issues: list[StructuredReviewIssue]
+    summary: str
+    score: Optional[float]
+    recommendations: list[str]
+
+# Instructor와 함께 OpenAI 클라이언트 사용
+client = LLMClientFactory().create_client("openai", api_key)
+
+# 구조화된 응답 얻기
+response = client.chat.completions.create(
+    model="gpt-4o",
+    response_model=StructuredReviewResponse,
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+)
+
+# response는 StructuredReviewResponse 인스턴스
+print(f"발견된 이슈: {len(response.issues)}")
+print(f"요약: {response.summary}")
+```
+
+#### BaseGateway에서의 Instructor 활용
+
+BaseGateway의 `review_code` 메서드는 내부적으로 다음과 같이 Instructor를 활용합니다:
+
+```python
+def review_code(self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent) -> ReviewResponse:
+    """코드를 리뷰합니다 - BaseGateway에서 완전히 구현됨"""
+    
+    # 1. 컨텍스트 제한 확인
+    self.validate_review_request(review_prompt)
+    
+    # 2. 메시지 변환 및 클라이언트 생성
+    messages = review_prompt.to_messages()
+    client = self._create_client()  # LLMClientFactory 활용
+    
+    # 3. 프로바이더별 API 호출 및 구조화된 응답 획득
+    if isinstance(client, instructor.Instructor):
+        structured_response, raw_api_response = client.chat.completions.create_with_completion(
+            response_model=StructuredReviewResponse, **self._create_request_params(messages)
+        )
+    elif isinstance(client, genai.Client):
+        raw_api_response = client.models.generate_content(**self._create_request_params(messages))
+        structured_response = StructuredReviewResponse.model_validate_json(raw_api_response.text)
+    elif isinstance(client, anthropic.Anthropic):
+        raw_api_response = client.messages.create(**self._create_request_params(messages))
+        structured_response = JSONExtractor.validate_and_parse_json(
+            raw_api_response.content[0].text, StructuredReviewResponse
+        )
+    
+    # 4. 비용 계산 및 응답 변환
+    cost = self.estimate_cost(raw_api_response)
+    console.cost_info(cost.model, cost.input_tokens, cost.output_tokens, f"${cost.total_cost_usd:.6f} USD")
+    return ReviewResponse.from_structured_response(structured_response)
+```
+
+위 예시는 `instructor.Instructor` 타입의 클라이언트를 사용하는 경우와 함께, `genai.Client` (Google) 및 `anthropic.Anthropic` (Claude thinking mode)을 직접 사용하는 경우에 대한 조건부 로직을 보여줍니다. 각기 다른 방식으로 API를 호출하고 응답을 처리합니다.
+
+### 7. 비용 추정 및 실제 비용 계산
+
+Selvage는 두 단계의 비용 관리 시스템을 사용합니다:
+
+1. **사전 컨텍스트 제한 확인**: LLM API 호출 전 토큰 수 검증
+2. **사후 실제 비용 계산**: API 응답의 usage 정보를 기반으로 한 정확한 비용 산출
+
+#### 1. 컨텍스트 제한 사전 확인
+
+[validate_review_request](mdc:selvage/src/llm_gateway/base_gateway.py) 메서드는 API 호출 전 컨텍스트 제한을 확인합니다:
+
+```python
+def validate_review_request(
+    self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent
+) -> None:
+    """리뷰 요청 전 유효성 검사를 수행합니다.
+    input_token_count와 context_limit을 비교하여 컨텍스트 제한을 초과한 경우 예외를 발생시킵니다.
+    """
+    input_token_count = TokenUtils.count_tokens(review_prompt, self.get_model_name())
+    context_limit = TokenUtils.get_model_context_limit(self.get_model_name())
+    if input_token_count > context_limit:
+        raise ContextLimitExceededError(
+            input_tokens=input_token_count,
+            context_limit=context_limit,
+        )
+```
+
+#### 프로바이더별 토큰 카운팅 방식
+
+각 LLM 프로바이더는 고유한 토큰 카운팅 방식을 제공하며, Selvage는 이를 활용하여 정확한 토큰 수를 계산합니다:
+
+1. **OpenAI 모델**: `tiktoken` 라이브러리 활용
+   ```python
+   import tiktoken
+   encoding = tiktoken.encoding_for_model(model_name)
+   token_count = len(encoding.encode(text))
+   ```
+
+2. **Claude 모델**: Anthropic의 토큰 카운팅 API 활용
+   ```python
+   # Anthropic 클라이언트의 토큰 카운팅 기능 사용
+   token_count = anthropic_client.count_tokens(text)
+   ```
+
+3. **Google 모델**: Google AI의 토큰 카운팅 API 활용
+   ```python
+   # Google AI의 토큰 카운팅 기능 사용
+   token_count = genai_client.count_tokens(text)
+   ```
+
+[TokenUtils.count_tokens](mdc:selvage/src/utils/token/token_utils.py) 메서드는 모델명을 기반으로 적절한 프로바이더의 토큰 카운팅 방식을 자동으로 선택합니다.
+
+#### 2. API 응답 기반 실제 비용 계산
+
+[estimate_cost](mdc:selvage/src/llm_gateway/base_gateway.py) 메서드는 API 호출 후 실제 usage 정보를 기반으로 정확한 비용을 계산합니다:
+
+```python
+def estimate_cost(
+    self,
+    raw_response: openai.types.Completion
+    | anthropic.types.Message
+    | genai_types.GenerateContentResponse,
+) -> EstimatedCost:
+    """API 응답의 usage 정보를 이용하여 비용을 계산합니다."""
+```
+
+#### CostEstimator 클래스와 프로바이더별 비용 계산
+
+[CostEstimator](mdc:selvage/src/utils/token/cost_estimator.py) 클래스는 각 LLM 프로바이더의 usage 정보를 처리합니다:
+
+```python
+class CostEstimator:
+    """LLM API 응답의 usage 정보를 이용한 비용 계산 유틸리티 클래스"""
+
+    @staticmethod
+    def estimate_cost_from_openai_usage(
+        model_name: str, usage: openai.types.CompletionUsage
+    ) -> EstimatedCost:
+        """OpenAI API 응답의 usage 정보를 이용하여 비용을 계산합니다."""
+        
+    @staticmethod
+    def estimate_cost_from_anthropic_usage(
+        model_name: str, usage: anthropic.types.Usage
+    ) -> EstimatedCost:
+        """Anthropic (Claude) API 응답의 usage 정보를 이용하여 비용을 계산합니다."""
+        
+    @staticmethod
+    def estimate_cost_from_gemini_usage(
+        model_name: str, usage_metadata: genai_types.GenerateContentResponseUsageMetadata,
+    ) -> EstimatedCost:
+        """Google (Gemini) API 응답의 usage_metadata 정보를 이용하여 비용을 계산합니다."""
+```
+
+#### 비용 계산 과정 상세
+
+1. **API 응답에서 usage 정보 추출**:
+   ```python
+   # OpenAI의 경우
+   input_tokens = usage.prompt_tokens
+   output_tokens = usage.completion_tokens
+   
+   # Claude의 경우
+   input_tokens = usage.input_tokens
+   output_tokens = usage.output_tokens
+   
+   # Gemini의 경우
+   input_tokens = usage_metadata.prompt_token_count
+   output_tokens = usage_metadata.candidates_token_count
+   ```
+
+2. **models.yml에서 가격 정보 조회**:
+   ```python
+   model_pricing = CostEstimator._get_model_pricing(model_name)
+   ```
+
+3. **실제 비용 계산**:
+   ```python
+   input_cost = input_tokens * (model_pricing["input"] / 1000000)
+   output_cost = output_tokens * (model_pricing["output"] / 1000000)
+   total_cost = input_cost + output_cost
+   ```
+
+#### EstimatedCost 구조
+
+API 응답 기반 비용 계산 결과는 다음 구조로 반환됩니다:
+
+```python
+class EstimatedCost(BaseModel):
+    """API 응답의 usage 정보를 이용한 비용 추정 결과 모델"""
+    
+    model: str
+    input_tokens: int
+    input_cost_usd: float
+    output_tokens: int
+    output_cost_usd: float
+    total_cost_usd: float
+    within_context_limit: bool = True  # API 응답이 성공했다면 컨텍스트 제한 내에서 처리된 것으로 간주
+```
+
+#### 실제 비용 계산 예시
+
+```python
+# API 응답 후 실제 비용 계산
+cost = gateway.estimate_cost(raw_api_response)
+
+# 콘솔에 비용 정보 출력
+console.cost_info(
+    cost.model,
+    cost.input_tokens,
+    cost.output_tokens,
+    f"${cost.total_cost_usd:.6f} USD",
+)
+```
+
+#### EstimatedCost 객체 예시
+
+실제 계산된 비용 정보의 예시:
+
+```python
+EstimatedCost(
+    model="gpt-4o",
+    input_tokens=5280,
+    input_cost_usd=0.013200,  # 5,280 * $2.50/1M = $0.0132
+    output_tokens=1245,
+    output_cost_usd=0.012450,  # 1,245 * $10.00/1M = $0.01245
+    total_cost_usd=0.025650,   # $0.02565 총 비용
+    within_context_limit=True  # API 호출이 성공했으므로 True
+)
+```
+
+#### 장점
+
+1. **정확성**: API 응답의 실제 토큰 사용량을 기반으로 계산
+2. **일관성**: models.yml을 통한 중앙 집중식 설정 관리
+3. **확장성**: 새로운 모델 추가 시 models.yml만 수정하면 됨
+4. **투명성**: 실제 사용된 토큰 수와 비용을 정확히 표시
+
+이 시스템은 사전 검증과 사후 정산을 통해 사용자에게 투명하고 정확한 비용 정보를 제공합니다.
+
+### 8. 리뷰 로그 저장
+
+[save_review_log](mdc:selvage/cli.py) 함수는 리뷰 과정의 모든 데이터를 기록합니다:
+
+```python
+def save_review_log(
+    prompt: ReviewPrompt | ReviewPromptWithFileContent | None,
+    review_request: ReviewRequest,
+    review_response: ReviewResponse | None,
+    status: ReviewStatus,
+    error: Exception | None = None,
+): ...
+```
+
+리뷰 로그 데이터 구조:
+```python
+review_log = {
+    "id": log_id,                                      # 고유 ID
+    "model": {"provider": provider, "name": model_name}, # 사용된 모델 정보
+    "created_at": now.isoformat(),                     # 생성 시간
+    "prompt": prompt_data,                             # 프롬프트 정보
+    "review_request": review_request.model_dump(mode="json"), # 요청 정보
+    "review_response": response_data,                  # 응답 정보
+    "status": status.value,                            # 리뷰 상태
+    "error": str(error) if error else None,            # 오류 정보
+    "prompt_version": "v2",                            # 프롬프트 버전
+}
+```
+
+- 이 로그는 로컬에 저장되어 나중에 UI에서 조회할 수 있습니다.
+
+### 9. 리뷰 결과 시각화
+
+`selvage view` 명령어 또는 `selvage review --open-ui` 옵션을 사용하면 리뷰 결과를 Streamlit 기반 UI에서 볼 수 있습니다:
+
+- 저장된 리뷰 로그를 불러와 구조화된 형식으로 표시합니다.
+- 파일별 이슈, 심각도, 제안사항 등을 시각적으로 제공합니다.
+- 사용자는 리뷰 결과를 더 쉽게 이해하고 코드에 적용할 수 있습니다.
+
+## 전체 워크플로우 요약
+
+1. Git diff 생성 및 파싱
+2. 파싱된 데이터로 ReviewRequest 객체 생성
+3. PromptGenerator로 LLM용 프롬프트 생성
+4. GatewayFactory로 적절한 LLM 게이트웨이 선택
+5. models.yml에서 모델 정보 조회 (SSOT)
+6. LLMClientFactory로 LLM 클라이언트 생성
+7. 컨텍스트 제한 사전 확인
+8. LLM에 프롬프트 전송 및 구조화된 응답 수신
+9. 비용 계산 (API 응답의 usage 정보 기반)
+10. 응답을 ReviewResponse 객체로 변환
+11. 리뷰 로그 저장
+12. 필요시 Streamlit UI로 결과 시각화
+
+이 워크플로우는 코드 변경 사항에 대한 자동화된 리뷰를 제공하며, 개발자가 코드 품질을 향상시키는 데 도움을 줍니다.

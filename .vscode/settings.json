@@ -1,0 +1,24 @@
+{
+  "ruff.nativeServer": "on",
+  "editor.formatOnSave": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit",
+      "source.fixAll.ruff": "explicit"
+    },
+    "editor.rulers": [88]
+  },
+  "python.analysis.typeCheckingMode": "basic",
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/venv": true,
+    "**llm_eval/results": true,
+    "**llm_eval/data_set": true,
+  }
+}

@@ -1,0 +1,75 @@
+---
+description: 프로젝트 개요 및 프로젝트 구조
+globs: 
+alwaysApply: false
+---
+# Selvage - AI 기반 코드 리뷰 도구 구조
+
+## 프로젝트 개요
+Selvage는 AI를 활용하여 코드 리뷰를 자동화하는 도구입니다. OpenAI, Anthropic, Google의 LLM 모델을 사용하여 코드를 분석하고 개선점, 버그, 보안 취약점 등을 찾아 제공합니다.
+
+## 디렉토리 구조
+- `selvage/`: 메인 패키지
+  - `src/`: 핵심 소스 코드
+    - `llm_gateway/`: LLM 게이트웨이 모듈
+    - `diff_parser/`: 코드 diff 파싱 로직
+    - `exceptions/`: 예외 클래스 모음
+    - `utils/`: 유틸리티 함수 및 클래스
+      - `token/`: 토큰 관련 유틸리티 및 모델
+      - `prompts/`: 프롬프트 생성 및 관리
+      - `logging/`: 로깅 설정 및 관리
+  - `cli.py`: 명령줄 인터페이스
+- `tests/`: 테스트 코드
+- `sample_data/`: 샘플 데이터
+- `logs/`: 로그 저장 디렉토리
+- `resources/`: 리소스 파일
+- `llm_evla`: llm evaluation 파일 디렉토리
+  - `data_set`: 테스트 데이터
+  - `results`: llm evaludation 결과 디렉토리
+  
+## 주요 파일
+- [setup.py](mdc:setup.py): 패키지 설정 및 의존성 관리
+- [requirements.txt](mdc:requirements.txt): 프로덕션 의존성
+- [requirements-dev.txt](mdc:requirements-dev.txt): 개발 의존성
+- [pyproject.toml](mdc:pyproject.toml): 프로젝트 메타데이터
+- [pytest.ini](mdc:pytest.ini): pytest 설정
+
+## 핵심 모듈
+- [selvage/cli.py](mdc:selvage/cli.py): 명령줄 인터페이스 및 진입점
+- [selvage/src/llm_gateway/base_gateway.py](mdc:selvage/src/llm_gateway/base_gateway.py): LLM 게이트웨이 기본 클래스
+- [selvage/src/llm_gateway/gateway_factory.py](mdc:selvage/src/llm_gateway/gateway_factory.py): 게이트웨이 팩토리 패턴 구현
+- [selvage/src/available_models.py](mdc:selvage/src/available_models.py): 지원되는 AI 모델 정의
+- [selvage/src/config.py](mdc:selvage/src/config.py): 설정 관리
+- [selvage/src/review_processor.py](mdc:selvage/src/review_processor.py): 코드 리뷰 처리 로직
+- [selvage/src/ui.py](mdc:selvage/src/ui.py): 리뷰 결과 UI 인터페이스
+
+## 게이트웨이 모듈
+- [selvage/src/llm_gateway/openai_gateway.py](mdc:selvage/src/llm_gateway/openai_gateway.py): OpenAI API 게이트웨이
+- [selvage/src/llm_gateway/claude_gateway.py](mdc:selvage/src/llm_gateway/claude_gateway.py): Anthropic Claude API 게이트웨이
+- [selvage/src/llm_gateway/google_gateway.py](mdc:selvage/src/llm_gateway/google_gateway.py): Google AI API 게이트웨이
+
+## 유틸리티 모듈
+- [selvage/src/utils/file_utils.py](mdc:selvage/src/utils/file_utils.py): 파일 처리 유틸리티 함수
+- [selvage/src/utils/git_utils.py](mdc:selvage/src/utils/git_utils.py): Git 관련 작업 유틸리티
+- [selvage/src/utils/prompt_utils.py](mdc:selvage/src/utils/prompt_utils.py): 프롬프트 처리 유틸리티
+- [selvage/src/utils/llm_factory.py](mdc:selvage/src/utils/llm_factory.py): LLM 팩토리 유틸리티
+
+### 토큰 관련 유틸리티
+- [selvage/src/utils/token/token_utils.py](mdc:selvage/src/utils/token/token_utils.py): 토큰 처리 유틸리티
+- [selvage/src/utils/token/models.py](mdc:selvage/src/utils/token/models.py): 토큰 관련 데이터 모델
+
+### 프롬프트 관련 유틸리티
+- [selvage/src/utils/prompts/prompt_generator.py](mdc:selvage/src/utils/prompts/prompt_generator.py): 프롬프트 생성 로직
+- [selvage/src/utils/prompts/models/system_prompt.py](mdc:selvage/src/utils/prompts/models/system_prompt.py): 시스템 프롬프트 모델
+- [selvage/src/utils/prompts/models/user_prompt.py](mdc:selvage/src/utils/prompts/models/user_prompt.py): 사용자 프롬프트 모델
+- [selvage/src/utils/prompts/models/review_prompt.py](mdc:selvage/src/utils/prompts/models/review_prompt.py): 리뷰 프롬프트 모델
+
+### 로깅 관련 유틸리티
+- [selvage/src/utils/logging/config.py](mdc:selvage/src/utils/logging/config.py): 로깅 설정 및 구성
+
+## 테스트
+- [tests/test_llm_gateway.py](mdc:tests/test_llm_gateway.py): LLM 게이트웨이 기본 테스트
+- [tests/test_llm_gateway_request.py](mdc:tests/test_llm_gateway_request.py): 게이트웨이 요청 테스트
+- [tests/test_llm_gateway_review_code.py](mdc:tests/test_llm_gateway_review_code.py): 코드 리뷰 기능 테스트
+- [tests/test_diff_parser.py](mdc:tests/test_diff_parser.py): 디프 파서 테스트
+- [tests/test_prompt_generator.py](mdc:tests/test_prompt_generator.py): 프롬프트 생성 테스트

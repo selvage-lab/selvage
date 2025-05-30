@@ -1,0 +1,42 @@
+---
+description: Selvage 프로젝트 린팅 설정
+globs: 
+alwaysApply: false
+---
+# Selvage 프로젝트 린팅 설정
+
+## Ruff 설정
+
+Selvage 프로젝트는 Python 린터로 Ruff를 사용합니다. 다음 설정을 통해 코드 품질을 관리합니다:
+### VSCode 설정
+[.vscode/settings.json](mdc:.vscode/settings.json) 파일에 정의된 Ruff 설정:
+
+- 라인 길이: 88자 (Black 스타일)
+- 활성화된 린트 규칙:
+  - `E`: pycodestyle 오류
+  - `F`: Pyflakes 규칙
+  - `I`: isort 규칙
+  - `B`: flake8-bugbear 규칙
+  - `C4`: flake8-comprehensions
+  - `ARG`: flake8-unused-arguments
+  - `N`: PEP8 네이밍 규칙
+  - `UP`: pyupgrade 규칙
+  - `ANN`: flake8-annotations (타입 힌팅)
+  - `S`: flake8-bandit (보안)
+  - `A`: flake8-builtins
+
+### 자동화된 코드 정리
+- 파일 저장 시 자동 포맷팅 적용
+- 자동 import 정리
+- 코드 수정 제안(Code Actions)을 통한 문제 해결
+
+## 타입 체킹
+Python 타입 검사 모드는 `basic`으로 설정되어 있습니다. 이를 통해 타입 힌팅에 대한 기본적인 검사가 이루어집니다.
+
+## 테스트 설정
+[pytest.ini](mdc:pytest.ini) 파일에서 pytest 설정을 관리합니다:
+- 테스트 경로: `tests/`
+- 테스트 파일 패턴: `test_*.py`
+- 테스트 클래스 패턴: `Test*`
+- 테스트 함수 패턴: `test_*`
+- legacy_tests 디렉토리 무시
