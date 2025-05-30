@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "selvage"
+dynamic = ["version"]
+description = "LLM 기반 코드 리뷰 도구"
+authors = [{name = "Selvage Team"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["code-review", "llm", "ai", "git", "cli", "python"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "requests==2.32.3",
+    "pydantic==2.10.6",
+    "openai==1.68.2",
+    "anthropic==0.49.0",
+    "tiktoken==0.9.0",
+    "streamlit==1.43.2",
+    "instructor==1.8.0",
+    "google-genai==1.13.0",
+    "click==8.1.8",
+    "PyYAML==6.0.1",
+    "rich==13.7.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.5",
+    "pytest-cov==4.1.0",
+    "build==1.0.3",
+    "twine==6.1.0",
+    "wheel==0.43.0",
+]
+e2e = [
+    "testcontainers>=4.0.0",
+    "docker>=6.0.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-timeout>=2.0.0",
+    "pytest-mock>=3.10.0",
+    "pytest-subprocess>=1.5.0",
+]
+
+[project.scripts]
+selvage = "selvage.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "selvage.__version__.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["selvage*"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I", "B", "C4", "ARG", "N", "UP", "ANN", "S", "A", "ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002"]
+"llm_eval/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002"]
+"e2e/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002"]
+
+[project.urls]
+Homepage = "https://github.com/selvage-team/selvage"
+Repository = "https://github.com/selvage-team/selvage"
+Documentation = "https://github.com/selvage-team/selvage#readme"
+"Bug Tracker" = "https://github.com/selvage-team/selvage/issues"

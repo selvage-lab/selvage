@@ -1,0 +1,132 @@
+# 지원하는 LLM 모델 설정
+# 새 모델 추가시 이 파일만 수정하면 됩니다.
+
+models:
+  gpt-4o:
+    full_name: "gpt-4o"
+    aliases: []
+    description: "고급 코드 분석 및 텍스트 처리 능력"
+    provider: "openai"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 2.5 # USD per 1M tokens
+      output: 10.0 # USD per 1M tokens
+      description: "$2.50/$10.00 per 1M tokens"
+    context_limit: 128000
+
+  gpt-4.1:
+    full_name: "gpt-4.1"
+    aliases: []
+    description: "대용량 코드베이스 분석 및 100만 토큰 컨텍스트 처리"
+    provider: "openai"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 2.0
+      output: 8.0
+      description: "$2.00/$8.00 per 1M tokens"
+    context_limit: 1047576
+
+  o4-mini-high:
+    full_name: "o4-mini"
+    aliases: ["o4-mini-high"]
+    description: "추론 모델로 높은 정확도 코드 분석 수행 (high reasoning)"
+    provider: "openai"
+    params:
+      reasoning_effort: "high"
+    thinking_mode: false
+    pricing:
+      input: 1.1
+      output: 4.4
+      description: "$1.10/$4.40 per 1M tokens"
+    context_limit: 200000
+
+  o4-mini:
+    full_name: "o4-mini"
+    aliases: ["o4-mini", "o4-mini-medium"]
+    description: "추론 모델로 균형 잡힌 코드 분석 수행 (medium reasoning)"
+    provider: "openai"
+    params:
+      reasoning_effort: "medium"
+    thinking_mode: false
+    pricing:
+      input: 1.1
+      output: 4.4
+      description: "$1.10/$4.40 per 1M tokens"
+    context_limit: 200000
+
+  o4-mini-low:
+    full_name: "o4-mini"
+    aliases: ["o4-mini-low"]
+    description: "추론 모델로 빠른 코드 분석 수행 (low reasoning)"
+    provider: "openai"
+    params:
+      reasoning_effort: "low"
+    thinking_mode: false
+    pricing:
+      input: 1.1
+      output: 4.4
+      description: "$1.10/$4.40 per 1M tokens"
+    context_limit: 200000
+
+  claude-sonnet-4-20250514:
+    full_name: "claude-sonnet-4-20250514"
+    aliases: ["claude-sonnet-4"]
+    description: "하이브리드 추론 모델로 고급 코딩 및 명령 수행 최적화"
+    provider: "anthropic"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 3.0
+      output: 15.0
+      description: "$3.00/$15.00 per 1M tokens"
+    context_limit: 200000
+
+  claude-sonnet-4-20250514-thinking:
+    full_name: "claude-sonnet-4-20250514"
+    aliases: ["claude-sonnet-4-thinking"]
+    description: "(recommend) 하이브리드 추론 모델로 확장 사고 프로세스 지원"
+    provider: "anthropic"
+    params:
+      temperature: 1 # thinking 모드에서 더 다양한 사고 과정 생성을 위해 설정
+      thinking:
+        type: "enabled"
+        budget_tokens: 20000
+    thinking_mode: true
+    pricing:
+      input: 3.0
+      output: 15.0
+      description: "$3.00/$15.00 per 1M tokens"
+    context_limit: 200000
+
+  gemini-2.5-pro-preview-05-06:
+    full_name: "gemini-2.5-pro-preview-05-06"
+    aliases: ["gemini-2.5-pro"]
+    description: "(recommend) 대용량 컨텍스트 처리 및 고급 추론 작업 수행"
+    provider: "google"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 1.25
+      output: 10.0
+      description: "$1.25/$10.00 per 1M tokens (Gemini 2.5 Pro)"
+    context_limit: 1048576
+
+  gemini-2.5-flash-preview-05-20:
+    full_name: "gemini-2.5-flash-preview-05-20"
+    aliases: ["gemini-2.5-flash"]
+    description: "(recommend) 응답 속도와 비용 효율성 최적화 모델"
+    provider: "google"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.15
+      output: 0.6
+      description: "$0.15/$0.60 per 1M tokens (Gemini 2.5 Flash)"
+    context_limit: 1048576
