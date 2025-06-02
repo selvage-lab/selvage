@@ -39,7 +39,15 @@ from selvage.src.utils.prompts.models.review_prompt_with_file_content import (
 )
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.review_display import review_display
-from selvage.src.utils.token.models import ReviewRequest, ReviewResponse
+from selvage.src.utils.token.models import (
+    EstimatedCost,
+    ReviewRequest,
+    ReviewResponse,
+)
+from selvage.src.cache import CacheManager
+from selvage.src.cache.models import CacheKeyInfo
+from selvage.src.cache.cache_key_generator import CacheKeyGenerator
+from selvage.src.utils.logging.utils import generate_log_id
 
 
 @click.group(invoke_without_command=True)
@@ -245,9 +253,13 @@ def save_review_log(
     review_response: ReviewResponse | None,
     status: ReviewStatus,
     error: Exception | None = None,
+    log_id: str | None = None,  # New parameter
 ) -> str:
     """리뷰 로그를 저장하고 파일 경로를 반환합니다."""
     model_info = get_model_info(review_request.model)
+    now = datetime.now() # Moved now to be accessible for log_id generation
+    provider = model_info.get("provider", "unknown") # Moved provider up
+    model_name = model_info.get("full_name", review_request.model) # Moved model_name up
     log_dir = get_default_review_log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -261,14 +273,12 @@ def save_review_log(
     if review_response:
         response_data = review_response.model_dump(mode="json")
 
-    now = datetime.now()
-    provider = model_info.get("provider", "unknown")
-    model_name = model_info.get("full_name", review_request.model)
-    log_id = f"{provider.value}-{model_name}-{int(now.timestamp())}"
+    # Use provided log_id or generate a new one
+    current_log_id = log_id if log_id else f"{provider.value}-{model_name}-{int(now.timestamp())}"
 
     # JSON 로그 데이터 구성
     review_log = {
-        "id": log_id,
+        "id": current_log_id,
         "model": {"provider": provider.value, "name": model_name},
         "created_at": now.isoformat(),
         "prompt": prompt_data,
@@ -289,6 +299,18 @@ def save_review_log(
     return str(file_path)
 
 
+def _perform_new_review(
+    review_request: ReviewRequest,
+    review_prompt: ReviewPrompt | ReviewPromptWithFileContent,
+) -> tuple[ReviewResponse, EstimatedCost | None]:
+    """Performs a new code review using the LLM gateway.
+    The progress display (review_display.progress_review) should wrap the call to this function.
+    """
+    llm_gateway = GatewayFactory.create(model=review_request.model)
+    review_result = llm_gateway.review_code(review_prompt)  # review_prompt is an argument
+    return review_result.review_response, review_result.estimated_cost
+
+
 def review_code(
     model: str,
     repo_path: str = ".",
@@ -298,9 +320,11 @@ def review_code(
     diff_only: bool = False,
     open_ui: bool = False,
     port: int = 8501,
+    skip_cache: bool = False,  # Add new
+    clear_cache: bool = False,  # Add new
 ) -> None:
     """코드 리뷰를 수행합니다."""
-    # API 키 확인
+    # API 키 확인 (model_info is defined here)
     model_info = get_model_info(model)
     provider = model_info.get("provider", "unknown")
     api_key = get_api_key(provider)
@@ -316,6 +340,31 @@ def review_code(
         )
         return
 
+    provider = model_info.get("provider", "unknown")
+    api_key = get_api_key(provider)
+    if not api_key:
+        console.error(f"{provider.get_display_name()} API 키가 설정되지 않았습니다.")
+        # ... (rest of API key error handling)
+        console.print(
+            f"  1. 환경변수(권장): "
+            f"[green]export {provider.get_env_var_name()}=YOUR_API_KEY[/green]"
+        )
+        console.print(
+            f"  2. CLI 명령어: [green]selvage --set-{provider.value}-key[/green]"
+        )
+        return
+
+    # Initialize CacheManager
+    cache_manager = CacheManager()  # Default TTL
+
+    # Handle --clear-cache option
+    if clear_cache:
+        console.info("CLI 옵션에 따라 캐시를 삭제합니다...")
+        cache_manager.clear_cache()
+
+    # Cleanup expired cache
+    cache_manager.cleanup_expired_cache()
+
     # Git diff 내용 가져오기
     diff_content = get_diff_content(repo_path, staged, target_commit, target_branch)
     if not diff_content:
@@ -324,57 +373,117 @@ def review_code(
 
     # diff 파싱 및 메타데이터 추가
     use_full_context = not diff_only
-
     # repo_path 결정 - 사용자 입력 또는 프로젝트 루트
-    repo_path = str(Path(repo_path)) if repo_path != "." else str(find_project_root())
-    diff_result = parse_git_diff(diff_content, use_full_context, repo_path)
-    review_prompt = None
+    actual_repo_path = str(Path(repo_path)) if repo_path != "." else str(find_project_root())
+    diff_result = parse_git_diff(diff_content, use_full_context, actual_repo_path)
+
+    # 리뷰 요청 생성
+    review_request = ReviewRequest(
+        diff_content=diff_content,
+        processed_diff=diff_result,
+        file_paths=[file.filename for file in diff_result.files],
+        use_full_context=use_full_context,
+        model=model,
+        repo_path=actual_repo_path,
+    )
+
+    review_response: ReviewResponse | None = None
+    estimated_cost: EstimatedCost | None = None
+    current_log_id: str | None = None # Renamed log_id to current_log_id to avoid confusion
+    log_path: str | None = None
+    review_prompt_obj: ReviewPrompt | ReviewPromptWithFileContent | None = None
+
     try:
-        # 리뷰 요청 생성
-        review_request = ReviewRequest(
-            diff_content=diff_content,
-            processed_diff=diff_result,
-            file_paths=[file.filename for file in diff_result.files],
-            use_full_context=use_full_context,
-            model=model,
-            repo_path=repo_path,
-        )
+        if not skip_cache:
+            console.info("캐시된 리뷰 결과를 확인합니다...")
+            cached_result = cache_manager.get_cached_review(review_request)
+            if cached_result:
+                review_response, _ = cached_result # Original cached_cost is not directly used for display
+                estimated_cost = EstimatedCost.get_zero_cost(review_request.model)
 
-        # LLM 게이트웨이 가져오기
-        llm_gateway = GatewayFactory.create(model=review_request.model)
+                original_log_id_from_cache = None
+                try:
+                    # Attempt to retrieve the original log_id from the cache entry
+                    temp_cache_key_info = CacheKeyInfo(
+                        diff_content=review_request.diff_content,
+                        model=review_request.model,
+                        use_full_context=review_request.use_full_context
+                    )
+                    temp_cache_key = CacheKeyGenerator.generate_cache_key(temp_cache_key_info)
+                    cache_file_path_temp = cache_manager._get_cache_file_path(temp_cache_key)
+                    if cache_file_path_temp.exists():
+                        with open(cache_file_path_temp, 'r', encoding='utf-8') as f_temp:
+                            cache_data_temp = json.load(f_temp)
+                            original_log_id_from_cache = cache_data_temp.get("log_id")
+                except Exception as e_cache_read:
+                    console.warning(f"캐시된 로그 ID를 읽는 중 오류 발생: {e_cache_read}")
 
-        # 코드 리뷰 수행
-        with review_display.progress_review(review_request.model):
-            review_prompt = PromptGenerator().create_code_review_prompt(review_request)
-            review_result = llm_gateway.review_code(review_prompt)
-            review_response = review_result.review_response
+                current_log_id = generate_log_id(review_request.model) # New log for this cache hit event
+                log_path = save_review_log(
+                    prompt=None,
+                    review_request=review_request,
+                    review_response=review_response,
+                    status=ReviewStatus.SUCCESS,
+                    log_id=current_log_id, # Use new log_id for this specific log record
+                    # Consider adding cached_from_log_id=original_log_id_from_cache to save_review_log if schema supports
+                )
+                console.success(
+                    f"캐시된 리뷰 결과를 사용했습니다! (원본 로그 ID: {original_log_id_from_cache or 'N/A'}) (API 비용 절약)"
+                )
+
+        if review_response is None:  # Cache miss or skip_cache is True
+            if skip_cache:
+                console.info("CLI 옵션에 따라 캐시를 건너뛰고 새로운 리뷰를 수행합니다...")
+            else:
+                console.info("캐시된 결과가 없습니다. 새로운 리뷰를 수행합니다...")
+
+            current_log_id = generate_log_id(review_request.model)
+            review_prompt_obj = PromptGenerator().create_code_review_prompt(review_request)
+
+            with review_display.progress_review(review_request.model):
+                review_response, estimated_cost = _perform_new_review(review_request, review_prompt_obj)
+
+            if not skip_cache and review_response: # Ensure review_response is not None before caching
+                cache_manager.save_review_to_cache(
+                    review_request=review_request,
+                    review_response=review_response,
+                    estimated_cost=estimated_cost, # Save the actual cost to cache
+                    log_id=current_log_id # Save the log_id of this new review
+                )
+
             log_path = save_review_log(
-                review_prompt, review_request, review_response, ReviewStatus.SUCCESS
+                prompt=review_prompt_obj,
+                review_request=review_request,
+                review_response=review_response,
+                status=ReviewStatus.SUCCESS,
+                log_id=current_log_id
             )
 
-        # 리뷰 완료 정보 통합 출력
         review_display.review_complete(
             model_info=model_info,
             log_path=log_path,
-            estimated_cost=review_result.estimated_cost,
+            estimated_cost=estimated_cost, # This will be 0 for cache hits, or actual for new
         )
-
         console.success("코드 리뷰가 완료되었습니다!")
+
+        if open_ui:
+            console.info("리뷰 결과 UI를 시작합니다...")
+            handle_view_command(port)
+
     except Exception as e:
         console.error(f"코드 리뷰 중 오류가 발생했습니다: {str(e)}", exception=e)
+        error_log_id = current_log_id if current_log_id else generate_log_id(model)
+
+        # review_request should be defined, review_prompt_obj might be None
         log_path = save_review_log(
-            review_prompt,
-            review_request,
-            None,
-            ReviewStatus.FAILED,
+            prompt=review_prompt_obj,
+            review_request=review_request, # review_request should exist
+            review_response=None,
+            status=ReviewStatus.FAILED,
             error=e,
+            log_id=error_log_id,
         )
         return
-
-    # UI 자동 실행
-    if open_ui:
-        console.info("리뷰 결과 UI를 시작합니다...")
-        handle_view_command(port)
 
 
 def handle_view_command(port: int) -> None:
@@ -450,6 +559,22 @@ def _process_single_api_key(display_name: str, provider: ModelProvider) -> bool:
     help="변경된 부분만 분석",
     type=bool,
 )
+@click.option(
+    "--skip-cache",
+    is_flag=True,
+    help="캐시를 사용하지 않고 새로운 리뷰 수행",
+    default=False, # Explicitly set default
+    show_default=True, # Show default in help
+    type=bool,
+)
+@click.option(
+    "--clear-cache",
+    is_flag=True,
+    help="캐시를 삭제한 후 리뷰 수행",
+    default=False, # Explicitly set default
+    show_default=True, # Show default in help
+    type=bool
+)
 def review(
     repo_path: str,
     staged: bool,
@@ -458,6 +583,8 @@ def review(
     model: str | None,
     open_ui: bool,
     diff_only: bool,
+    skip_cache: bool, # New parameter
+    clear_cache: bool, # New parameter
 ) -> None:
     """코드 리뷰 수행"""
     # 상호 배타적 옵션 검증
@@ -490,6 +617,8 @@ def review(
         target_branch=target_branch,
         diff_only=diff_only,
         open_ui=open_ui,
+        skip_cache=skip_cache, # Pass new parameter
+        clear_cache=clear_cache, # Pass new parameter
     )
 
 
