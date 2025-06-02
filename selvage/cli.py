@@ -240,12 +240,22 @@ def config_list() -> None:
     console.info(f"디버그 모드: {debug_status}")
 
 
+def generate_log_id(model: str) -> str:
+    """리뷰 로그 ID를 생성합니다."""
+    model_info = get_model_info(model)
+    provider = model_info.get("provider", "unknown")
+    model_name = model_info.get("full_name", model)
+    now = datetime.now()
+    return f"{provider.value}-{model_name}-{int(now.timestamp())}"
+
+
 def save_review_log(
     prompt: ReviewPrompt | ReviewPromptWithFileContent | None,
     review_request: ReviewRequest,
     review_response: ReviewResponse | None,
     status: ReviewStatus,
     error: Exception | None = None,
+    log_id: str | None = None,
 ) -> str:
     """리뷰 로그를 저장하고 파일 경로를 반환합니다."""
     model_info = get_model_info(review_request.model)
@@ -263,9 +273,11 @@ def save_review_log(
         response_data = review_response.model_dump(mode="json")
 
     now = datetime.now()
+    if log_id is None:
+        log_id = generate_log_id(review_request.model)
+    
     provider = model_info.get("provider", "unknown")
     model_name = model_info.get("full_name", review_request.model)
-    log_id = f"{provider.value}-{model_name}-{int(now.timestamp())}"
 
     # JSON 로그 데이터 구성
     review_log = {
@@ -369,10 +381,11 @@ def review_code(
     try:
         if skip_cache:
             # 캐시 사용하지 않고 직접 리뷰 수행
+            log_id = generate_log_id(model)
             review_response, estimated_cost = _perform_new_review(review_request)
             review_prompt = PromptGenerator().create_code_review_prompt(review_request)
             log_path = save_review_log(
-                review_prompt, review_request, review_response, ReviewStatus.SUCCESS
+                review_prompt, review_request, review_response, ReviewStatus.SUCCESS, log_id=log_id
             )
         else:
             # 캐시 확인 시도
@@ -392,18 +405,19 @@ def review_code(
                 console.success("캐시된 리뷰 결과를 사용했습니다! (API 비용 절약)")
             else:
                 # 캐시 미스: 새로운 리뷰 수행 후 캐시에 저장
+                log_id = generate_log_id(model)
                 review_response, estimated_cost = _perform_new_review(review_request)
 
                 # 리뷰 결과를 캐시에 저장
                 cache_manager.save_review_to_cache(
-                    review_request, review_response, estimated_cost
+                    review_request, review_response, estimated_cost, log_id=log_id
                 )
 
                 review_prompt = PromptGenerator().create_code_review_prompt(
                     review_request
                 )
                 log_path = save_review_log(
-                    review_prompt, review_request, review_response, ReviewStatus.SUCCESS
+                    review_prompt, review_request, review_response, ReviewStatus.SUCCESS, log_id=log_id
                 )
 
         # 리뷰 완료 정보 통합 출력
@@ -416,12 +430,14 @@ def review_code(
         console.success("코드 리뷰가 완료되었습니다!")
     except Exception as e:
         console.error(f"코드 리뷰 중 오류가 발생했습니다: {str(e)}", exception=e)
+        error_log_id = generate_log_id(model)
         log_path = save_review_log(
             review_prompt,
             review_request,
             None,
             ReviewStatus.FAILED,
             error=e,
+            log_id=error_log_id,
         )
         return
 

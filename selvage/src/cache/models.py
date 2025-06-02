@@ -17,6 +17,7 @@ class CacheEntry(BaseModel):
     request_info: dict[str, Any]
     review_response: ReviewResponse
     estimated_cost: EstimatedCost | None = None
+    log_id: str | None = None
     
     class Config:
         json_encoders = {

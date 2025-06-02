@@ -80,7 +80,8 @@ class CacheManager:
         self, 
         review_request: ReviewRequest, 
         review_response: ReviewResponse,
-        estimated_cost: EstimatedCost | None = None
+        estimated_cost: EstimatedCost | None = None,
+        log_id: str | None = None
     ) -> None:
         """리뷰 결과를 캐시에 저장합니다.
         
@@ -88,6 +89,7 @@ class CacheManager:
             review_request: 리뷰 요청 정보
             review_response: 리뷰 응답 결과
             estimated_cost: 비용 정보
+            log_id: 원본 리뷰 로그 ID (추적용)
         """
         try:
             # 캐시 키 생성
@@ -110,14 +112,23 @@ class CacheManager:
                 },
                 review_response=review_response,
                 estimated_cost=estimated_cost,
+                log_id=log_id,
             )
             
             # 캐시 파일에 저장
             cache_file = self._get_cache_file_path(cache_key)
             with open(cache_file, 'w', encoding='utf-8') as f:
-                json.dump(cache_entry.model_dump(mode='json'), f, ensure_ascii=False, indent=2)
+                json.dump(
+                    cache_entry.model_dump(mode='json'), 
+                    f, 
+                    ensure_ascii=False, 
+                    indent=2
+                )
             
-            console.info(f"리뷰 결과를 캐시에 저장했습니다. (유효기간: {self.cache_ttl_hours}시간)")
+            console.info(
+                f"리뷰 결과를 캐시에 저장했습니다. "
+                f"(유효기간: {self.cache_ttl_hours}시간)"
+            )
             
         except Exception as e:
             console.warning(f"캐시 저장 중 오류 발생: {str(e)}")
@@ -149,7 +160,7 @@ class CacheManager:
             
             for cache_file in cache_files:
                 try:
-                    with open(cache_file, 'r', encoding='utf-8') as f:
+                    with open(cache_file, encoding='utf-8') as f:
                         cache_data = json.load(f)
                     
                     cache_entry = CacheEntry.model_validate(cache_data)
