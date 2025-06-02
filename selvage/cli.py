@@ -12,6 +12,7 @@ from pathlib import Path
 import click
 
 from selvage.__version__ import __version__
+from selvage.src.cache import CacheManager
 from selvage.src.config import (
     get_api_key,
     get_default_debug_mode,
@@ -39,7 +40,7 @@ from selvage.src.utils.prompts.models.review_prompt_with_file_content import (
 )
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.review_display import review_display
-from selvage.src.utils.token.models import ReviewRequest, ReviewResponse
+from selvage.src.utils.token.models import EstimatedCost, ReviewRequest, ReviewResponse
 
 
 @click.group(invoke_without_command=True)
@@ -239,12 +240,22 @@ def config_list() -> None:
     console.info(f"디버그 모드: {debug_status}")
 
 
+def generate_log_id(model: str) -> str:
+    """리뷰 로그 ID를 생성합니다."""
+    model_info = get_model_info(model)
+    provider = model_info.get("provider", "unknown")
+    model_name = model_info.get("full_name", model)
+    now = datetime.now()
+    return f"{provider.value}-{model_name}-{int(now.timestamp())}"
+
+
 def save_review_log(
     prompt: ReviewPrompt | ReviewPromptWithFileContent | None,
     review_request: ReviewRequest,
     review_response: ReviewResponse | None,
     status: ReviewStatus,
     error: Exception | None = None,
+    log_id: str | None = None,
 ) -> str:
     """리뷰 로그를 저장하고 파일 경로를 반환합니다."""
     model_info = get_model_info(review_request.model)
@@ -262,9 +273,11 @@ def save_review_log(
         response_data = review_response.model_dump(mode="json")
 
     now = datetime.now()
+    if log_id is None:
+        log_id = generate_log_id(review_request.model)
+    
     provider = model_info.get("provider", "unknown")
     model_name = model_info.get("full_name", review_request.model)
-    log_id = f"{provider.value}-{model_name}-{int(now.timestamp())}"
 
     # JSON 로그 데이터 구성
     review_log = {
@@ -289,6 +302,21 @@ def save_review_log(
     return str(file_path)
 
 
+def _perform_new_review(
+    review_request: ReviewRequest,
+) -> tuple[ReviewResponse, EstimatedCost]:
+    """새로운 리뷰를 수행하고 결과를 반환합니다."""
+    # LLM 게이트웨이 가져오기
+    llm_gateway = GatewayFactory.create(model=review_request.model)
+
+    # 코드 리뷰 수행
+    with review_display.progress_review(review_request.model):
+        review_prompt = PromptGenerator().create_code_review_prompt(review_request)
+        review_result = llm_gateway.review_code(review_prompt)
+
+        return review_result.review_response, review_result.estimated_cost
+
+
 def review_code(
     model: str,
     repo_path: str = ".",
@@ -298,6 +326,8 @@ def review_code(
     diff_only: bool = False,
     open_ui: bool = False,
     port: int = 8501,
+    skip_cache: bool = False,
+    clear_cache: bool = False,
 ) -> None:
     """코드 리뷰를 수행합니다."""
     # API 키 확인
@@ -316,6 +346,16 @@ def review_code(
         )
         return
 
+    # 캐시 매니저 초기화
+    cache_manager = CacheManager()
+
+    # 캐시 삭제 요청시
+    if clear_cache:
+        cache_manager.clear_cache()
+
+    # 만료된 캐시 정리
+    cache_manager.cleanup_expired_cache()
+
     # Git diff 내용 가져오기
     diff_content = get_diff_content(repo_path, staged, target_commit, target_branch)
     if not diff_content:
@@ -329,45 +369,75 @@ def review_code(
     repo_path = str(Path(repo_path)) if repo_path != "." else str(find_project_root())
     diff_result = parse_git_diff(diff_content, use_full_context, repo_path)
     review_prompt = None
+    # 리뷰 요청 생성
+    review_request = ReviewRequest(
+        diff_content=diff_content,
+        processed_diff=diff_result,
+        file_paths=[file.filename for file in diff_result.files],
+        use_full_context=use_full_context,
+        model=model,
+        repo_path=repo_path,
+    )
     try:
-        # 리뷰 요청 생성
-        review_request = ReviewRequest(
-            diff_content=diff_content,
-            processed_diff=diff_result,
-            file_paths=[file.filename for file in diff_result.files],
-            use_full_context=use_full_context,
-            model=model,
-            repo_path=repo_path,
-        )
-
-        # LLM 게이트웨이 가져오기
-        llm_gateway = GatewayFactory.create(model=review_request.model)
-
-        # 코드 리뷰 수행
-        with review_display.progress_review(review_request.model):
+        if skip_cache:
+            # 캐시 사용하지 않고 직접 리뷰 수행
+            log_id = generate_log_id(model)
+            review_response, estimated_cost = _perform_new_review(review_request)
             review_prompt = PromptGenerator().create_code_review_prompt(review_request)
-            review_result = llm_gateway.review_code(review_prompt)
-            review_response = review_result.review_response
             log_path = save_review_log(
-                review_prompt, review_request, review_response, ReviewStatus.SUCCESS
+                review_prompt, review_request, review_response, ReviewStatus.SUCCESS, log_id=log_id
             )
+        else:
+            # 캐시 확인 시도
+            cached_result = cache_manager.get_cached_review(review_request)
+
+            if cached_result:
+                # 캐시 적중: 저장된 결과 사용
+                review_response, cached_cost = cached_result
+
+                log_path = save_review_log(
+                    None, review_request, review_response, ReviewStatus.SUCCESS
+                )
+
+                # 캐시 적중 비용 표시 (0 USD)
+                estimated_cost = EstimatedCost.get_zero_cost(model)
+
+                console.success("캐시된 리뷰 결과를 사용했습니다! (API 비용 절약)")
+            else:
+                # 캐시 미스: 새로운 리뷰 수행 후 캐시에 저장
+                log_id = generate_log_id(model)
+                review_response, estimated_cost = _perform_new_review(review_request)
+
+                # 리뷰 결과를 캐시에 저장
+                cache_manager.save_review_to_cache(
+                    review_request, review_response, estimated_cost, log_id=log_id
+                )
+
+                review_prompt = PromptGenerator().create_code_review_prompt(
+                    review_request
+                )
+                log_path = save_review_log(
+                    review_prompt, review_request, review_response, ReviewStatus.SUCCESS, log_id=log_id
+                )
 
         # 리뷰 완료 정보 통합 출력
         review_display.review_complete(
             model_info=model_info,
             log_path=log_path,
-            estimated_cost=review_result.estimated_cost,
+            estimated_cost=estimated_cost,
         )
 
         console.success("코드 리뷰가 완료되었습니다!")
     except Exception as e:
         console.error(f"코드 리뷰 중 오류가 발생했습니다: {str(e)}", exception=e)
+        error_log_id = generate_log_id(model)
         log_path = save_review_log(
             review_prompt,
             review_request,
             None,
             ReviewStatus.FAILED,
             error=e,
+            log_id=error_log_id,
         )
         return
 
@@ -450,6 +520,15 @@ def _process_single_api_key(display_name: str, provider: ModelProvider) -> bool:
     help="변경된 부분만 분석",
     type=bool,
 )
+@click.option(
+    "--skip-cache",
+    is_flag=True,
+    help="캐시를 사용하지 않고 새로운 리뷰 수행",
+    type=bool,
+)
+@click.option(
+    "--clear-cache", is_flag=True, help="캐시를 삭제한 후 리뷰 수행", type=bool
+)
 def review(
     repo_path: str,
     staged: bool,
@@ -458,6 +537,8 @@ def review(
     model: str | None,
     open_ui: bool,
     diff_only: bool,
+    skip_cache: bool,
+    clear_cache: bool,
 ) -> None:
     """코드 리뷰 수행"""
     # 상호 배타적 옵션 검증
@@ -490,6 +571,8 @@ def review(
         target_branch=target_branch,
         diff_only=diff_only,
         open_ui=open_ui,
+        skip_cache=skip_cache,
+        clear_cache=clear_cache,
     )
 
 
