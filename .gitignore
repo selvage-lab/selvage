@@ -206,3 +206,4 @@ logs/
 data/
 llm_eval/results/
 .pypirc
+.aider*
