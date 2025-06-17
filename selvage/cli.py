@@ -262,12 +262,12 @@ def save_review_log(
     log_dir = get_default_review_log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # 프롬프트 직렬화
+    # 로그 저장을 위한 프롬프트 데이터 변환
     prompt_data = None
     if prompt:
         prompt_data = prompt.to_messages()
 
-    # 응답 직렬화
+    # 로그 저장을 위한 응답 데이터 JSON 직렬화
     response_data = None
     if review_response:
         response_data = review_response.model_dump(mode="json")
@@ -275,7 +275,7 @@ def save_review_log(
     now = datetime.now()
     if log_id is None:
         log_id = generate_log_id(review_request.model)
-    
+
     provider = model_info.get("provider", "unknown")
     model_name = model_info.get("full_name", review_request.model)
 
@@ -289,7 +289,7 @@ def save_review_log(
         "review_response": response_data,
         "status": status.value,
         "error": str(error) if error else None,
-        "prompt_version": "v2",
+        "prompt_version": "v3",
     }
 
     # 파일 저장
@@ -385,7 +385,11 @@ def review_code(
             review_response, estimated_cost = _perform_new_review(review_request)
             review_prompt = PromptGenerator().create_code_review_prompt(review_request)
             log_path = save_review_log(
-                review_prompt, review_request, review_response, ReviewStatus.SUCCESS, log_id=log_id
+                review_prompt,
+                review_request,
+                review_response,
+                ReviewStatus.SUCCESS,
+                log_id=log_id,
             )
         else:
             # 캐시 확인 시도
@@ -417,7 +421,11 @@ def review_code(
                     review_request
                 )
                 log_path = save_review_log(
-                    review_prompt, review_request, review_response, ReviewStatus.SUCCESS, log_id=log_id
+                    review_prompt,
+                    review_request,
+                    review_response,
+                    ReviewStatus.SUCCESS,
+                    log_id=log_id,
                 )
 
         # 리뷰 완료 정보 통합 출력
