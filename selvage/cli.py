@@ -256,6 +256,7 @@ def save_review_log(
     status: ReviewStatus,
     error: Exception | None = None,
     log_id: str | None = None,
+    repo_path: str = ".",
 ) -> str:
     """리뷰 로그를 저장하고 파일 경로를 반환합니다."""
     model_info = get_model_info(review_request.model)
@@ -290,6 +291,7 @@ def save_review_log(
         "status": status.value,
         "error": str(error) if error else None,
         "prompt_version": "v3",
+        "repo_path": repo_path,
     }
 
     # 파일 저장
@@ -390,6 +392,7 @@ def review_code(
                 review_response,
                 ReviewStatus.SUCCESS,
                 log_id=log_id,
+                repo_path=repo_path,
             )
         else:
             # 캐시 확인 시도
@@ -400,7 +403,11 @@ def review_code(
                 review_response, cached_cost = cached_result
 
                 log_path = save_review_log(
-                    None, review_request, review_response, ReviewStatus.SUCCESS
+                    None,
+                    review_request,
+                    review_response,
+                    ReviewStatus.SUCCESS,
+                    repo_path=repo_path,
                 )
 
                 # 캐시 적중 비용 표시 (0 USD)
@@ -426,6 +433,7 @@ def review_code(
                     review_response,
                     ReviewStatus.SUCCESS,
                     log_id=log_id,
+                    repo_path=repo_path,
                 )
 
         # 리뷰 완료 정보 통합 출력
@@ -446,6 +454,7 @@ def review_code(
             ReviewStatus.FAILED,
             error=e,
             log_id=error_log_id,
+            repo_path=repo_path,
         )
         return
 

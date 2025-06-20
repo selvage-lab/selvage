@@ -163,6 +163,11 @@ def get_file_info(file: Path) -> dict[str, Any]:
     # 파일 형식 결정
     file_format = determine_file_format(file)
 
+    # repo_path 추출 (JSON 파일인 경우)
+    repo_path = None
+    if file_format == "json":
+        repo_path = extract_repo_path_from_file(file)
+
     return {
         "path": file,
         "name": file.name,
@@ -172,6 +177,7 @@ def get_file_info(file: Path) -> dict[str, Any]:
         "size": size,
         "size_str": size_str,
         "format": file_format,
+        "repo_path": repo_path,
     }
 
 
@@ -179,7 +185,12 @@ def display_file_info(file_info: dict[str, Any]) -> None:
     """파일 정보를 화면에 표시합니다."""
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown(f"**파일명**: {file_info['name']}")
+        # 파일명과 프로젝트명 표시
+        file_display = f"**파일명**: {file_info['name']}"
+        if "repo_path" in file_info and file_info["repo_path"]:
+            project_display = format_repo_path_display(file_info["repo_path"])
+            file_display += f" `({project_display})`"
+        st.markdown(file_display)
     with col2:
         st.markdown(f"**날짜**: {file_info['date'].strftime('%Y-%m-%d %H:%M')}")
     with col3:
@@ -419,6 +430,67 @@ def sort_file_infos(
     return file_infos
 
 
+def extract_repo_path_from_file(file_path: Path) -> str | None:
+    """JSON 파일에서 repo_path를 추출합니다."""
+    try:
+        with open(file_path, encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("repo_path")
+    except Exception as e:
+        console.error(f"파일 {file_path}에서 repo_path 추출 중 오류: {e}")
+        return None
+
+
+def get_unique_repo_paths(files: list[Path]) -> list[str]:
+    """모든 파일에서 고유한 repo_path 목록을 반환합니다."""
+    repo_paths = set()
+    has_none_repo_path = False
+
+    for file_path in files:
+        repo_path = extract_repo_path_from_file(file_path)
+        if repo_path:
+            repo_paths.add(repo_path)
+        else:
+            has_none_repo_path = True
+
+    # None인 repo_path가 있으면 "미분류" 카테고리 추가
+    sorted_paths = sorted(repo_paths)
+    if has_none_repo_path:
+        sorted_paths.append("__UNCATEGORIZED__")  # 특별한 키값 사용
+
+    return sorted_paths
+
+
+def filter_files_by_repo_path(files: list[Path], selected_repo_path: str) -> list[Path]:
+    """선택된 repo_path에 해당하는 파일들만 필터링합니다."""
+    if not selected_repo_path:
+        return files
+
+    filtered_files = []
+    for file_path in files:
+        repo_path = extract_repo_path_from_file(file_path)
+
+        # 미분류 카테고리 선택 시 repo_path가 None인 파일들 반환
+        if selected_repo_path == "__UNCATEGORIZED__":
+            if repo_path is None:
+                filtered_files.append(file_path)
+        elif repo_path == selected_repo_path:
+            filtered_files.append(file_path)
+
+    return filtered_files
+
+
+def format_repo_path_display(repo_path: str | None) -> str:
+    """repo_path를 화면 표시용으로 포맷팅합니다."""
+    if repo_path is None:
+        return "미분류 프로젝트"
+    elif repo_path == ".":
+        return "현재 프로젝트 (.)"
+    elif repo_path == "__UNCATEGORIZED__":
+        return "미분류 프로젝트"
+    return repo_path
+
+
 def app():
     """Streamlit 앱 메인 함수"""
     st.set_page_config(
@@ -452,8 +524,8 @@ def app():
 
     # 파일 목록 가져오기
     if view_type == "리뷰 결과":
-        files = get_review_log_files()
-        if not files:
+        all_files = get_review_log_files()
+        if not all_files:
             st.info("저장된 리뷰 로그가 없습니다.")
             st.markdown("""
             ### 리뷰 생성 방법
@@ -466,6 +538,36 @@ def app():
             자세한 사용법은 README.md 파일을 참조하세요.
             """)
             return
+
+        # 프로젝트(repo_path) 선택 - 최상위 카테고리
+        unique_repo_paths = get_unique_repo_paths(all_files)
+        if unique_repo_paths:
+            # repo_path 표시용 옵션 생성
+            repo_path_options = {
+                format_repo_path_display(path): path for path in unique_repo_paths
+            }
+
+            selected_display_path = st.sidebar.selectbox(
+                "📁 프로젝트 선택:",
+                ["전체 프로젝트"] + list(repo_path_options.keys()),
+                index=0,
+            )
+
+            # 선택된 repo_path로 파일 필터링
+            if selected_display_path == "전체 프로젝트":
+                files = all_files
+                st.sidebar.markdown(
+                    f"**표시 중**: 전체 프로젝트 ({len(all_files)}개 파일)"
+                )
+            else:
+                selected_repo_path = repo_path_options[selected_display_path]
+                files = filter_files_by_repo_path(all_files, selected_repo_path)
+                st.sidebar.markdown(
+                    f"**표시 중**: {selected_display_path} ({len(files)}개 파일)"
+                )
+        else:
+            files = all_files
+            st.sidebar.markdown(f"**표시 중**: 전체 파일 ({len(all_files)}개)")
     else:  # llm_eval 결과
         files = get_llm_eval_data_files()
         if not files:
