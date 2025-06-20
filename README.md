@@ -140,11 +140,14 @@ selvage review --staged
 # 특정 모델로 리뷰
 selvage review --model gemini-2.5-pro
 
-# 리뷰 후 자동으로 UI 열기
+# 리뷰 후 자동으로 UI 열기 (터미널 출력 비활성화)
 selvage review --open-ui
+
+# 터미널에 출력하지 않고 파일로만 저장
+selvage review --no-print
 ```
 
-리뷰 결과는 자동으로 저장되며, 콘솔 출력 또는 UI를 통해 확인할 수 있습니다.
+리뷰 결과는 기본적으로 터미널에 출력되며 자동으로 파일에도 저장됩니다. `--open-ui` 옵션으로 UI를 열거나 `--no-print` 옵션으로 터미널 출력을 비활성화할 수 있습니다.
 
 ## 🌐 지원 언어 및 모델
 
@@ -222,6 +225,7 @@ selvage review [OPTIONS]
 - `--target-branch <브랜치명>`: 현재 브랜치와 지정된 브랜치 간 변경사항 리뷰 (예: main)
 - `--model <모델명>`: 사용할 AI 모델 (예: claude-sonnet-4-thinking)
 - `--open-ui`: 리뷰 완료 후 자동으로 UI 실행
+- `--no-print`: 터미널에 리뷰 결과를 출력하지 않음 (기본적으로 터미널 출력 활성화)
 - `--diff-only`: 변경된 부분만 분석 (전체 파일 컨텍스트 제외)
 
 #### 사용 예시
@@ -233,10 +237,13 @@ selvage review
 # 스테이징된 변경사항을 Claude로 리뷰
 selvage review --staged --model claude-sonnet-4-thinking
 
-# main 브랜치와 현재 브랜치 간 차이점 리뷰
+# 리뷰 후 터미널에 출력하지 않음 (파일로만 저장)
+selvage review --no-print --model gemini-2.5-flash
+
+# main 브랜치와 현재 브랜치 간 차이점 리뷰 후 UI 열기
 selvage review --target-branch main --open-ui
 
-# 특정 커밋 이후 변경사항 리뷰
+# 특정 커밋 이후 변경사항 리뷰 (기본적으로 터미널 출력)
 selvage review --target-commit abc1234 --model gemini-2.5-pro
 ```
 

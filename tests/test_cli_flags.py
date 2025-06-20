@@ -156,6 +156,22 @@ class TestCLIFlags(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertIn("설정 관리", result.output)
 
+    def test_no_print_option_in_help(self) -> None:
+        """--no-print 옵션이 도움말에 표시되는지 테스트."""
+        result = self.runner.invoke(cli, ["review", "--help"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("--no-print", result.output)
+        self.assertIn("터미널에 리뷰 결과를 출력하지 않음", result.output)
+
+    def test_open_ui_option_in_help(self) -> None:
+        """--open-ui 옵션이 도움말에 표시되는지 테스트."""
+        result = self.runner.invoke(cli, ["review", "--help"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("--open-ui", result.output)
+        self.assertIn("리뷰 완료 후 UI로 결과 보기", result.output)
+
 
 if __name__ == "__main__":
     unittest.main()

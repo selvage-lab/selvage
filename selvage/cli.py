@@ -327,6 +327,7 @@ def review_code(
     target_branch: str | None = None,
     diff_only: bool = False,
     open_ui: bool = False,
+    print_result: bool = False,
     port: int = 8501,
     skip_cache: bool = False,
     clear_cache: bool = False,
@@ -458,6 +459,10 @@ def review_code(
         )
         return
 
+    # 터미널에 리뷰 결과 출력
+    if print_result:
+        review_display.print_review_result(log_path)
+
     # UI 자동 실행
     if open_ui:
         console.info("리뷰 결과 UI를 시작합니다...")
@@ -531,6 +536,13 @@ def _process_single_api_key(display_name: str, provider: ModelProvider) -> bool:
 )
 @click.option("--open-ui", is_flag=True, help="리뷰 완료 후 UI로 결과 보기", type=bool)
 @click.option(
+    "--no-print",
+    "no_print_result",
+    is_flag=True,
+    help="터미널에 리뷰 결과를 출력하지 않음",
+    type=bool,
+)
+@click.option(
     "--diff-only",
     is_flag=True,
     default=get_default_diff_only(),
@@ -553,6 +565,7 @@ def review(
     target_branch: str | None,
     model: str | None,
     open_ui: bool,
+    no_print_result: bool,
     diff_only: bool,
     skip_cache: bool,
     clear_cache: bool,
@@ -580,6 +593,9 @@ def review(
         console.print(message)
         return
 
+    # 터미널 출력 로직: 기본적으로 출력하되, --open-ui 사용 시 또는 --no-print 사용 시 비활성화
+    print_result = not (open_ui or no_print_result)
+
     review_code(
         model=model,
         repo_path=repo_path,
@@ -588,6 +604,7 @@ def review(
         target_branch=target_branch,
         diff_only=diff_only,
         open_ui=open_ui,
+        print_result=print_result,
         skip_cache=skip_cache,
         clear_cache=clear_cache,
     )

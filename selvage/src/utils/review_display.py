@@ -1,9 +1,11 @@
 """리뷰 프로세스 관련 UI 표시를 위한 모듈."""
 
+import json
 import threading
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rich.align import Align
@@ -11,6 +13,7 @@ from rich.console import Console, Group
 from rich.live import Live
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
+from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
@@ -29,26 +32,121 @@ def _format_token_count(count: int) -> str:
 
 
 def _shorten_path(path: str) -> str:
-    """긴 파일 경로를 축약합니다."""
+    """경로를 축약된 형태로 표시합니다."""
     import os
 
-    # 홈 디렉토리를 ~ 로 표시
-    simplified = path.replace(os.path.expanduser("~"), "~")
+    # 홈 디렉토리 축약
+    path = path.replace(str(Path.home()), "~")
 
-    # 경로가 너무 긴 경우 중간 부분 생략
-    if len(simplified) > 60:  # 더 짧게 제한
-        parts = simplified.split("/")
+    # 경로가 너무 길면 가운데를 생략
+    if len(path) > 60:
+        parts = path.split(os.sep)
         if len(parts) > 3:
-            filename = parts[-1]
-            # 파일명도 너무 긴 경우 축약
-            if len(filename) > 30:
-                name, ext = os.path.splitext(filename)
-                filename = f"{name[:20]}...{ext}"
+            # 앞 2개와 뒤 1개만 남기고 ...으로 생략
+            shortened = os.sep.join(parts[:2] + ["..."] + parts[-1:])
+            return shortened
 
-            start = "/".join(parts[:2])  # ~/Library 등
-            return f"{start}/.../{filename}"
+    return path
 
-    return simplified
+
+def _load_review_log(log_path: str) -> dict | None:
+    """리뷰 로그 파일을 로드합니다."""
+    try:
+        with open(log_path, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError):
+        console.error(f"리뷰 로그 파일을 읽을 수 없습니다: {log_path}")
+        return None
+
+
+def _format_severity_badge(severity: str) -> str:
+    """심각도 배지를 생성합니다."""
+    severity_upper = severity.upper()
+    if severity_upper == "HIGH":
+        return "[bold red]HIGH[/bold red]"
+    elif severity_upper == "MEDIUM":
+        return "[bold yellow]MEDIUM[/bold yellow]"
+    elif severity_upper == "LOW":
+        return "[bold blue]LOW[/bold blue]"
+    else:
+        return "[bold cyan]INFO[/bold cyan]"
+
+
+def _detect_language_from_filename(filename: str) -> str:
+    """파일명에서 프로그래밍 언어를 추론합니다."""
+    if not filename:
+        return "text"
+
+    ext = Path(filename).suffix.lower()
+    language_map = {
+        ".py": "python",
+        ".js": "javascript",
+        ".ts": "typescript",
+        ".jsx": "jsx",
+        ".tsx": "tsx",
+        ".java": "java",
+        ".cpp": "cpp",
+        ".c": "c",
+        ".h": "c",
+        ".hpp": "cpp",
+        ".cs": "csharp",
+        ".php": "php",
+        ".rb": "ruby",
+        ".go": "go",
+        ".rs": "rust",
+        ".swift": "swift",
+        ".kt": "kotlin",
+        ".scala": "scala",
+        ".sql": "sql",
+        ".html": "html",
+        ".css": "css",
+        ".scss": "scss",
+        ".sass": "sass",
+        ".json": "json",
+        ".xml": "xml",
+        ".yaml": "yaml",
+        ".yml": "yaml",
+        ".toml": "toml",
+        ".md": "markdown",
+        ".sh": "bash",
+        ".bash": "bash",
+        ".zsh": "zsh",
+        ".fish": "fish",
+    }
+
+    return language_map.get(ext, "text")
+
+
+def _create_syntax_block(code: str, filename: str = "", title: str = "코드") -> Syntax:
+    """코드 블록을 구문 강조와 함께 생성합니다."""
+    language = _detect_language_from_filename(filename)
+
+    return Syntax(
+        code.strip(),
+        language,
+        theme="monokai",
+        line_numbers=True,
+        word_wrap=True,
+        background_color="default",
+    )
+
+
+def _create_recommendations_panel(recommendations: list) -> Panel:
+    """추천사항을 패널로 생성합니다."""
+    if not recommendations:
+        content = "[dim]추천사항이 없습니다.[/dim]"
+    else:
+        content_lines = []
+        for i, rec in enumerate(recommendations, 1):
+            content_lines.append(f"[bold cyan]{i}.[/bold cyan] {rec}")
+        content = "\n".join(content_lines)
+
+    return Panel(
+        content,
+        title="[bold green]추천사항[/bold green]",
+        border_style="green",
+        padding=(1, 2),
+    )
 
 
 class ReviewDisplay:
@@ -116,6 +214,143 @@ class ReviewDisplay:
         )
 
         self.console.print(panel)
+
+    def print_review_result(self, log_path: str, use_pager: bool = True) -> None:
+        """리뷰 결과를 터미널에 출력합니다."""
+
+        log_data = _load_review_log(log_path)
+        if not log_data:
+            return
+
+        review_response = log_data.get("review_response")
+        if not review_response:
+            console.error("리뷰 응답 데이터가 없습니다.")
+            return
+
+        model_info = log_data.get("model", {})
+        model_name = model_info.get("name", "Unknown")
+
+        # 요약 정보 패널
+        summary = review_response.get("summary", "")
+        score = review_response.get("score")
+        issues = review_response.get("issues", [])
+        recommendations = review_response.get("recommendations", [])
+
+        # 요약 패널 생성
+        summary_content = f"[bold cyan]모델:[/bold cyan] {model_name}\n\n"
+        summary_content += (
+            f"[bold yellow]전체 점수:[/bold yellow] {score}/10\n\n" if score else ""
+        )
+        summary_content += f"[bold red]발견된 이슈:[/bold red] {len(issues)}개\n\n"
+        summary_content += (
+            f"[bold green]추천사항:[/bold green] {len(recommendations)}개\n\n"
+        )
+
+        if summary:
+            summary_content += f"[bold white]요약:[/bold white]\n{summary}"
+
+        summary_panel = Panel(
+            summary_content,
+            title="[bold]리뷰 결과 요약[/bold]",
+            border_style="cyan",
+            padding=(1, 2),
+        )
+
+        # 출력 함수 정의
+        def _print_content():
+            # 요약 패널 출력
+            self.console.print(summary_panel)
+            self.console.print()
+
+            # 이슈 정보 출력
+            if issues:
+                self.console.print("[bold cyan]이슈 상세 정보[/bold cyan]\n")
+                for i, issue in enumerate(issues, 1):
+                    severity = issue.get("severity", "INFO").upper()
+                    # file과 file_name 둘 다 확인
+                    file_name = issue.get("file") or issue.get("file_name", "")
+                    line_number = issue.get("line_number", "")
+                    description = issue.get("description", "")
+                    suggestion = issue.get("suggestion", "")
+                    target_code = issue.get("target_code", "")
+                    suggested_code = issue.get("suggested_code", "")
+
+                    # 설명이 너무 길면 축약 (일관성 유지)
+                    if len(description) > 80:
+                        description = description[:77] + "..."
+
+                    # 이슈 내용 구성 (항목 간 간격 증가)
+                    issue_content = f"[bold]심각도:[/bold] {severity}\n\n"
+                    issue_content += f"[bold]파일:[/bold] {file_name}"
+                    if line_number:
+                        issue_content += f" (라인 {line_number})"
+                    issue_content += f"\n\n[bold]설명:[/bold]\n{description}"
+
+                    if suggestion:
+                        issue_content += f"\n\n[bold]제안:[/bold]\n{suggestion}"
+
+                    border_style = (
+                        "red"
+                        if severity == "HIGH"
+                        else "yellow"
+                        if severity == "MEDIUM"
+                        else "blue"
+                    )
+
+                    issue_panel = Panel(
+                        issue_content,
+                        title=f"[bold]{i}. {severity}[/bold]",
+                        border_style=border_style,
+                        padding=(1, 2),
+                    )
+                    self.console.print(issue_panel)
+
+                    # 코드 블록이 있는 경우 별도 패널로 출력
+                    if target_code or suggested_code:
+                        if target_code:
+                            self.console.print()
+                            current_syntax = _create_syntax_block(
+                                target_code, file_name
+                            )
+                            current_panel = Panel(
+                                current_syntax,
+                                title="[bold red]현재 코드[/bold red]",
+                                border_style="red",
+                                padding=(0, 1),
+                            )
+                            self.console.print(current_panel)
+
+                        if suggested_code:
+                            self.console.print()
+                            suggested_syntax = _create_syntax_block(
+                                suggested_code, file_name
+                            )
+                            suggested_panel = Panel(
+                                suggested_syntax,
+                                title="[bold green]개선된 코드[/bold green]",
+                                border_style="green",
+                                padding=(0, 1),
+                            )
+                            self.console.print(suggested_panel)
+
+                    self.console.print()  # 이슈 사이 간격
+            else:
+                self.console.print("[bold green]발견된 이슈가 없습니다![/bold green]")
+
+            # 추천사항 출력
+            if recommendations:
+                self.console.print()
+                rec_panel = _create_recommendations_panel(recommendations)
+                self.console.print(rec_panel)
+
+        # Pager 사용 여부에 따라 출력
+        if use_pager:
+            # Pager로 출력 (스크롤링 가능)
+            with self.console.pager(styles=True):
+                _print_content()
+        else:
+            # 직접 출력 (테스트용)
+            _print_content()
 
     @contextmanager
     def progress_review(self, model: str) -> Generator[None, None, None]:
