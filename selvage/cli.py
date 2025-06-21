@@ -271,11 +271,20 @@ def save_review_log(
     status: ReviewStatus,
     error: Exception | None = None,
     log_id: str | None = None,
-    repo_path: str = ".",
+    review_log_dir: str | None = None,
 ) -> str:
     """리뷰 로그를 저장하고 파일 경로를 반환합니다."""
     model_info = get_model_info(review_request.model)
-    log_dir = get_default_review_log_dir()
+
+    # 리뷰 로그 디렉토리 결정: 파라미터로 제공되면 사용, 없으면 기본값 사용
+    if review_log_dir:
+        log_dir = Path(os.path.expanduser(review_log_dir))
+        # 절대 경로로 변환
+        if not log_dir.is_absolute():
+            log_dir = log_dir.resolve()
+    else:
+        log_dir = get_default_review_log_dir()
+
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # 로그 저장을 위한 프롬프트 데이터 변환
@@ -306,7 +315,7 @@ def save_review_log(
         "status": status.value,
         "error": str(error) if error else None,
         "prompt_version": "v3",
-        "repo_path": repo_path,
+        "repo_path": review_request.repo_path,
     }
 
     # 파일 저장
@@ -346,6 +355,7 @@ def review_code(
     port: int = 8501,
     skip_cache: bool = False,
     clear_cache: bool = False,
+    review_log_dir: str | None = None,
 ) -> None:
     """코드 리뷰를 수행합니다."""
     # API 키 확인
@@ -408,7 +418,7 @@ def review_code(
                 review_response,
                 ReviewStatus.SUCCESS,
                 log_id=log_id,
-                repo_path=repo_path,
+                review_log_dir=review_log_dir,
             )
         else:
             # 캐시 확인 시도
@@ -418,12 +428,16 @@ def review_code(
                 # 캐시 적중: 저장된 결과 사용
                 review_response, cached_cost = cached_result
 
+                # 캐시된 결과에 대해서도 log_id 생성
+                log_id = generate_log_id(model)
+
                 log_path = save_review_log(
                     None,
                     review_request,
                     review_response,
                     ReviewStatus.SUCCESS,
-                    repo_path=repo_path,
+                    log_id=log_id,
+                    review_log_dir=review_log_dir,
                 )
 
                 # 캐시 적중 비용 표시 (0 USD)
@@ -449,7 +463,7 @@ def review_code(
                     review_response,
                     ReviewStatus.SUCCESS,
                     log_id=log_id,
-                    repo_path=repo_path,
+                    review_log_dir=review_log_dir,
                 )
 
         # 리뷰 완료 정보 통합 출력
@@ -470,7 +484,7 @@ def review_code(
             ReviewStatus.FAILED,
             error=e,
             log_id=error_log_id,
-            repo_path=repo_path,
+            review_log_dir=review_log_dir,
         )
         return
 
@@ -573,6 +587,11 @@ def _process_single_api_key(display_name: str, provider: ModelProvider) -> bool:
 @click.option(
     "--clear-cache", is_flag=True, help="캐시를 삭제한 후 리뷰 수행", type=bool
 )
+@click.option(
+    "--log-dir",
+    help="로그 저장 디렉토리",
+    type=str,
+)
 def review(
     repo_path: str,
     staged: bool,
@@ -584,6 +603,7 @@ def review(
     diff_only: bool,
     skip_cache: bool,
     clear_cache: bool,
+    log_dir: str | None,
 ) -> None:
     """코드 리뷰 수행"""
     # 상호 배타적 옵션 검증
@@ -622,6 +642,7 @@ def review(
         print_result=print_result,
         skip_cache=skip_cache,
         clear_cache=clear_cache,
+        review_log_dir=log_dir,
     )
 
 

@@ -2,6 +2,7 @@
 리뷰 로그 디렉토리 설정 기능 테스트 모듈.
 """
 
+import json
 import os
 import tempfile
 import unittest
@@ -274,6 +275,118 @@ class TestCLIConfigReviewLogDir(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertIn(test_path, result.output)
         self.assertIn("리뷰 로그 저장 디렉토리", result.output)
+
+
+class TestCLIReviewLogDirOption(unittest.TestCase):
+    """CLI review --review-log-dir 옵션 테스트 클래스."""
+
+    def setUp(self) -> None:
+        """테스트 설정."""
+        self.runner = CliRunner()
+        self.temp_dir = tempfile.mkdtemp()
+        self.custom_log_dir = os.path.join(self.temp_dir, "custom_reviews")
+
+    def tearDown(self) -> None:
+        """테스트 완료 후 정리."""
+        import shutil
+
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+    @patch("selvage.cli.get_model_info")
+    def test_save_review_log_with_custom_dir(self, mock_get_model_info) -> None:
+        """save_review_log 함수가 사용자 지정 디렉토리를 올바르게 처리하는지 테스트."""
+        from selvage.cli import save_review_log
+        from selvage.src.diff_parser.models.diff_result import DiffResult
+        from selvage.src.models.model_provider import ModelProvider
+        from selvage.src.models.review_status import ReviewStatus
+        from selvage.src.utils.token.models import ReviewRequest
+
+        # Mock 설정
+        mock_get_model_info.return_value = {
+            "provider": ModelProvider.OPENAI,
+            "full_name": "gpt-4",
+        }
+
+        # ReviewRequest Mock 생성
+        diff_result = DiffResult(files=[])
+        review_request = ReviewRequest(
+            diff_content="test diff",
+            processed_diff=diff_result,
+            file_paths=["test.py"],
+            use_full_context=True,
+            model="gpt-4",
+            repo_path="/test/repo",
+        )
+
+        # save_review_log 호출
+        log_path = save_review_log(
+            prompt=None,
+            review_request=review_request,
+            review_response=None,
+            status=ReviewStatus.SUCCESS,
+            review_log_dir=self.custom_log_dir,
+        )
+
+        # 사용자 지정 디렉토리에 로그가 저장되었는지 확인
+        self.assertTrue(log_path.startswith(self.custom_log_dir))
+        self.assertTrue(os.path.exists(log_path))
+
+        # 로그 파일 내용 확인
+        with open(log_path, encoding="utf-8") as f:
+            log_data = json.load(f)
+
+        self.assertEqual(log_data["model"]["name"], "gpt-4")
+        self.assertEqual(log_data["status"], "SUCCESS")
+
+    @patch("selvage.cli.get_model_info")
+    def test_save_review_log_with_default_dir(self, mock_get_model_info) -> None:
+        """save_review_log 함수가 기본 디렉토리를 올바르게 사용하는지 테스트."""
+        from selvage.cli import save_review_log
+        from selvage.src.config import get_default_review_log_dir
+        from selvage.src.diff_parser.models.diff_result import DiffResult
+        from selvage.src.models.model_provider import ModelProvider
+        from selvage.src.models.review_status import ReviewStatus
+        from selvage.src.utils.token.models import ReviewRequest
+
+        # Mock 설정
+        mock_get_model_info.return_value = {
+            "provider": ModelProvider.OPENAI,
+            "full_name": "gpt-4",
+        }
+
+        # ReviewRequest Mock 생성
+        diff_result = DiffResult(files=[])
+        review_request = ReviewRequest(
+            diff_content="test diff",
+            processed_diff=diff_result,
+            file_paths=["test.py"],
+            use_full_context=True,
+            model="gpt-4",
+            repo_path="/test/repo",
+        )
+
+        # save_review_log 호출 (review_log_dir=None)
+        log_path = save_review_log(
+            prompt=None,
+            review_request=review_request,
+            review_response=None,
+            status=ReviewStatus.SUCCESS,
+            review_log_dir=None,
+        )
+
+        # 기본 디렉토리에 로그가 저장되었는지 확인
+        default_dir = str(get_default_review_log_dir())
+        self.assertTrue(log_path.startswith(default_dir))
+        self.assertTrue(os.path.exists(log_path))
+
+    def test_review_log_dir_help(self) -> None:
+        """review 명령어 도움말에 --log-dir 옵션이 포함되는지 테스트."""
+        result = self.runner.invoke(cli, ["review", "--help"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("--log-dir", result.output)
+        self.assertIn("로그 저장 디렉토리", result.output)
 
 
 if __name__ == "__main__":
