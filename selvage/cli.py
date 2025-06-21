@@ -23,6 +23,7 @@ from selvage.src.config import (
     set_default_debug_mode,
     set_default_diff_only,
     set_default_model,
+    set_default_review_log_dir,
 )
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
@@ -189,6 +190,20 @@ def config_debug_mode(value: str | None = None) -> None:
         console.info(
             "디버그 모드를 변경하려면 'selvage config debug-mode on' 또는 "
             "'selvage config debug-mode off' 명령어를 사용하세요."
+        )
+
+
+def config_review_log_dir(log_dir: str | None = None) -> None:
+    """리뷰 로그 디렉토리 설정을 처리합니다."""
+    if log_dir is not None:
+        set_default_review_log_dir(log_dir)
+    else:
+        # 값이 지정되지 않은 경우 현재 설정을 표시
+        current_dir = get_default_review_log_dir()
+        console.info(f"현재 리뷰 로그 디렉토리: {current_dir}")
+        console.info(
+            "새로운 디렉토리를 설정하려면 'selvage config review-log-dir <directory_path>' "
+            "명령어를 사용하세요."
         )
 
 
@@ -637,6 +652,13 @@ def diff_only(value: str | None) -> None:
 def debug_mode(value: str | None) -> None:
     """디버그 모드 설정 (on / off)"""
     config_debug_mode(value)
+
+
+@config.command(name="review-log-dir")
+@click.argument("directory_path", required=False)
+def review_log_dir(directory_path: str | None) -> None:
+    """리뷰 로그 저장 디렉토리 설정"""
+    config_review_log_dir(directory_path)
 
 
 @config.command(name="list")

@@ -167,12 +167,41 @@ def get_default_review_log_dir() -> Path:
     config = load_config()
 
     # 설정 파일에 지정된 경우
-    if "default_review_log_dir" in config["paths"]:
-        path = config["paths"]["default_review_log_dir"]
+    if "review_log_dir" in config["paths"]:
+        path = config["paths"]["review_log_dir"]
         return Path(os.path.expanduser(path))
 
     # 기본 위치 (플랫폼별 설정 디렉토리 사용)
     return CONFIG_DIR / "review_log"
+
+
+def set_default_review_log_dir(log_dir: str) -> bool:
+    """리뷰 로그 디렉토리를 설정합니다.
+
+    Args:
+        log_dir: 설정할 로그 디렉토리 경로
+
+    Returns:
+        bool: 성공 여부
+    """
+    try:
+        # 경로 유효성 검증
+        expanded_path = os.path.expanduser(log_dir)
+        log_path = Path(expanded_path)
+
+        # 절대 경로로 변환
+        if not log_path.is_absolute():
+            log_path = log_path.resolve()
+
+        config = load_config()
+        config["paths"]["review_log_dir"] = str(log_path)
+        save_config(config)
+
+        console.success(f"리뷰 로그 디렉토리가 {log_path}로 설정되었습니다.")
+        return True
+    except Exception as e:
+        console.error(f"리뷰 로그 디렉토리 설정 중 오류 발생: {str(e)}", exception=e)
+        return False
 
 
 def get_default_model() -> str | None:
