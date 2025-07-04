@@ -72,6 +72,20 @@ models:
       description: "$1.10/$4.40 per 1M tokens"
     context_limit: 200000
 
+  o3:
+    full_name: "o3"
+    aliases: ["o3"]
+    description: "모든 분야에 걸쳐 다재다능하고 강력한 모델입니다. 수학, 과학, 코딩, 그리고 시각적 추론 과제에도 탁월"
+    provider: "openai"
+    params:
+      reasoning_effort: "high"
+    pricing:
+      input: 2.0
+      output: 8.0
+      description: "$2.00/$8.00 per 1M tokens"
+    context_limit: 200000
+    thinking_mode: false
+
   claude-sonnet-4-20250514:
     full_name: "claude-sonnet-4-20250514"
     aliases: ["claude-sonnet-4"]
