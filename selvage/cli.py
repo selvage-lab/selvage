@@ -29,6 +29,7 @@ from selvage.src.config import (
 )
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
+from selvage.src.exceptions.unsupported_model_error import UnsupportedModelError
 from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
 from selvage.src.llm_gateway.gateway_factory import GatewayFactory
 from selvage.src.model_config import ModelProvider, get_model_info
@@ -528,6 +529,9 @@ def review_code(
         )
 
         console.success("코드 리뷰가 완료되었습니다!")
+    except UnsupportedModelError:
+        # UnsupportedModelError는 이미 명확한 메시지가 표시되었으므로 추가 메시지 없이 종료
+        return
     except Exception as e:
         console.error(f"코드 리뷰 중 오류가 발생했습니다: {str(e)}", exception=e)
         error_log_id = generate_log_id(model)

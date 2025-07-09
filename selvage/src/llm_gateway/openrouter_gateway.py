@@ -12,6 +12,7 @@ from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.exceptions.invalid_model_provider_error import (
     InvalidModelProviderError,
 )
+from selvage.src.exceptions.unsupported_model_error import UnsupportedModelError
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
@@ -46,6 +47,7 @@ class OpenRouterGateway(BaseGateway):
 
         Raises:
             InvalidModelProviderError: Claude 모델이 아닌 경우
+            UnsupportedModelError: OpenRouter에서 지원하지 않는 기능을 사용하는 모델인 경우
         """
         # OpenRouter를 통해 Claude 모델을 사용하므로 원래 provider가 anthropic이어야 함
         if model_info["provider"] != ModelProvider.ANTHROPIC:
@@ -53,11 +55,25 @@ class OpenRouterGateway(BaseGateway):
             raise InvalidModelProviderError(
                 model_info["full_name"], ModelProvider.ANTHROPIC
             )
-        else:
-            console.log_info(
-                f"OpenRouter를 통한 모델 설정: {model_info['full_name']} - {model_info['description']}"
+
+        # OpenRouter에서는 thinking 모드를 지원하지 않음
+        if model_info.get("thinking_mode", False):
+            console.error(
+                f"OpenRouter는 thinking 모드를 지원하지 않습니다: {model_info['full_name']}"
             )
-            self.model = model_info
+            console.info("해결 방법:")
+            console.print(
+                "  1. Anthropic 직접 사용: selvage config claude-provider anthropic"
+            )
+            console.print("  2. 일반 Claude 모델 사용: --model claude-sonnet-4")
+            raise UnsupportedModelError(
+                f"OpenRouter는 thinking 모드를 지원하지 않습니다: {model_info['full_name']}"
+            )
+
+        console.log_info(
+            f"OpenRouter를 통한 모델 설정: {model_info['full_name']} - {model_info['description']}"
+        )
+        self.model = model_info
 
     def _create_request_params(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
         """OpenRouter API 요청 파라미터를 생성합니다.
