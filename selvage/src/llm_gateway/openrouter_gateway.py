@@ -78,7 +78,7 @@ class OpenRouterGateway(BaseGateway):
         params = {
             "model": openrouter_model_name,
             "messages": messages,
-            "max_tokens": 48000,
+            "max_tokens": 8192,
         }
 
         # 모델별 파라미터 설정

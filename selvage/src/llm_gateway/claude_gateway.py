@@ -87,6 +87,14 @@ class ClaudeGateway(BaseGateway):
             # system 메시지가 있으면 별도 파라미터로 추가
             if system_message:
                 params["system"] = system_message
+
+            # thinking 파라미터 추가 (Claude 4 호환)
+            thinking_config = self.model.get("params", {}).get("thinking")
+            if thinking_config:
+                params["thinking"] = thinking_config
+                console.log_info(
+                    f"확장 사고 모드 활성화: budget_tokens={thinking_config.get('budget_tokens', 'N/A')}"
+                )
         else:
             # 일반 모드 (instructor 사용)
             params = {
@@ -95,8 +103,10 @@ class ClaudeGateway(BaseGateway):
                 "max_tokens": 8192,
             }
 
-        # 모델별 파라미터 설정
-        model_params = self.model["params"]
+        # 모델별 파라미터 설정 (thinking 제외한 나머지 파라미터들)
+        model_params = {
+            k: v for k, v in self.model.get("params", {}).items() if k != "thinking"
+        }
         params.update(model_params)
 
         return params
