@@ -47,13 +47,16 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
             ModelProvider.ANTHROPIC.get_env_var_name(), "ANTHROPIC_API_KEY"
         )
         self.assertEqual(ModelProvider.GOOGLE.get_env_var_name(), "GEMINI_API_KEY")
+        self.assertEqual(
+            ModelProvider.OPENROUTER.get_env_var_name(), "OPENROUTER_API_KEY"
+        )
 
     def test_get_env_var_name_invalid_provider(self) -> None:
         """지원하지 않는 provider에 대한 테스트."""
         with self.assertRaises(UnsupportedProviderError) as context:
             ModelProvider.from_string("invalid_provider")
         self.assertIn(
-            "지원하지 않는 provider 'invalid_provider'. 유효한 값: ['openai', 'anthropic', 'google']",
+            "지원하지 않는 provider 'invalid_provider'. 유효한 값: ['openai', 'anthropic', 'google', 'openrouter']",
             str(context.exception),
         )
 
@@ -191,6 +194,7 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
             "openai": "OPENAI_API_KEY",
             "anthropic": "ANTHROPIC_API_KEY",
             "google": "GEMINI_API_KEY",
+            "openrouter": "OPENROUTER_API_KEY",
         }
 
         for provider, expected_env_var in expected_mappings.items():
@@ -207,6 +211,7 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
             "openai": "openai_test_key_12345678",
             "anthropic": "claude_test_key_12345678",
             "google": "google_test_key_12345678",
+            "openrouter": "openrouter_test_key_12345678",
         }
 
         for provider, test_key in test_keys.items():
@@ -225,6 +230,9 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
         self.assertEqual(ModelProvider.OPENAI.get_api_key_command_name(), "openai")
         self.assertEqual(ModelProvider.ANTHROPIC.get_api_key_command_name(), "claude")
         self.assertEqual(ModelProvider.GOOGLE.get_api_key_command_name(), "google")
+        self.assertEqual(
+            ModelProvider.OPENROUTER.get_api_key_command_name(), "openrouter"
+        )
 
 
 if __name__ == "__main__":

@@ -15,11 +15,13 @@ from selvage.__version__ import __version__
 from selvage.src.cache import CacheManager
 from selvage.src.config import (
     get_api_key,
+    get_claude_provider,
     get_default_debug_mode,
     get_default_diff_only,
     get_default_model,
     get_default_review_log_dir,
     set_api_key,
+    set_claude_provider,
     set_default_debug_mode,
     set_default_diff_only,
     set_default_model,
@@ -27,9 +29,11 @@ from selvage.src.config import (
 )
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
+from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
 from selvage.src.llm_gateway.gateway_factory import GatewayFactory
 from selvage.src.model_config import ModelProvider, get_model_info
 from selvage.src.models import ModelChoice, ReviewStatus
+from selvage.src.models.claude_provider import ClaudeProvider
 from selvage.src.ui import run_app
 from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import find_project_root
@@ -199,10 +203,35 @@ def config_review_log_dir(log_dir: str | None = None) -> None:
         set_default_review_log_dir(log_dir)
     else:
         # 값이 지정되지 않은 경우 현재 설정을 표시
-        current_dir = get_default_review_log_dir()
-        console.info(f"현재 리뷰 로그 디렉토리: {current_dir}")
+        current_value = get_default_review_log_dir()
+        if current_value:
+            console.info(f"현재 리뷰 로그 디렉토리: {current_value}")
+        else:
+            console.info("리뷰 로그 디렉토리가 설정되지 않았습니다.")
+
+
+def config_claude_provider(provider: str | None = None) -> None:
+    """Claude Provider 설정을 처리합니다."""
+    if provider is not None:
+        try:
+            claude_provider = ClaudeProvider.from_string(provider)
+            set_claude_provider(
+                claude_provider
+            )  # 성공/실패 메시지는 config.py에서 처리
+        except UnsupportedProviderError:
+            console.error(
+                f"지원되지 않는 Provider입니다: {provider}. "
+                f"지원되는 Provider: {', '.join([p.value for p in ClaudeProvider])}"
+            )
+    else:
+        # 값이 지정되지 않은 경우 현재 설정을 표시
+        current_provider = get_claude_provider()
+        console.info(f"현재 Claude Provider: {current_provider.get_display_name()}")
         console.info(
-            "새로운 디렉토리를 설정하려면 'selvage config review-log-dir <directory_path>' "
+            f"지원되는 Provider: {', '.join([p.value for p in ClaudeProvider])}"
+        )
+        console.info(
+            "새로운 Provider를 설정하려면 'selvage config claude-provider <provider>' "
             "명령어를 사용하세요."
         )
 
@@ -218,8 +247,12 @@ def config_list() -> None:
         env_value = os.getenv(env_var_name)
 
         try:
-            # API 키 가져오기 시도
-            get_api_key(provider)
+            # API 키 가져오기 시도 (에러 메시지 억제)
+            from unittest.mock import patch
+
+            with patch("selvage.src.config.console"):
+                get_api_key(provider)
+
             if env_value:
                 console.print(
                     f"{provider_display} API 키: 환경변수 {env_var_name}에서 설정됨",
@@ -231,12 +264,23 @@ def config_list() -> None:
                 )
         except APIKeyNotFoundError:
             console.print(f"{provider_display} API 키: 설정되지 않음", style="red")
-            console.print(
-                f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
-            )
-            console.print(f"  또는: [green]selvage --set-{provider.value}-key[/green]")
+            if provider == ModelProvider.OPENROUTER:
+                console.print(
+                    f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
+                )
+            else:
+                console.print(
+                    f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
+                )
+                console.print(
+                    f"  또는: [green]selvage --set-{provider.value}-key[/green]"
+                )
 
     console.print("")
+    # Claude 제공자 설정 표시
+    claude_provider = get_claude_provider()
+    console.info(f"Claude 제공자: {claude_provider.get_display_name()}")
+
     # 리뷰 로그 저장 디렉토리
     console.info(f"리뷰 로그 저장 디렉토리: {get_default_review_log_dir()}")
 
@@ -361,6 +405,16 @@ def review_code(
     # API 키 확인
     model_info = get_model_info(model)
     provider = model_info.get("provider", "unknown")
+
+    # Claude 모델인 경우 claude-provider 설정에 따라 실제 provider 결정
+    if provider == ModelProvider.ANTHROPIC:
+        from selvage.src.config import get_claude_provider
+        from selvage.src.models.claude_provider import ClaudeProvider
+
+        claude_provider = get_claude_provider()
+        if claude_provider == ClaudeProvider.OPENROUTER:
+            provider = ModelProvider.OPENROUTER
+
     api_key = get_api_key(provider)
     if not api_key:
         console.error(f"{provider.get_display_name()} API 키가 설정되지 않았습니다.")
@@ -680,6 +734,15 @@ def debug_mode(value: str | None) -> None:
 def review_log_dir(directory_path: str | None) -> None:
     """리뷰 로그 저장 디렉토리 설정"""
     config_review_log_dir(directory_path)
+
+
+@config.command(name="claude-provider")
+@click.argument(
+    "provider", type=click.Choice(["anthropic", "openrouter"]), required=False
+)
+def claude_provider(provider: str | None) -> None:
+    """Claude Provider 설정"""
+    config_claude_provider(provider)
 
 
 @config.command(name="list")

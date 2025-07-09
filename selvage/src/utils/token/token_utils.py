@@ -36,70 +36,9 @@ class TokenUtils:
         Returns:
             int: 토큰 수
         """
-        # Claude 모델인 경우 공식 API 사용
+        # Claude 모델인 경우 처리
         if "claude" in model.lower():
-            try:
-                import anthropic
-
-                from selvage.src.config import get_api_key
-
-                api_key = get_api_key(ModelProvider.ANTHROPIC)
-                client = anthropic.Anthropic(api_key=api_key)
-
-                # 메시지 목록에서 시스템 메시지 분리
-                messages = review_prompt.to_messages()
-                system_message = None
-                user_messages = []
-
-                for msg in messages:
-                    if msg.get("role") == "system":
-                        system_message = msg.get("content", "")
-                    else:
-                        user_messages.append(msg)
-
-                # Anthropic API 호출 시 시스템 메시지는 별도 파라미터로 전달
-                kwargs = {
-                    "model": model,
-                    "messages": typing.cast(
-                        typing.Iterable[anthropic.types.MessageParam],
-                        user_messages,
-                    ),
-                }
-
-                # system 파라미터가 None이 아닌 경우에만 추가
-                if system_message is not None:
-                    kwargs["system"] = system_message
-
-                response = client.messages.count_tokens(**kwargs)
-
-                # 응답 처리 - 예상 응답 형식:
-                # {"content_tokens": 토큰수} 또는 유사한 구조
-                response_dict = (
-                    response.model_dump()
-                    if hasattr(response, "model_dump")
-                    else vars(response)
-                )
-
-                # 토큰 수를 포함할 수 있는 필드명들
-                token_field_names = [
-                    "token_count",
-                    "content_tokens",
-                    "input_tokens",
-                    "num_tokens",
-                    "tokens",
-                ]
-
-                # 응답에서 토큰 수를 추출
-                for field in token_field_names:
-                    if field in response_dict:
-                        return response_dict[field]
-
-                # 로그 기록 및 예외 처리
-                console.warning(f"응답에서 토큰 수를 찾을 수 없습니다: {response_dict}")
-                return 0
-            except Exception as e:
-                console.error(f"Claude 토큰 계산 중 오류 발생: {e}", exception=e)
-                raise TokenCountError(model, str(e), e) from e
+            return TokenUtils._count_tokens_claude(review_prompt, model)
 
         if "gemini" in model.lower():
             try:
@@ -157,3 +96,142 @@ class TokenUtils:
             int: 컨텍스트 제한 (토큰 수)
         """
         return get_model_context_limit(model)
+
+    @staticmethod
+    def _count_tokens_claude(
+        review_prompt: ReviewPrompt | ReviewPromptWithFileContent, model: str
+    ) -> int:
+        """Claude 모델의 토큰 수를 계산합니다.
+        OpenRouter 사용 시에도 정확한 계산을 위해 Anthropic API를 사용합니다.
+
+        Args:
+            review_prompt: 리뷰 프롬프트
+            model: 모델 이름
+
+        Returns:
+            int: 토큰 수
+        """
+        from selvage.src.config import get_claude_provider
+        from selvage.src.models.claude_provider import ClaudeProvider
+
+        claude_provider_enum = get_claude_provider()
+
+        # OpenRouter 사용 시에도 정확한 토큰 계산을 위해 Anthropic API 사용
+        if claude_provider_enum == ClaudeProvider.OPENROUTER:
+            return TokenUtils._count_tokens_claude_with_anthropic_for_openrouter(
+                review_prompt, model
+            )
+        else:
+            # Anthropic 직접 사용
+            return TokenUtils._count_tokens_claude_anthropic(review_prompt, model)
+
+    @staticmethod
+    def _count_tokens_claude_anthropic(
+        review_prompt: ReviewPrompt | ReviewPromptWithFileContent, model: str
+    ) -> int:
+        """Anthropic API를 직접 사용하여 Claude 토큰 수를 계산합니다.
+
+        Args:
+            review_prompt: 리뷰 프롬프트
+            model: 모델 이름
+
+        Returns:
+            int: 토큰 수
+        """
+        try:
+            import anthropic
+
+            from selvage.src.config import get_api_key
+
+            api_key = get_api_key(ModelProvider.ANTHROPIC)
+            client = anthropic.Anthropic(api_key=api_key)
+
+            # 메시지 목록에서 시스템 메시지 분리
+            messages = review_prompt.to_messages()
+            system_message = None
+            user_messages = []
+
+            for msg in messages:
+                if msg.get("role") == "system":
+                    system_message = msg.get("content", "")
+                else:
+                    user_messages.append(msg)
+
+            # Anthropic API 호출 시 시스템 메시지는 별도 파라미터로 전달
+            kwargs = {
+                "model": model,
+                "messages": typing.cast(
+                    typing.Iterable[anthropic.types.MessageParam],
+                    user_messages,
+                ),
+            }
+
+            # system 파라미터가 None이 아닌 경우에만 추가
+            if system_message is not None:
+                kwargs["system"] = system_message
+
+            response = client.messages.count_tokens(**kwargs)
+
+            # 응답 처리 - 예상 응답 형식:
+            # {"content_tokens": 토큰수} 또는 유사한 구조
+            response_dict = (
+                response.model_dump()
+                if hasattr(response, "model_dump")
+                else vars(response)
+            )
+
+            # 토큰 수를 포함할 수 있는 필드명들
+            token_field_names = [
+                "token_count",
+                "content_tokens",
+                "input_tokens",
+                "num_tokens",
+                "tokens",
+            ]
+
+            # 응답에서 토큰 수를 추출
+            for field in token_field_names:
+                if field in response_dict:
+                    return response_dict[field]
+
+            # 로그 기록 및 예외 처리
+            console.warning(f"응답에서 토큰 수를 찾을 수 없습니다: {response_dict}")
+            return 0
+        except Exception as e:
+            console.error(
+                f"Claude (Anthropic) 토큰 계산 중 오류 발생: {e}", exception=e
+            )
+            raise TokenCountError(model, str(e), e) from e
+
+    @staticmethod
+    def _count_tokens_claude_with_anthropic_for_openrouter(
+        review_prompt: ReviewPrompt | ReviewPromptWithFileContent, model: str
+    ) -> int:
+        """OpenRouter 사용 시에도 정확한 토큰 계산을 위해 Anthropic API를 사용합니다.
+
+        Args:
+            review_prompt: 리뷰 프롬프트
+            model: 모델 이름
+
+        Returns:
+            int: 토큰 수
+        """
+        from selvage.src.config import get_api_key
+
+        try:
+            # Anthropic API 키 확인
+            api_key = get_api_key(ModelProvider.ANTHROPIC)
+            if not api_key:
+                console.warning(
+                    "OpenRouter를 사용하는 경우에도 정확한 토큰 계산을 위해 Anthropic API 키를 설정해주세요."
+                )
+                raise TokenCountError(model, "Anthropic API 키가 설정되지 않았습니다.")
+
+            # Anthropic API를 사용하여 정확한 토큰 계산
+            console.info(
+                "OpenRouter 사용 중 - 정확한 토큰 계산을 위해 Anthropic API 사용"
+            )
+            return TokenUtils._count_tokens_claude_anthropic(review_prompt, model)
+
+        except Exception as e:
+            console.warning(f"Anthropic API를 통한 토큰 계산 실패: {e}")
