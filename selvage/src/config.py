@@ -22,6 +22,15 @@ from selvage.src.utils.platform_utils import get_platform_config_dir
 CONFIG_DIR = get_platform_config_dir()
 CONFIG_FILE = CONFIG_DIR / "config.ini"
 
+# 기본 설정 섹션 목록
+DEFAULT_SECTIONS = [
+    "credentials",  # API 키 저장
+    "paths",  # 경로 설정
+    "default",  # 기본값 설정
+    "debug",  # 디버그 설정
+    "language",  # 언어 설정
+]
+
 
 def ensure_config_dir() -> None:
     """설정 디렉토리가 존재하는지 확인하고, 없으면 생성합니다."""
@@ -37,20 +46,17 @@ def load_config() -> configparser.ConfigParser:
 
     # 플랫폼별 설정 파일 확인
     if CONFIG_FILE.exists():
-        config.read(CONFIG_FILE)
+        try:
+            config.read(CONFIG_FILE)
+        except (configparser.Error, UnicodeDecodeError) as e:
+            # 설정 파일이 손상된 경우 기본 설정으로 진행
+            console.warning(f"설정 파일이 손상되어 기본 설정을 사용합니다: {e}")
+            config = configparser.ConfigParser()
 
     # 기본 섹션이 없으면 추가
-    if "credentials" not in config:
-        config["credentials"] = {}
-
-    if "paths" not in config:
-        config["paths"] = {}
-
-    if "default" not in config:
-        config["default"] = {}
-
-    if "debug" not in config:
-        config["debug"] = {}
+    for section in DEFAULT_SECTIONS:
+        if section not in config:
+            config[section] = {}
 
     return config
 
@@ -310,4 +316,38 @@ def set_claude_provider(provider: ClaudeProvider) -> bool:
         return True
     except Exception as e:
         console.error(f"Claude 제공자 설정 중 오류 발생: {str(e)}", exception=e)
+        return False
+
+
+def get_default_language() -> str:
+    """기본 언어를 반환합니다.
+
+    Returns:
+        str: 기본 언어 (기본값: Korean)
+    """
+    try:
+        config = load_config()
+        return config["language"].get("default", "Korean")
+    except KeyError:
+        return "Korean"
+
+
+def set_default_language(language: str) -> bool:
+    """기본 언어를 설정합니다.
+
+    Args:
+        language: 설정할 언어
+
+    Returns:
+        bool: 성공 여부
+    """
+    try:
+        config = load_config()
+        if "language" not in config:
+            config["language"] = {}
+        config["language"]["default"] = language
+        save_config(config)
+        return True
+    except Exception as e:
+        console.error(f"기본 언어 설정 중 오류 발생: {str(e)}", exception=e)
         return False

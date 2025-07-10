@@ -119,6 +119,36 @@ class TestSelvageConfigManagement:
         output_str = output.decode("utf-8", errors="ignore").lower()
         assert "true" in output_str
 
+    def test_config_language_setting(self, testpypi_container) -> None:
+        """언어 설정이 정상적으로 작동하는지 테스트."""
+        container = testpypi_container
+
+        install_selvage_from_testpypi(container)  # 다시 호출
+
+        # 언어 설정
+        exit_code, output = container.exec("selvage config language English")
+        assert exit_code == 0
+        output_str = output.decode("utf-8", errors="ignore")
+        assert "English로 설정되었습니다" in output_str
+
+        # 설정 확인
+        exit_code, output = container.exec("selvage config list")
+        assert exit_code == 0
+        output_str = output.decode("utf-8", errors="ignore")
+        assert "English" in output_str
+
+    def test_config_language_show_current(self, testpypi_container) -> None:
+        """현재 언어 설정 표시가 정상적으로 작동하는지 테스트."""
+        container = testpypi_container
+
+        install_selvage_from_testpypi(container)  # 다시 호출
+
+        # 현재 언어 설정 확인
+        exit_code, output = container.exec("selvage config language")
+        assert exit_code == 0
+        output_str = output.decode("utf-8", errors="ignore")
+        assert "현재 기본 언어" in output_str
+
 
 class TestSelvageFileSystem:
     """selvage 파일 시스템 관련 컨테이너 테스트."""

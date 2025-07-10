@@ -18,12 +18,14 @@ from selvage.src.config import (
     get_claude_provider,
     get_default_debug_mode,
     get_default_diff_only,
+    get_default_language,
     get_default_model,
     get_default_review_log_dir,
     set_api_key,
     set_claude_provider,
     set_default_debug_mode,
     set_default_diff_only,
+    set_default_language,
     set_default_model,
     set_default_review_log_dir,
 )
@@ -198,6 +200,23 @@ def config_debug_mode(value: str | None = None) -> None:
         )
 
 
+def config_language(language: str | None = None) -> None:
+    """언어 설정을 처리합니다."""
+    if language is not None:
+        if set_default_language(language):
+            console.success(f"기본 언어가 {language}로 설정되었습니다.")
+        else:
+            console.error("기본 언어 설정에 실패했습니다.")
+    else:
+        # 언어가 지정되지 않은 경우 현재 설정을 표시
+        current_language = get_default_language()
+        console.info(f"현재 기본 언어: {current_language}")
+        console.info(
+            "기본 언어를 설정하려면 'selvage config language <language>' "
+            "명령어를 사용하세요."
+        )
+
+
 def config_review_log_dir(log_dir: str | None = None) -> None:
     """리뷰 로그 디렉토리 설정을 처리합니다."""
     if log_dir is not None:
@@ -298,6 +317,9 @@ def config_list() -> None:
     # 기본 debug-mode 설정
     debug_status = "활성화" if get_default_debug_mode() else "비활성화"
     console.info(f"디버그 모드: {debug_status}")
+
+    # 기본 언어 설정
+    console.info(f"기본 언어: {get_default_language()}")
 
 
 def generate_log_id(model: str) -> str:
@@ -747,6 +769,13 @@ def review_log_dir(directory_path: str | None) -> None:
 def claude_provider(provider: str | None) -> None:
     """Claude Provider 설정"""
     config_claude_provider(provider)
+
+
+@config.command(name="language")
+@click.argument("language_name", required=False)
+def language(language_name: str | None) -> None:
+    """기본 언어 설정"""
+    config_language(language_name)
 
 
 @config.command(name="list")

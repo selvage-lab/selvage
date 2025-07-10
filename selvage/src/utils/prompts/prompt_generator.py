@@ -1,8 +1,8 @@
 """프롬프트 생성기"""
 
 import importlib.resources
-from functools import lru_cache
 
+from selvage.src.config import get_default_language
 from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import is_ignore_file
 from selvage.src.utils.token.models import ReviewRequest
@@ -24,7 +24,6 @@ class PromptGenerator:
     """프롬프트 생성기 클래스"""
 
     @classmethod
-    @lru_cache(maxsize=1)
     def _get_code_review_system_prompt(cls) -> str:
         """코드 리뷰 시스템 프롬프트를 불러옵니다.
 
@@ -36,7 +35,13 @@ class PromptGenerator:
                 f"{PROMPT_FILE_NAME}_{VERSION}.txt"
             )
             with importlib.resources.as_file(file_ref) as file_path:
-                return file_path.read_text(encoding="utf-8")
+                prompt_content = file_path.read_text(encoding="utf-8")
+
+                # 템플릿 변수 처리
+                language = get_default_language()
+                prompt_content = prompt_content.replace("{{LANGUAGE}}", language)
+
+                return prompt_content
         except Exception as e:
             error_message = f"시스템 프롬프트 파일을 찾을 수 없습니다 (경로: '{PROMPT_PATH}.{VERSION}/{PROMPT_FILE_NAME}_{VERSION}.txt'). 원본 오류: {e}"
             console.error(error_message, exception=e)
