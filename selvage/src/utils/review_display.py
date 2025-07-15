@@ -275,10 +275,6 @@ class ReviewDisplay:
                     target_code = issue.get("target_code", "")
                     suggested_code = issue.get("suggested_code", "")
 
-                    # 설명이 너무 길면 축약 (일관성 유지)
-                    if len(description) > 80:
-                        description = description[:77] + "..."
-
                     # 이슈 내용 구성 (항목 간 간격 증가)
                     issue_content = f"[bold]심각도:[/bold] {severity}\n\n"
                     issue_content += f"[bold]파일:[/bold] {file_name}"
