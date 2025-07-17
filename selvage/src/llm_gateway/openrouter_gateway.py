@@ -112,13 +112,13 @@ class OpenRouterGateway(BaseGateway):
         Returns:
             str: OpenRouter 형식의 모델명
         """
-        # Claude 모델명 매핑 테이블
-        model_mapping = {
-            "claude-sonnet-4-20250514": "anthropic/claude-sonnet-4",
-            "claude-sonnet-4": "anthropic/claude-sonnet-4",  # alias 지원
-        }
+        # models.yml에서 openrouter_name 필드 확인
+        openrouter_name = self.model.get("openrouter_name")
+        if openrouter_name:
+            return openrouter_name
 
-        return model_mapping.get(selvage_model_name, selvage_model_name)
+        # openrouter_name이 설정되지 않은 경우 원래 모델명 반환
+        return selvage_model_name
 
     def _create_client(self) -> instructor.Instructor:
         """OpenRouter API 클라이언트를 생성합니다.

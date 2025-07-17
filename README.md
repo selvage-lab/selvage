@@ -181,7 +181,6 @@ selvage review --no-print
 - **gpt-4.1**: 대용량 코드베이스 분석 지원 (1M+ 토큰 컨텍스트)
 - **o4-mini-high**: 높은 정확도의 추론 모델 (200K 컨텍스트)
 - **o4-mini**: 균형 잡힌 추론 모델 (별칭: o4-mini-medium) (200K 컨텍스트)
-- **o4-mini-low**: 빠른 추론 모델 (200K 컨텍스트)
 
 #### Anthropic 모델
 

@@ -130,7 +130,7 @@ def get_api_key(provider: ModelProvider) -> str:
         _validate_api_key(api_key, provider)
         return api_key
 
-    console.error(f"API 키가 없습니다: {provider}")
+    console.error(f"API 키가 없습니다: {provider.get_display_name()}")
     console.info("다음 중 하나의 방법으로 API 키를 설정하세요:")
     console.info(f"  1. 환경변수: export {env_var_name}=your_api_key")
     console.info(f"  2. CLI 명령어: selvage --set-{provider.value}-key your_api_key")

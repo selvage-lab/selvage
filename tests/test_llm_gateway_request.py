@@ -73,7 +73,7 @@ class TestRequestParamsCreation(unittest.TestCase):
         params = gateway._create_request_params(messages)
 
         # 검증
-        self.assertEqual(params["model"], "gemini-2.5-pro-preview-05-06")
+        self.assertEqual(params["model"], "gemini-2.5-pro")
         self.assertIn("contents", params)  # Google API 요청 형식에 맞게 변환됨
         self.assertIn("config", params)  # Google API 구성 포함
         # config의 시스템 지시 검증

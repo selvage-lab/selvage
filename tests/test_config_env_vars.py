@@ -55,8 +55,9 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
         """지원하지 않는 provider에 대한 테스트."""
         with self.assertRaises(UnsupportedProviderError) as context:
             ModelProvider.from_string("invalid_provider")
+        valid_providers = [p.value for p in ModelProvider]
         self.assertIn(
-            "지원하지 않는 provider 'invalid_provider'. 유효한 값: ['openai', 'anthropic', 'google', 'openrouter']",
+            f"지원하지 않는 provider 'invalid_provider'. 유효한 값: {valid_providers}",
             str(context.exception),
         )
 

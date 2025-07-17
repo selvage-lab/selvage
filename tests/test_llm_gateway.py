@@ -293,23 +293,31 @@ class TestOpenRouterGateway(unittest.TestCase):
 
     @patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_openrouter_key"})
     def test_convert_to_openrouter_model_name(self):
-        """모델명 변환 테스트"""
+        """모델명 변환 테스트 - models.yml 설정 기반"""
         from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
 
+        # openrouter_name이 설정된 모델 테스트
+        model_info = get_model_info("claude-sonnet-4-20250514")
+        gateway = OpenRouterGateway(model_info)
+        result = gateway._convert_to_openrouter_model_name("claude-sonnet-4-20250514")
+        self.assertEqual(result, "anthropic/claude-sonnet-4")
+
+        # alias로 접근하는 모델 테스트
         model_info = get_model_info("claude-sonnet-4")
         gateway = OpenRouterGateway(model_info)
+        result = gateway._convert_to_openrouter_model_name("claude-sonnet-4")
+        self.assertEqual(result, "anthropic/claude-sonnet-4")
 
-        # 테스트 케이스들
-        test_cases = [
-            ("claude-sonnet-4-20250514", "anthropic/claude-sonnet-4"),
-            ("claude-sonnet-4", "anthropic/claude-sonnet-4"),
-            ("unknown-model", "unknown-model"),  # 매핑되지 않은 모델명
-        ]
-
-        for input_model, expected_output in test_cases:
-            with self.subTest(input_model=input_model):
-                result = gateway._convert_to_openrouter_model_name(input_model)
-                self.assertEqual(result, expected_output)
+        # openrouter_name이 설정되지 않은 경우 테스트 (임시로 openrouter_name 제거)
+        model_info = get_model_info("claude-sonnet-4")
+        gateway = OpenRouterGateway(model_info)
+        # openrouter_name을 임시로 제거하여 fallback 테스트
+        original_openrouter_name = gateway.model.pop("openrouter_name", None)
+        result = gateway._convert_to_openrouter_model_name("claude-sonnet-4")
+        self.assertEqual(result, "claude-sonnet-4")  # 원래 모델명 반환
+        # 원래 값 복원
+        if original_openrouter_name:
+            gateway.model["openrouter_name"] = original_openrouter_name
 
 
 class TestCreateLLMGateway(unittest.TestCase):
@@ -365,7 +373,7 @@ class TestCreateLLMGateway(unittest.TestCase):
 
         # 검증
         self.assertIsInstance(gateway, GoogleGateway)
-        self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro-preview-05-06")
+        self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro")
 
     # UnsupportedModelError 테스트
     @patch(
