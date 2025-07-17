@@ -1,6 +1,5 @@
 """DeepEval을 사용한 고급 테스트 예제."""
 
-from typing import Optional
 
 import pytest
 from deepeval import assert_test
@@ -15,7 +14,7 @@ from deepeval.test_case import LLMTestCase
 
 
 # 테스트할 LLM 응답 함수 (실제 LLM을 호출하는 대신 간단한 mock 함수 사용)
-def get_llm_response(user_input: str, context: Optional[str] = None) -> str:
+def get_llm_response(user_input: str, context: str | None = None) -> str:
     """사용자 입력과 컨텍스트에 따라 응답을 반환하는 모의 LLM 함수."""
     if "파이썬" in user_input:
         return "파이썬은 가독성이 좋고 다양한 라이브러리를 갖춘 프로그래밍 언어입니다."

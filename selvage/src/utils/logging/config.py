@@ -7,7 +7,6 @@
 import logging
 import logging.handlers
 from pathlib import Path
-from typing import Optional
 
 from selvage.src.utils.platform_utils import get_platform_config_dir
 
@@ -106,7 +105,7 @@ class TimedSizeRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
 def setup_logging(
     level: int = LOG_LEVEL_DEBUG,
     log_format: str = DETAILED_LOG_FORMAT,
-    log_dir: Optional[Path] = None,
+    log_dir: Path | None = None,
     max_file_size_mb: int = 10,
     backup_count: int = 30,  # 30일 분량의 로그 보관
     rotation_interval: int = 1,
@@ -164,7 +163,7 @@ def setup_logging(
     root_logger.addHandler(file_handler)
 
 
-def get_logger(name: str, level: Optional[int] = None) -> logging.Logger:
+def get_logger(name: str, level: int | None = None) -> logging.Logger:
     """지정된 이름의 로거를 반환합니다.
 
     Args:

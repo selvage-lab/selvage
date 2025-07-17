@@ -46,14 +46,17 @@ class OpenRouterGateway(BaseGateway):
             model_info: 모델 정보 객체
 
         Raises:
-            InvalidModelProviderError: Claude 모델이 아닌 경우
+            InvalidModelProviderError: OpenRouter에서 지원하지 않는 모델인 경우
             UnsupportedModelError: OpenRouter에서 지원하지 않는 기능을 사용하는 모델인 경우
         """
-        # OpenRouter를 통해 Claude 모델을 사용하므로 원래 provider가 anthropic이어야 함
-        if model_info["provider"] != ModelProvider.ANTHROPIC:
-            console.warning(f"{model_info['full_name']}은(는) Claude 모델이 아닙니다.")
+        # OpenRouter를 통해 사용 가능한 모델인지 확인
+        # 1. provider가 openrouter이거나 anthropic(Claude 모델)인 경우 허용
+        # 2. openrouter_name 필드가 있는 모델은 허용
+        if (model_info["provider"] not in [ModelProvider.ANTHROPIC, ModelProvider.OPENROUTER] 
+            and not model_info.get("openrouter_name")):
+            console.warning(f"{model_info['full_name']}은(는) OpenRouter에서 지원하지 않는 모델입니다.")
             raise InvalidModelProviderError(
-                model_info["full_name"], ModelProvider.ANTHROPIC
+                model_info["full_name"], ModelProvider.OPENROUTER
             )
 
         # OpenRouter에서는 thinking 모드를 지원하지 않음

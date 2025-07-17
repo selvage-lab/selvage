@@ -67,6 +67,17 @@ class TokenUtils:
                 console.error(f"Gemini 토큰 계산 중 오류 발생: {e}", exception=e)
                 raise TokenCountError(model, str(e), e) from e
 
+        # 새로 추가된 OpenRouter 모델들에 대한 처리
+        if any(
+            model_name in model.lower()
+            for model_name in ["kimi-k2", "deepseek-v3-0324", "deepseek-r1-0528"]
+        ):
+            # OpenRouter 모델은 토큰 계산 API가 없으므로 0 반환
+            console.info(
+                f"OpenRouter 모델 {model}에 대해서는 사전 토큰 계산을 건너뜁니다."
+            )
+            return 0
+
         # OpenAI 모델인 경우 tiktoken 사용
         try:
             encoding = tiktoken.encoding_for_model(model)
@@ -235,3 +246,4 @@ class TokenUtils:
 
         except Exception as e:
             console.warning(f"Anthropic API를 통한 토큰 계산 실패: {e}")
+            return 0
