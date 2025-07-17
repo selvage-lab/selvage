@@ -13,6 +13,7 @@ import google.genai.types as genai_types
 import instructor
 import openai
 from google import genai
+from openai import OpenAI
 
 from selvage.src.exceptions.context_limit_exceeded_error import (
     ContextLimitExceededError,
@@ -218,6 +219,24 @@ class BaseGateway(abc.ABC):
                         response_model=StructuredReviewResponse, max_retries=2, **params
                     )
                 )
+            elif isinstance(client, OpenAI) and "openrouter" in str(client.base_url):
+                # OpenRouter structured output 처리
+                try:
+                    raw_api_response = client.chat.completions.create(**params)
+                    response_text = raw_api_response.choices[0].message.content
+                    if response_text is None:
+                        return ReviewResult.get_empty_result(self.get_model_name())
+
+                    structured_response = StructuredReviewResponse.model_validate_json(
+                        response_text
+                    )
+                except Exception as parse_error:
+                    console.error(
+                        f"OpenRouter 응답 파싱 오류: {str(parse_error)}", exception=parse_error
+                    )
+                    return ReviewResult.get_error_result(
+                        parse_error, self.get_model_name()
+                    )
             elif isinstance(client, genai.Client):
                 try:
                     raw_api_response = client.models.generate_content(**params)

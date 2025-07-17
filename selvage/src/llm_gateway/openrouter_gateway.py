@@ -5,7 +5,6 @@ OpenRouter 게이트웨이 구현입니다.
 import os
 from typing import Any
 
-import instructor
 from openai import OpenAI
 
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
@@ -17,6 +16,7 @@ from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.base_console import console
+from selvage.src.utils.token.models import StructuredReviewResponse
 
 
 class OpenRouterGateway(BaseGateway):
@@ -52,9 +52,13 @@ class OpenRouterGateway(BaseGateway):
         # OpenRouter를 통해 사용 가능한 모델인지 확인
         # 1. provider가 openrouter이거나 anthropic(Claude 모델)인 경우 허용
         # 2. openrouter_name 필드가 있는 모델은 허용
-        if (model_info["provider"] not in [ModelProvider.ANTHROPIC, ModelProvider.OPENROUTER] 
-            and not model_info.get("openrouter_name")):
-            console.warning(f"{model_info['full_name']}은(는) OpenRouter에서 지원하지 않는 모델입니다.")
+        if model_info["provider"] not in [
+            ModelProvider.ANTHROPIC,
+            ModelProvider.OPENROUTER,
+        ] and not model_info.get("openrouter_name"):
+            console.warning(
+                f"{model_info['full_name']}은(는) OpenRouter에서 지원하지 않는 모델입니다."
+            )
             raise InvalidModelProviderError(
                 model_info["full_name"], ModelProvider.OPENROUTER
             )
@@ -98,6 +102,14 @@ class OpenRouterGateway(BaseGateway):
             "model": openrouter_model_name,
             "messages": messages,
             "max_tokens": 8192,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "structured_review_response",
+                    "strict": True,
+                    "schema": StructuredReviewResponse.model_json_schema(),
+                },
+            },
         }
 
         # 모델별 파라미터 설정
@@ -123,18 +135,16 @@ class OpenRouterGateway(BaseGateway):
         # openrouter_name이 설정되지 않은 경우 원래 모델명 반환
         return selvage_model_name
 
-    def _create_client(self) -> instructor.Instructor:
+    def _create_client(self) -> OpenAI:
         """OpenRouter API 클라이언트를 생성합니다.
 
-        OpenAI SDK를 사용하되 base_url을 OpenRouter로 변경하고,
-        instructor로 래핑하여 구조화된 응답을 지원합니다.
+        OpenAI SDK를 사용하되 base_url을 OpenRouter로 변경합니다.
+        OpenRouter의 native structured output을 사용하므로 instructor 래핑 없이 사용합니다.
 
         Returns:
-            instructor.Instructor: 구조화된 응답을 지원하는 클라이언트
+            OpenAI: OpenRouter API 클라이언트
         """
-        openai_client = OpenAI(
+        return OpenAI(
             api_key=self.api_key,
             base_url="https://openrouter.ai/api/v1",
         )
-
-        return instructor.from_openai(openai_client)
