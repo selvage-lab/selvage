@@ -11,6 +11,7 @@ class ModelProvider(Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GOOGLE = "google"
+    OPENROUTER = "openrouter"
 
     @classmethod
     def from_string(cls, provider_str: str) -> "ModelProvider":
@@ -40,6 +41,7 @@ class ModelProvider(Enum):
             ModelProvider.OPENAI: "OpenAI",
             ModelProvider.ANTHROPIC: "Anthropic",
             ModelProvider.GOOGLE: "Gemini",
+            ModelProvider.OPENROUTER: "OpenRouter",
         }
         return display_names[self]
 
@@ -49,5 +51,16 @@ class ModelProvider(Enum):
             ModelProvider.OPENAI: "OPENAI_API_KEY",
             ModelProvider.ANTHROPIC: "ANTHROPIC_API_KEY",
             ModelProvider.GOOGLE: "GEMINI_API_KEY",
+            ModelProvider.OPENROUTER: "OPENROUTER_API_KEY",
         }
         return env_vars[self]
+
+    def get_api_key_command_name(self) -> str:
+        """해당 provider의 API 키 설정 명령어 이름을 반환합니다."""
+        command_names = {
+            ModelProvider.OPENAI: "openai",
+            ModelProvider.ANTHROPIC: "claude",
+            ModelProvider.GOOGLE: "google",
+            ModelProvider.OPENROUTER: "openrouter",
+        }
+        return command_names[self]

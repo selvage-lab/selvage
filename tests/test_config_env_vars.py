@@ -10,7 +10,7 @@ from selvage.src.config import get_api_key, set_api_key
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.exceptions.invalid_api_key_error import InvalidAPIKeyError
 from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
-from selvage.src.model_config import ModelProvider
+from selvage.src.models.model_provider import ModelProvider
 
 
 class TestEnvironmentVariableConfig(unittest.TestCase):
@@ -47,13 +47,17 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
             ModelProvider.ANTHROPIC.get_env_var_name(), "ANTHROPIC_API_KEY"
         )
         self.assertEqual(ModelProvider.GOOGLE.get_env_var_name(), "GEMINI_API_KEY")
+        self.assertEqual(
+            ModelProvider.OPENROUTER.get_env_var_name(), "OPENROUTER_API_KEY"
+        )
 
     def test_get_env_var_name_invalid_provider(self) -> None:
         """지원하지 않는 provider에 대한 테스트."""
         with self.assertRaises(UnsupportedProviderError) as context:
             ModelProvider.from_string("invalid_provider")
+        valid_providers = [p.value for p in ModelProvider]
         self.assertIn(
-            "지원하지 않는 provider 'invalid_provider'. 유효한 값: ['openai', 'anthropic', 'google']",
+            f"지원하지 않는 provider 'invalid_provider'. 유효한 값: {valid_providers}",
             str(context.exception),
         )
 
@@ -93,17 +97,42 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
         api_key = get_api_key(ModelProvider.OPENAI)
         self.assertEqual(api_key, file_key)
 
-    def test_get_api_key_not_found(self) -> None:
-        """API 키가 없을 때 예외 발생 테스트."""
-        with patch("selvage.src.config.load_config") as mock_load_config:
-            mock_config = MagicMock()
-            mock_config.__contains__.return_value = False
-            mock_config.__getitem__.return_value = {}
-            mock_load_config.return_value = mock_config
+    @patch("selvage.src.config.load_config")
+    def test_get_api_key_not_found(self, mock_load_config) -> None:
+        """API 키가 없을 때 적절한 예외가 발생하는지 테스트"""
+        # 빈 설정 파일을 mock
+        mock_config = MagicMock()
+        mock_config.__getitem__.return_value = {}
+        mock_load_config.return_value = mock_config
 
-            with self.assertRaises(APIKeyNotFoundError) as context:
-                get_api_key(ModelProvider.OPENAI)
-            self.assertEqual(context.exception.provider, ModelProvider.OPENAI)
+        with self.assertRaises(APIKeyNotFoundError) as context:
+            get_api_key(ModelProvider.OPENAI)
+
+        self.assertIn("API 키가 제공되지 않았습니다", str(context.exception))
+        self.assertEqual(context.exception.provider, ModelProvider.OPENAI)
+
+    @patch("selvage.src.config.load_config")
+    def test_api_key_not_found_error_messages(self, mock_load_config) -> None:
+        """각 provider별로 APIKeyNotFoundError 메시지가 올바른 명령어를 포함하는지 테스트"""
+        # 빈 설정 파일을 mock
+        mock_config = MagicMock()
+        mock_config.__getitem__.return_value = {}
+        mock_load_config.return_value = mock_config
+
+        # OpenAI
+        with self.assertRaises(APIKeyNotFoundError) as context:
+            get_api_key(ModelProvider.OPENAI)
+        self.assertIn("selvage --set-openai-key", str(context.exception))
+
+        # Anthropic (Claude)
+        with self.assertRaises(APIKeyNotFoundError) as context:
+            get_api_key(ModelProvider.ANTHROPIC)
+        self.assertIn("selvage --set-claude-key", str(context.exception))
+
+        # Google
+        with self.assertRaises(APIKeyNotFoundError) as context:
+            get_api_key(ModelProvider.GOOGLE)
+        self.assertIn("selvage --set-google-key", str(context.exception))
 
     def test_get_api_key_invalid_short_key(self) -> None:
         """너무 짧은 API 키 검증 테스트."""
@@ -166,6 +195,7 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
             "openai": "OPENAI_API_KEY",
             "anthropic": "ANTHROPIC_API_KEY",
             "google": "GEMINI_API_KEY",
+            "openrouter": "OPENROUTER_API_KEY",
         }
 
         for provider, expected_env_var in expected_mappings.items():
@@ -182,6 +212,7 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
             "openai": "openai_test_key_12345678",
             "anthropic": "claude_test_key_12345678",
             "google": "google_test_key_12345678",
+            "openrouter": "openrouter_test_key_12345678",
         }
 
         for provider, test_key in test_keys.items():
@@ -194,6 +225,15 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
 
                 # 정리
                 del os.environ[env_var]
+
+    def test_get_api_key_command_name(self) -> None:
+        """API 키 명령어명 매핑 테스트."""
+        self.assertEqual(ModelProvider.OPENAI.get_api_key_command_name(), "openai")
+        self.assertEqual(ModelProvider.ANTHROPIC.get_api_key_command_name(), "claude")
+        self.assertEqual(ModelProvider.GOOGLE.get_api_key_command_name(), "google")
+        self.assertEqual(
+            ModelProvider.OPENROUTER.get_api_key_command_name(), "openrouter"
+        )
 
 
 if __name__ == "__main__":

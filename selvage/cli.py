@@ -15,20 +15,28 @@ from selvage.__version__ import __version__
 from selvage.src.cache import CacheManager
 from selvage.src.config import (
     get_api_key,
+    get_claude_provider,
     get_default_debug_mode,
     get_default_diff_only,
+    get_default_language,
     get_default_model,
     get_default_review_log_dir,
     set_api_key,
+    set_claude_provider,
     set_default_debug_mode,
     set_default_diff_only,
+    set_default_language,
     set_default_model,
+    set_default_review_log_dir,
 )
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
+from selvage.src.exceptions.unsupported_model_error import UnsupportedModelError
+from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
 from selvage.src.llm_gateway.gateway_factory import GatewayFactory
 from selvage.src.model_config import ModelProvider, get_model_info
 from selvage.src.models import ModelChoice, ReviewStatus
+from selvage.src.models.claude_provider import ClaudeProvider
 from selvage.src.ui import run_app
 from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import find_project_root
@@ -192,6 +200,62 @@ def config_debug_mode(value: str | None = None) -> None:
         )
 
 
+def config_language(language: str | None = None) -> None:
+    """언어 설정을 처리합니다."""
+    if language is not None:
+        if set_default_language(language):
+            console.success(f"기본 언어가 {language}로 설정되었습니다.")
+        else:
+            console.error("기본 언어 설정에 실패했습니다.")
+    else:
+        # 언어가 지정되지 않은 경우 현재 설정을 표시
+        current_language = get_default_language()
+        console.info(f"현재 기본 언어: {current_language}")
+        console.info(
+            "기본 언어를 설정하려면 'selvage config language <language>' "
+            "명령어를 사용하세요."
+        )
+
+
+def config_review_log_dir(log_dir: str | None = None) -> None:
+    """리뷰 로그 디렉토리 설정을 처리합니다."""
+    if log_dir is not None:
+        set_default_review_log_dir(log_dir)
+    else:
+        # 값이 지정되지 않은 경우 현재 설정을 표시
+        current_value = get_default_review_log_dir()
+        if current_value:
+            console.info(f"현재 리뷰 로그 디렉토리: {current_value}")
+        else:
+            console.info("리뷰 로그 디렉토리가 설정되지 않았습니다.")
+
+
+def config_claude_provider(provider: str | None = None) -> None:
+    """Claude Provider 설정을 처리합니다."""
+    if provider is not None:
+        try:
+            claude_provider = ClaudeProvider.from_string(provider)
+            set_claude_provider(
+                claude_provider
+            )  # 성공/실패 메시지는 config.py에서 처리
+        except UnsupportedProviderError:
+            console.error(
+                f"지원되지 않는 Provider입니다: {provider}. "
+                f"지원되는 Provider: {', '.join([p.value for p in ClaudeProvider])}"
+            )
+    else:
+        # 값이 지정되지 않은 경우 현재 설정을 표시
+        current_provider = get_claude_provider()
+        console.info(f"현재 Claude Provider: {current_provider.get_display_name()}")
+        console.info(
+            f"지원되는 Provider: {', '.join([p.value for p in ClaudeProvider])}"
+        )
+        console.info(
+            "새로운 Provider를 설정하려면 'selvage config claude-provider <provider>' "
+            "명령어를 사용하세요."
+        )
+
+
 def config_list() -> None:
     """모든 설정을 표시합니다."""
     console.print("==== selvage 설정 ====", style="bold cyan")
@@ -203,8 +267,12 @@ def config_list() -> None:
         env_value = os.getenv(env_var_name)
 
         try:
-            # API 키 가져오기 시도
-            get_api_key(provider)
+            # API 키 가져오기 시도 (에러 메시지 억제)
+            from unittest.mock import patch
+
+            with patch("selvage.src.config.console"):
+                get_api_key(provider)
+
             if env_value:
                 console.print(
                     f"{provider_display} API 키: 환경변수 {env_var_name}에서 설정됨",
@@ -216,12 +284,23 @@ def config_list() -> None:
                 )
         except APIKeyNotFoundError:
             console.print(f"{provider_display} API 키: 설정되지 않음", style="red")
-            console.print(
-                f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
-            )
-            console.print(f"  또는: [green]selvage --set-{provider.value}-key[/green]")
+            if provider == ModelProvider.OPENROUTER:
+                console.print(
+                    f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
+                )
+            else:
+                console.print(
+                    f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
+                )
+                console.print(
+                    f"  또는: [green]selvage --set-{provider.value}-key[/green]"
+                )
 
     console.print("")
+    # Claude 제공자 설정 표시
+    claude_provider = get_claude_provider()
+    console.info(f"Claude 제공자: {claude_provider.get_display_name()}")
+
     # 리뷰 로그 저장 디렉토리
     console.info(f"리뷰 로그 저장 디렉토리: {get_default_review_log_dir()}")
 
@@ -238,6 +317,9 @@ def config_list() -> None:
     # 기본 debug-mode 설정
     debug_status = "활성화" if get_default_debug_mode() else "비활성화"
     console.info(f"디버그 모드: {debug_status}")
+
+    # 기본 언어 설정
+    console.info(f"기본 언어: {get_default_language()}")
 
 
 def generate_log_id(model: str) -> str:
@@ -256,18 +338,28 @@ def save_review_log(
     status: ReviewStatus,
     error: Exception | None = None,
     log_id: str | None = None,
+    review_log_dir: str | None = None,
 ) -> str:
     """리뷰 로그를 저장하고 파일 경로를 반환합니다."""
     model_info = get_model_info(review_request.model)
-    log_dir = get_default_review_log_dir()
+
+    # 리뷰 로그 디렉토리 결정: 파라미터로 제공되면 사용, 없으면 기본값 사용
+    if review_log_dir:
+        log_dir = Path(os.path.expanduser(review_log_dir))
+        # 절대 경로로 변환
+        if not log_dir.is_absolute():
+            log_dir = log_dir.resolve()
+    else:
+        log_dir = get_default_review_log_dir()
+
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # 프롬프트 직렬화
+    # 로그 저장을 위한 프롬프트 데이터 변환
     prompt_data = None
     if prompt:
         prompt_data = prompt.to_messages()
 
-    # 응답 직렬화
+    # 로그 저장을 위한 응답 데이터 JSON 직렬화
     response_data = None
     if review_response:
         response_data = review_response.model_dump(mode="json")
@@ -275,7 +367,7 @@ def save_review_log(
     now = datetime.now()
     if log_id is None:
         log_id = generate_log_id(review_request.model)
-    
+
     provider = model_info.get("provider", "unknown")
     model_name = model_info.get("full_name", review_request.model)
 
@@ -289,7 +381,8 @@ def save_review_log(
         "review_response": response_data,
         "status": status.value,
         "error": str(error) if error else None,
-        "prompt_version": "v2",
+        "prompt_version": "v3",
+        "repo_path": review_request.repo_path,
     }
 
     # 파일 저장
@@ -325,14 +418,26 @@ def review_code(
     target_branch: str | None = None,
     diff_only: bool = False,
     open_ui: bool = False,
+    print_result: bool = False,
     port: int = 8501,
     skip_cache: bool = False,
     clear_cache: bool = False,
+    review_log_dir: str | None = None,
 ) -> None:
     """코드 리뷰를 수행합니다."""
     # API 키 확인
     model_info = get_model_info(model)
     provider = model_info.get("provider", "unknown")
+
+    # Claude 모델인 경우 claude-provider 설정에 따라 실제 provider 결정
+    if provider == ModelProvider.ANTHROPIC:
+        from selvage.src.config import get_claude_provider
+        from selvage.src.models.claude_provider import ClaudeProvider
+
+        claude_provider = get_claude_provider()
+        if claude_provider == ClaudeProvider.OPENROUTER:
+            provider = ModelProvider.OPENROUTER
+
     api_key = get_api_key(provider)
     if not api_key:
         console.error(f"{provider.get_display_name()} API 키가 설정되지 않았습니다.")
@@ -385,7 +490,12 @@ def review_code(
             review_response, estimated_cost = _perform_new_review(review_request)
             review_prompt = PromptGenerator().create_code_review_prompt(review_request)
             log_path = save_review_log(
-                review_prompt, review_request, review_response, ReviewStatus.SUCCESS, log_id=log_id
+                review_prompt,
+                review_request,
+                review_response,
+                ReviewStatus.SUCCESS,
+                log_id=log_id,
+                review_log_dir=review_log_dir,
             )
         else:
             # 캐시 확인 시도
@@ -395,8 +505,16 @@ def review_code(
                 # 캐시 적중: 저장된 결과 사용
                 review_response, cached_cost = cached_result
 
+                # 캐시된 결과에 대해서도 log_id 생성
+                log_id = generate_log_id(model)
+
                 log_path = save_review_log(
-                    None, review_request, review_response, ReviewStatus.SUCCESS
+                    None,
+                    review_request,
+                    review_response,
+                    ReviewStatus.SUCCESS,
+                    log_id=log_id,
+                    review_log_dir=review_log_dir,
                 )
 
                 # 캐시 적중 비용 표시 (0 USD)
@@ -417,7 +535,12 @@ def review_code(
                     review_request
                 )
                 log_path = save_review_log(
-                    review_prompt, review_request, review_response, ReviewStatus.SUCCESS, log_id=log_id
+                    review_prompt,
+                    review_request,
+                    review_response,
+                    ReviewStatus.SUCCESS,
+                    log_id=log_id,
+                    review_log_dir=review_log_dir,
                 )
 
         # 리뷰 완료 정보 통합 출력
@@ -428,6 +551,9 @@ def review_code(
         )
 
         console.success("코드 리뷰가 완료되었습니다!")
+    except UnsupportedModelError:
+        # UnsupportedModelError는 이미 명확한 메시지가 표시되었으므로 추가 메시지 없이 종료
+        return
     except Exception as e:
         console.error(f"코드 리뷰 중 오류가 발생했습니다: {str(e)}", exception=e)
         error_log_id = generate_log_id(model)
@@ -438,8 +564,13 @@ def review_code(
             ReviewStatus.FAILED,
             error=e,
             log_id=error_log_id,
+            review_log_dir=review_log_dir,
         )
         return
+
+    # 터미널에 리뷰 결과 출력
+    if print_result:
+        review_display.print_review_result(log_path)
 
     # UI 자동 실행
     if open_ui:
@@ -514,6 +645,13 @@ def _process_single_api_key(display_name: str, provider: ModelProvider) -> bool:
 )
 @click.option("--open-ui", is_flag=True, help="리뷰 완료 후 UI로 결과 보기", type=bool)
 @click.option(
+    "--no-print",
+    "no_print_result",
+    is_flag=True,
+    help="터미널에 리뷰 결과를 출력하지 않음",
+    type=bool,
+)
+@click.option(
     "--diff-only",
     is_flag=True,
     default=get_default_diff_only(),
@@ -529,6 +667,11 @@ def _process_single_api_key(display_name: str, provider: ModelProvider) -> bool:
 @click.option(
     "--clear-cache", is_flag=True, help="캐시를 삭제한 후 리뷰 수행", type=bool
 )
+@click.option(
+    "--log-dir",
+    help="로그 저장 디렉토리",
+    type=str,
+)
 def review(
     repo_path: str,
     staged: bool,
@@ -536,9 +679,11 @@ def review(
     target_branch: str | None,
     model: str | None,
     open_ui: bool,
+    no_print_result: bool,
     diff_only: bool,
     skip_cache: bool,
     clear_cache: bool,
+    log_dir: str | None,
 ) -> None:
     """코드 리뷰 수행"""
     # 상호 배타적 옵션 검증
@@ -563,6 +708,9 @@ def review(
         console.print(message)
         return
 
+    # 터미널 출력 로직: 기본적으로 출력하되, --open-ui 사용 시 또는 --no-print 사용 시 비활성화
+    print_result = not (open_ui or no_print_result)
+
     review_code(
         model=model,
         repo_path=repo_path,
@@ -571,8 +719,10 @@ def review(
         target_branch=target_branch,
         diff_only=diff_only,
         open_ui=open_ui,
+        print_result=print_result,
         skip_cache=skip_cache,
         clear_cache=clear_cache,
+        review_log_dir=log_dir,
     )
 
 
@@ -603,6 +753,29 @@ def diff_only(value: str | None) -> None:
 def debug_mode(value: str | None) -> None:
     """디버그 모드 설정 (on / off)"""
     config_debug_mode(value)
+
+
+@config.command(name="review-log-dir")
+@click.argument("directory_path", required=False)
+def review_log_dir(directory_path: str | None) -> None:
+    """리뷰 로그 저장 디렉토리 설정"""
+    config_review_log_dir(directory_path)
+
+
+@config.command(name="claude-provider")
+@click.argument(
+    "provider", type=click.Choice(["anthropic", "openrouter"]), required=False
+)
+def claude_provider(provider: str | None) -> None:
+    """Claude Provider 설정"""
+    config_claude_provider(provider)
+
+
+@config.command(name="language")
+@click.argument("language_name", required=False)
+def language(language_name: str | None) -> None:
+    """기본 언어 설정"""
+    config_language(language_name)
 
 
 @config.command(name="list")

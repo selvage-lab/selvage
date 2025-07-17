@@ -12,7 +12,7 @@ from selvage.src.utils.token.models import (
     StructuredReviewResponse,
 )
 
-model = "gemini-2.5-pro-preview-05-06"
+model = "gemini-2.5-pro"
 # Correctness GEval - 코드 리뷰 정확성 평가
 # """
 # # criteria="코드 리뷰 결과가 실제 코드 변경 사항에 대해 정확한 분석과 제안을 제공하는지 평가합니다.",

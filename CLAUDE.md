@@ -21,6 +21,16 @@ pytest tests/ --cov
 
 # Run specific test patterns
 pytest tests/test_llm_gateway.py -v
+
+# Run specific test files
+pytest tests/test_config_env_vars.py::test_config_language -v
+pytest tests/test_cli_flags.py -v
+
+# Run tests with parallel execution
+pytest tests/ -n auto
+
+# Run tests with timeout
+pytest tests/ --timeout=300
 ```
 
 ### Code Quality
@@ -71,6 +81,15 @@ selvage view
 selvage --set-openai-key
 selvage --set-claude-key
 selvage --set-gemini-key
+
+# Configure default model and language
+selvage config model claude-sonnet-4-thinking
+selvage config language ko  # Set Korean language
+selvage config debug-mode on
+selvage config diff-only true
+
+# View current configuration
+selvage config list
 ```
 
 ## Architecture Overview
@@ -89,7 +108,7 @@ Selvage is an LLM-based code review tool with a modular architecture:
 
 - `gateway_factory.py`: Factory pattern for creating LLM clients
 - `base_gateway.py`: Abstract base class for all LLM providers
-- Provider-specific gateways: `openai_gateway.py`, `claude_gateway.py`, `google_gateway.py`
+- Provider-specific gateways: `openai_gateway.py`, `claude_gateway.py`, `google_gateway.py`, `openrouter_gateway.py`
 - Handles API communication, token counting, and cost estimation
 
 **Diff Processing** (`selvage/src/diff_parser/`)
@@ -133,14 +152,72 @@ The tool supports multiple AI providers:
 - **OpenAI**: GPT-4o, GPT-4.1, o4-mini variants
 - **Anthropic**: Claude Sonnet-4, Claude Sonnet-4-thinking
 - **Google**: Gemini 2.5 Pro, Gemini 2.5 Flash
+- **OpenRouter**: Gateway for accessing various models through OpenRouter API
 
-Model configuration is centralized in `selvage/src/model_config.py` with provider-specific settings.
+Model configuration is centralized in `selvage/resources/models.yml` with provider-specific settings.
 
 ## Testing Strategy
 
 - **Unit Tests** (`tests/`): Component-level testing
 - **E2E Tests** (`e2e/`): Full workflow testing with Docker containers
 - **LLM Evaluation** (`llm_eval/`): AI model response quality assessment using DeepEval
+
+## Git Workflow Integration
+
+Selvage supports various Git diff modes for flexible code review:
+
+```bash
+# Review unstaged changes (default)
+selvage review
+
+# Review staged changes only
+selvage review --staged
+
+# Review changes against specific branch
+selvage review --target-branch main
+selvage review --target-branch develop
+
+# Review changes from specific commit to HEAD
+selvage review --target-commit abc1234
+
+# Use different context modes
+selvage review --diff-only  # Only changed lines
+selvage review --full-context  # Include full file content
+```
+
+## Coding Conventions
+
+### Python Style Guide
+
+- **Line Length**: Maximum 88 characters (Black style)
+- **Indentation**: 4 spaces
+- **Quotes**: Prefer single quotes (') over double quotes (")
+- **Naming**: snake_case for variables/functions, PascalCase for classes, UPPER_CASE for constants
+
+### Type Hints
+
+- Use modern Python type annotations (Python 3.9+ style)
+- Prefer lowercase types: `list[str]`, `dict[str, Any]`
+- Use union operator: `int | None` instead of `Optional[int]`
+- Define type aliases for complex types: `ModelInfoDict = dict[str, Any]`
+
+### File Organization
+
+- One class per file when possible
+- File names match class names in snake_case: `ReviewProcessor` → `review_processor.py`
+- Module docstrings at file top
+- Group related classes in packages/directories
+
+## Detailed Development Guides
+
+For comprehensive development information, refer to these detailed guides in `.cursor/rules/`:
+
+- **[Code Conventions](file://.cursor/rules/code-conventions.mdc)** - Detailed Python style guide, type hints, file organization, docstring standards, and code review checklist
+- **[Models and Gateways](file://.cursor/rules/models-and-gateways.mdc)** - LLM model information, gateway architecture, factory patterns, and API integration details
+- **[App Architecture Workflow](file://.cursor/rules/app-architecture-workflow.mdc)** - Complete data flow, Git diff processing, prompt generation, and cost estimation systems
+- **[Project Structure](file://.cursor/rules/project-structure.mdc)** - Directory organization and module dependencies
+- **[Linting Setup](file://.cursor/rules/linting-setup.mdc)** - Ruff configuration and code quality tools
+- **[GitHub PR Workflow](file://.cursor/rules/github-pr-create-workflow.mdc)** - Pull request creation and review processes
 
 ## Important Notes
 
@@ -149,3 +226,5 @@ Model configuration is centralized in `selvage/src/model_config.py` with provide
 - All user-facing text is in Korean (this is intentional for the target audience)
 - The tool maintains review logs in structured JSON format for audit trails
 - API keys are validated and securely stored with appropriate file permissions
+- Uses Instructor library for structured LLM responses with Pydantic models
+- Prompt versions are managed in `selvage/resources/prompt/` with version-specific directories

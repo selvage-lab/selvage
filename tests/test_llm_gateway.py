@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import patch
 
@@ -240,6 +241,85 @@ class TestGoogleGateway(unittest.TestCase):
         self.assertEqual(context.exception.provider, ModelProvider.GOOGLE)
 
 
+class TestOpenRouterGateway(unittest.TestCase):
+    """OpenRouterGateway 단위 테스트"""
+
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_openrouter_key"})
+    def test_init_with_valid_claude_model(self):
+        """유효한 Claude 모델로 OpenRouterGateway 초기화 테스트"""
+        from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
+
+        model_info = get_model_info("claude-sonnet-4")
+        self.assertIsNotNone(model_info)
+
+        gateway = OpenRouterGateway(model_info)
+
+        self.assertEqual(gateway.get_model_name(), "claude-sonnet-4-20250514")
+        self.assertEqual(gateway.model, model_info)
+
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_openrouter_key"})
+    def test_init_with_invalid_model_provider(self):
+        """잘못된 모델 제공자로 OpenRouterGateway 초기화 시 예외 발생 테스트"""
+        from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
+
+        openai_model_info: ModelInfoDict = {
+            "full_name": "gpt-4o",
+            "aliases": [],
+            "description": "OpenAI 모델",
+            "provider": ModelProvider.OPENAI,
+            "params": {"temperature": 0.0},
+            "thinking_mode": False,
+            "pricing": {"input": 0.0, "output": 0.0, "description": "OpenAI 모델"},
+            "context_limit": 100000,
+        }
+
+        with self.assertRaises(InvalidModelProviderError) as context:
+            OpenRouterGateway(openai_model_info)
+
+        self.assertEqual(context.exception.model_name, "gpt-4o")
+        self.assertEqual(context.exception.expected_provider, ModelProvider.ANTHROPIC)
+
+    def test_init_without_api_key(self):
+        """API 키 없이 OpenRouterGateway 초기화 시 예외 발생 테스트"""
+        from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
+
+        with patch.dict(os.environ, {}, clear=True):
+            model_info = get_model_info("claude-sonnet-4")
+
+            with self.assertRaises(APIKeyNotFoundError) as context:
+                OpenRouterGateway(model_info)
+
+            self.assertEqual(context.exception.provider, ModelProvider.OPENROUTER)
+
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_openrouter_key"})
+    def test_convert_to_openrouter_model_name(self):
+        """모델명 변환 테스트 - models.yml 설정 기반"""
+        from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
+
+        # openrouter_name이 설정된 모델 테스트
+        model_info = get_model_info("claude-sonnet-4-20250514")
+        gateway = OpenRouterGateway(model_info)
+        result = gateway._convert_to_openrouter_model_name("claude-sonnet-4-20250514")
+        self.assertEqual(result, "anthropic/claude-sonnet-4")
+
+        # alias로 접근하는 모델 테스트
+        model_info = get_model_info("claude-sonnet-4")
+        gateway = OpenRouterGateway(model_info)
+        result = gateway._convert_to_openrouter_model_name("claude-sonnet-4")
+        self.assertEqual(result, "anthropic/claude-sonnet-4")
+
+        # openrouter_name이 설정되지 않은 경우 테스트 (임시로 openrouter_name 제거)
+        model_info = get_model_info("claude-sonnet-4")
+        gateway = OpenRouterGateway(model_info)
+        # openrouter_name을 임시로 제거하여 fallback 테스트
+        original_openrouter_name = gateway.model.pop("openrouter_name", None)
+        result = gateway._convert_to_openrouter_model_name("claude-sonnet-4")
+        self.assertEqual(result, "claude-sonnet-4")  # 원래 모델명 반환
+        # 원래 값 복원
+        if original_openrouter_name:
+            gateway.model["openrouter_name"] = original_openrouter_name
+
+
 class TestCreateLLMGateway(unittest.TestCase):
     @patch("selvage.src.llm_gateway.openai_gateway.get_api_key")
     def test_create_openai_gateway(self, mock_get_api_key):
@@ -253,14 +333,35 @@ class TestCreateLLMGateway(unittest.TestCase):
         self.assertEqual(gateway.get_model_name(), "gpt-4o")
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
-    def test_create_claude_gateway(self, mock_get_api_key):
-        """Claude 모델명으로 get_llm_gateway 호출 시 ClaudeGateway 반환을 테스트합니다."""
-        mock_get_api_key.return_value = "fake-api-key"
+    @patch("selvage.src.llm_gateway.gateway_factory.get_claude_provider")
+    def test_create_claude_gateway_with_anthropic_provider(
+        self, mock_get_claude_provider, mock_get_api_key
+    ):
+        """Claude 모델, Anthropic provider 설정 시 ClaudeGateway 반환 테스트"""
+        from selvage.src.models.claude_provider import ClaudeProvider
+
+        mock_get_api_key.return_value = "fake-claude-key"
+        mock_get_claude_provider.return_value = ClaudeProvider.ANTHROPIC
 
         gateway = GatewayFactory.create("claude-sonnet-4")
 
-        # 검증
         self.assertIsInstance(gateway, ClaudeGateway)
+        self.assertEqual(gateway.get_model_name(), "claude-sonnet-4-20250514")
+
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": "fake-openrouter-key"})
+    @patch("selvage.src.llm_gateway.gateway_factory.get_claude_provider")
+    def test_create_openrouter_gateway_with_openrouter_provider(
+        self, mock_get_claude_provider
+    ):
+        """Claude 모델, OpenRouter provider 설정 시 OpenRouterGateway 반환 테스트"""
+        from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
+        from selvage.src.models.claude_provider import ClaudeProvider
+
+        mock_get_claude_provider.return_value = ClaudeProvider.OPENROUTER
+
+        gateway = GatewayFactory.create("claude-sonnet-4")
+
+        self.assertIsInstance(gateway, OpenRouterGateway)
         self.assertEqual(gateway.get_model_name(), "claude-sonnet-4-20250514")
 
     @patch("selvage.src.llm_gateway.google_gateway.get_api_key")
@@ -272,7 +373,7 @@ class TestCreateLLMGateway(unittest.TestCase):
 
         # 검증
         self.assertIsInstance(gateway, GoogleGateway)
-        self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro-preview-05-06")
+        self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro")
 
     # UnsupportedModelError 테스트
     @patch(

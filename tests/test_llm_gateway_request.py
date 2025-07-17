@@ -35,9 +35,15 @@ class TestRequestParamsCreation(unittest.TestCase):
         self.assertEqual(params["temperature"], 0.0)  # 모델의 기본 파라미터
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
-    def test_claude_create_request_params(self, mock_get_api_key):
+    @patch("selvage.src.llm_gateway.gateway_factory.get_claude_provider")
+    def test_claude_create_request_params(
+        self, mock_get_claude_provider, mock_get_api_key
+    ):
         """Claude 게이트웨이의 요청 파라미터 생성을 테스트합니다."""
         # 설정
+        from selvage.src.models.claude_provider import ClaudeProvider
+
+        mock_get_claude_provider.return_value = ClaudeProvider.ANTHROPIC
         mock_get_api_key.return_value = "fake-api-key"
         gateway = GatewayFactory.create("claude-sonnet-4")
 
@@ -67,7 +73,7 @@ class TestRequestParamsCreation(unittest.TestCase):
         params = gateway._create_request_params(messages)
 
         # 검증
-        self.assertEqual(params["model"], "gemini-2.5-pro-preview-05-06")
+        self.assertEqual(params["model"], "gemini-2.5-pro")
         self.assertIn("contents", params)  # Google API 요청 형식에 맞게 변환됨
         self.assertIn("config", params)  # Google API 구성 포함
         # config의 시스템 지시 검증

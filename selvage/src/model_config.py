@@ -6,6 +6,11 @@ import importlib.resources
 import threading
 from typing import Any, TypedDict
 
+try:
+    from typing import NotRequired
+except ImportError:
+    from typing_extensions import NotRequired
+
 import yaml
 
 from selvage.src.exceptions.unsupported_model_error import UnsupportedModelError
@@ -18,12 +23,11 @@ class ModelParamsDict(TypedDict, total=False):
 
     temperature: float
     reasoning_effort: str
-    max_tokens: int
-    thinking: dict[str, str | int] | None
+    thinking: dict[str, Any]
 
 
 class PricingDict(TypedDict):
-    """모델 가격 정보 타입"""
+    """가격 정보 타입"""
 
     input: float
     output: float
@@ -41,6 +45,7 @@ class ModelInfoDict(TypedDict):
     thinking_mode: bool
     pricing: PricingDict
     context_limit: int
+    openrouter_name: NotRequired[str]
 
 
 class ModelConfig:

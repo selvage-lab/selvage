@@ -12,6 +12,8 @@ from pathlib import Path
 
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.exceptions.invalid_api_key_error import InvalidAPIKeyError
+from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
+from selvage.src.models.claude_provider import ClaudeProvider
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.base_console import console
 from selvage.src.utils.platform_utils import get_platform_config_dir
@@ -19,6 +21,15 @@ from selvage.src.utils.platform_utils import get_platform_config_dir
 # 설정 파일 경로 (플랫폼별 설정 디렉토리 사용)
 CONFIG_DIR = get_platform_config_dir()
 CONFIG_FILE = CONFIG_DIR / "config.ini"
+
+# 기본 설정 섹션 목록
+DEFAULT_SECTIONS = [
+    "credentials",  # API 키 저장
+    "paths",  # 경로 설정
+    "default",  # 기본값 설정
+    "debug",  # 디버그 설정
+    "language",  # 언어 설정
+]
 
 
 def ensure_config_dir() -> None:
@@ -35,20 +46,17 @@ def load_config() -> configparser.ConfigParser:
 
     # 플랫폼별 설정 파일 확인
     if CONFIG_FILE.exists():
-        config.read(CONFIG_FILE)
+        try:
+            config.read(CONFIG_FILE)
+        except (configparser.Error, UnicodeDecodeError) as e:
+            # 설정 파일이 손상된 경우 기본 설정으로 진행
+            console.warning(f"설정 파일이 손상되어 기본 설정을 사용합니다: {e}")
+            config = configparser.ConfigParser()
 
     # 기본 섹션이 없으면 추가
-    if "credentials" not in config:
-        config["credentials"] = {}
-
-    if "paths" not in config:
-        config["paths"] = {}
-
-    if "default" not in config:
-        config["default"] = {}
-
-    if "debug" not in config:
-        config["debug"] = {}
+    for section in DEFAULT_SECTIONS:
+        if section not in config:
+            config[section] = {}
 
     return config
 
@@ -122,7 +130,7 @@ def get_api_key(provider: ModelProvider) -> str:
         _validate_api_key(api_key, provider)
         return api_key
 
-    console.error(f"API 키가 없습니다: {provider}")
+    console.error(f"API 키가 없습니다: {provider.get_display_name()}")
     console.info("다음 중 하나의 방법으로 API 키를 설정하세요:")
     console.info(f"  1. 환경변수: export {env_var_name}=your_api_key")
     console.info(f"  2. CLI 명령어: selvage --set-{provider.value}-key your_api_key")
@@ -167,12 +175,41 @@ def get_default_review_log_dir() -> Path:
     config = load_config()
 
     # 설정 파일에 지정된 경우
-    if "default_review_log_dir" in config["paths"]:
-        path = config["paths"]["default_review_log_dir"]
+    if "review_log_dir" in config["paths"]:
+        path = config["paths"]["review_log_dir"]
         return Path(os.path.expanduser(path))
 
     # 기본 위치 (플랫폼별 설정 디렉토리 사용)
     return CONFIG_DIR / "review_log"
+
+
+def set_default_review_log_dir(log_dir: str) -> bool:
+    """리뷰 로그 디렉토리를 설정합니다.
+
+    Args:
+        log_dir: 설정할 로그 디렉토리 경로
+
+    Returns:
+        bool: 성공 여부
+    """
+    try:
+        # 경로 유효성 검증
+        expanded_path = os.path.expanduser(log_dir)
+        log_path = Path(expanded_path)
+
+        # 절대 경로로 변환
+        if not log_path.is_absolute():
+            log_path = log_path.resolve()
+
+        config = load_config()
+        config["paths"]["review_log_dir"] = str(log_path)
+        save_config(config)
+
+        console.success(f"리뷰 로그 디렉토리가 {log_path}로 설정되었습니다.")
+        return True
+    except Exception as e:
+        console.error(f"리뷰 로그 디렉토리 설정 중 오류 발생: {str(e)}", exception=e)
+        return False
 
 
 def get_default_model() -> str | None:
@@ -241,4 +278,76 @@ def set_default_debug_mode(debug_mode: bool) -> bool:
         return True
     except Exception as e:
         console.error(f"debug_mode 설정 중 오류 발생: {str(e)}", exception=e)
+        return False
+
+
+def get_claude_provider() -> ClaudeProvider:
+    """Claude 제공자 설정을 반환합니다."""
+    try:
+        config = load_config()
+        if "claude" in config and "provider" in config["claude"]:
+            provider_str = config["claude"]["provider"]
+        else:
+            provider_str = "anthropic"  # 기본값
+        return ClaudeProvider.from_string(provider_str)
+    except (KeyError, ValueError, UnsupportedProviderError):
+        # 설정이 없거나 잘못된 경우 기본값 반환
+        return ClaudeProvider.ANTHROPIC
+
+
+def set_claude_provider(provider: ClaudeProvider) -> bool:
+    """Claude 제공자를 설정합니다.
+
+    Args:
+        provider: 설정할 Claude 제공자
+
+    Returns:
+        bool: 성공 여부
+    """
+    try:
+        config = load_config()
+        if "claude" not in config:
+            config["claude"] = {}
+        config["claude"]["provider"] = provider.value
+        save_config(config)
+        console.success(
+            f"Claude 제공자가 {provider.get_display_name()}로 설정되었습니다."
+        )
+        return True
+    except Exception as e:
+        console.error(f"Claude 제공자 설정 중 오류 발생: {str(e)}", exception=e)
+        return False
+
+
+def get_default_language() -> str:
+    """기본 언어를 반환합니다.
+
+    Returns:
+        str: 기본 언어 (기본값: Korean)
+    """
+    try:
+        config = load_config()
+        return config["language"].get("default", "Korean")
+    except KeyError:
+        return "Korean"
+
+
+def set_default_language(language: str) -> bool:
+    """기본 언어를 설정합니다.
+
+    Args:
+        language: 설정할 언어
+
+    Returns:
+        bool: 성공 여부
+    """
+    try:
+        config = load_config()
+        if "language" not in config:
+            config["language"] = {}
+        config["language"]["default"] = language
+        save_config(config)
+        return True
+    except Exception as e:
+        console.error(f"기본 언어 설정 중 오류 발생: {str(e)}", exception=e)
         return False
