@@ -45,9 +45,17 @@ class FileDiff:
         ):
             self.line_count = 0
         else:
-            # 빈 파일의 경우 라인 수는 0
-            if not self.file_content.strip():
+            # 완전히 빈 파일의 경우 라인 수는 0
+            if self.file_content == '':
                 self.line_count = 0
             else:
                 # 개행 문자로 분할하여 라인 수 계산
-                self.line_count = len(self.file_content.split('\n'))
+                lines = self.file_content.split('\n')
+                # 마지막이 빈 문자열이면 제거 (파일 끝 개행 문자 처리)
+                if lines and lines[-1] == '':
+                    lines = lines[:-1]
+                # 빈 라인들만 있는 경우 처리
+                if not lines:
+                    self.line_count = 0
+                else:
+                    self.line_count = len(lines)

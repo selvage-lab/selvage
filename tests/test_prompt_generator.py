@@ -22,7 +22,15 @@ from selvage.src.utils.token.models import ReviewRequest
 @pytest.fixture
 def review_request() -> ReviewRequest:
     return ReviewRequest(
-        diff_content="diff --git a/file.py b/file.py\nindex 1234..5678 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,3 +1,4 @@\n+print('Hello')\n print('World')\n",
+        diff_content=(
+            "diff --git a/file.py b/file.py\n"
+            "index 1234..5678 100644\n"
+            "--- a/file.py\n"
+            "+++ b/file.py\n"
+            "@@ -1,3 +1,4 @@\n"
+            "+print('Hello')\n"
+            " print('World')\n"
+        ),
         file_paths=["file.py"],
         processed_diff=DiffResult(
             files=[
@@ -42,6 +50,9 @@ def review_request() -> ReviewRequest:
                         )
                     ],
                     language="python",
+                    additions=1,
+                    deletions=0,
+                    line_count=10,  # 전체 파일이 10줄이라고 가정
                 )
             ]
         ),
@@ -55,7 +66,15 @@ def review_request() -> ReviewRequest:
 def diff_only_review_request() -> ReviewRequest:
     """use_full_context가 False인 review_request fixture"""
     return ReviewRequest(
-        diff_content="diff --git a/file.py b/file.py\nindex 1234..5678 100644\n--- a/file.py\n+++ b/file.py\n@@ -1,3 +1,4 @@\n+print('Hello')\n print('World')\n",
+        diff_content=(
+            "diff --git a/file.py b/file.py\n"
+            "index 1234..5678 100644\n"
+            "--- a/file.py\n"
+            "+++ b/file.py\n"
+            "@@ -1,3 +1,4 @@\n"
+            "+print('Hello')\n"
+            " print('World')\n"
+        ),
         file_paths=["file.py"],
         processed_diff=DiffResult(
             files=[
@@ -75,6 +94,9 @@ def diff_only_review_request() -> ReviewRequest:
                         )
                     ],
                     language="python",
+                    additions=1,
+                    deletions=0,
+                    line_count=10,  # 전체 파일이 10줄이라고 가정
                 )
             ]
         ),
@@ -118,6 +140,9 @@ def multi_hunk_review_request() -> ReviewRequest:
                         ),
                     ],
                     language="python",
+                    additions=2,
+                    deletions=0,
+                    line_count=15,  # 전체 파일이 15줄이라고 가정
                 )
             ]
         ),
@@ -161,6 +186,9 @@ def multi_hunk_diff_only_review_request() -> ReviewRequest:
                         ),
                     ],
                     language="python",
+                    additions=2,
+                    deletions=0,
+                    line_count=15,  # 전체 파일이 15줄이라고 가정
                 )
             ]
         ),
@@ -347,7 +375,7 @@ class TestPromptGenerator:
         mock_system_prompt,
         multi_hunk_review_request: ReviewRequest,
     ):
-        """여러 hunk가 있는 경우 코드 리뷰 프롬프트 생성 테스트 (use_full_context=True)"""
+        """여러 hunk가 있는 경우 코드 리뷰 프롬프트 생성 테스트 (use_full_context=True)"""  # noqa: E501
         # Given
         generator = PromptGenerator()
 
@@ -396,7 +424,7 @@ class TestPromptGenerator:
     def test_create_code_review_prompt_multiple_hunks_with_diff_only(
         self, mock_system_prompt, multi_hunk_diff_only_review_request: ReviewRequest
     ):
-        """여러 hunk가 있고 use_full_context=False인 경우 코드 리뷰 프롬프트 생성 테스트"""
+        """여러 hunk가 있고 use_full_context=False인 경우 코드 리뷰 프롬프트 생성 테스트"""  # noqa: E501
         # Given
         generator = PromptGenerator()
 
@@ -435,3 +463,227 @@ class TestPromptGenerator:
         assert "print('Debug')" in second_prompt.before_code
         assert "print('Log')" in second_prompt.after_code
         assert "print('Info')" in second_prompt.after_code
+
+
+@pytest.fixture
+def new_file_review_request() -> ReviewRequest:
+    """새로 생성된 파일에 대한 review_request fixture"""
+    return ReviewRequest(
+        diff_content=(
+            "diff --git a/new_file.py b/new_file.py\n"
+            "index 0000000..abc1234 100644\n"
+            "--- /dev/null\n"
+            "+++ b/new_file.py\n"
+            "@@ -0,0 +1,3 @@\n"
+            "+def hello():\n"
+            "+    print('Hello')\n"
+            "+    return True\n"
+        ),
+        file_paths=["new_file.py"],
+        processed_diff=DiffResult(
+            files=[
+                FileDiff(
+                    filename="new_file.py",
+                    file_content=(
+                        "def hello():\n"
+                        "    print('Hello')\n"
+                        "    return True\n"
+                    ),
+                    hunks=[
+                        Hunk(
+                            header="@@ -0,0 +1,3 @@",
+                            content=(
+                                "+def hello():\n"
+                                "+    print('Hello')\n"
+                                "+    return True\n"
+                            ),
+                            before_code="",
+                            after_code=(
+                                "def hello():\n"
+                                "    print('Hello')\n"
+                                "    return True\n"
+                            ),
+                            start_line_original=0,
+                            line_count_original=0,
+                            start_line_modified=1,
+                            line_count_modified=3,
+                        )
+                    ],
+                    language="python",
+                    additions=3,
+                    deletions=0,
+                    line_count=3,  # 새 파일은 전체 라인 수가 추가된 라인 수와 같음
+                )
+            ]
+        ),
+        model="gpt-4o-mini",
+        use_full_context=True,
+        repo_path=".",
+    )
+
+
+@pytest.fixture
+def rewritten_file_review_request() -> ReviewRequest:
+    """파일이 재작성된 경우에 대한 review_request fixture"""
+    return ReviewRequest(
+        diff_content=(
+            "diff --git a/rewritten.py b/rewritten.py\n"
+            "index abc1234..def5678 100644\n"
+            "--- a/rewritten.py\n"
+            "+++ b/rewritten.py\n"
+            "@@ -1,5 +1,3 @@\n"
+            "-old_function()\n"
+            "-old_code()\n"
+            "-legacy()\n"
+            "-deprecated()\n"
+            "-unused()\n"
+            "+def new_function():\n"
+            "+    return 'Rewritten'\n"
+            "+    print('Done')\n"
+        ),
+        file_paths=["rewritten.py"],
+        processed_diff=DiffResult(
+            files=[
+                FileDiff(
+                    filename="rewritten.py",
+                    file_content=(
+                        "def new_function():\n"
+                        "    return 'Rewritten'\n"
+                        "    print('Done')\n"
+                    ),
+                    hunks=[
+                        Hunk(
+                            header="@@ -1,5 +1,3 @@",
+                            content=(
+                                "-old_function()\n"
+                                "-old_code()\n"
+                                "-legacy()\n"
+                                "-deprecated()\n"
+                                "-unused()\n"
+                                "+def new_function():\n"
+                                "+    return 'Rewritten'\n"
+                                "+    print('Done')\n"
+                            ),
+                            before_code=(
+                                "old_function()\n"
+                                "old_code()\n"
+                                "legacy()\n"
+                                "deprecated()\n"
+                                "unused()\n"
+                            ),
+                            after_code=(
+                                "def new_function():\n"
+                                "    return 'Rewritten'\n"
+                                "    print('Done')\n"
+                            ),
+                            start_line_original=1,
+                            line_count_original=5,
+                            start_line_modified=1,
+                            line_count_modified=3,
+                        )
+                    ],
+                    language="python",
+                    additions=3,
+                    deletions=5,
+                    line_count=3,  # 파일 재작성: 전체 라인 수가 추가된 라인 수와 같음
+                )
+            ]
+        ),
+        model="gpt-4o-mini",
+        use_full_context=True,
+        repo_path=".",
+    )
+
+
+class TestPromptGeneratorNewFileAndRewrite:
+    """새 파일 생성 및 파일 재작성 케이스 테스트"""
+
+    @patch.object(
+        PromptGenerator,
+        "_get_code_review_system_prompt",
+        return_value="New file review system prompt",
+    )
+    def test_create_code_review_prompt_new_file(
+        self, mock_system_prompt, new_file_review_request: ReviewRequest
+    ):
+        """새로 생성된 파일의 경우 file_content가 비워지는지 테스트"""
+        # Given
+        generator = PromptGenerator()
+
+        # When
+        review_prompt = generator.create_code_review_prompt(new_file_review_request)
+
+        # Then
+        # 1. ReviewPromptWithFileContent 구조 검증
+        assert isinstance(review_prompt, ReviewPromptWithFileContent)
+        assert len(review_prompt.user_prompts) == 1
+
+        # 2. 새 파일의 경우 file_content가 빈 문자열이어야 함
+        user_prompt = review_prompt.user_prompts[0]
+        assert user_prompt.file_name == "new_file.py"
+        assert user_prompt.file_content == ""  # 중복 제거를 위해 비워짐
+
+        # 3. hunks는 여전히 존재해야 함 (after_code에 전체 파일 내용 포함)
+        assert len(user_prompt.formatted_hunks) == 1
+        hunk = user_prompt.formatted_hunks[0]
+        assert "def hello():" in hunk.after_code
+        assert "print('Hello')" in hunk.after_code
+        assert "return True" in hunk.after_code
+
+    @patch.object(
+        PromptGenerator,
+        "_get_code_review_system_prompt",
+        return_value="Rewritten file review system prompt",
+    )
+    def test_create_code_review_prompt_rewritten_file(
+        self, mock_system_prompt, rewritten_file_review_request: ReviewRequest
+    ):
+        """파일이 재작성된 경우 file_content가 비워지는지 테스트"""
+        # Given
+        generator = PromptGenerator()
+
+        # When
+        review_prompt = generator.create_code_review_prompt(
+            rewritten_file_review_request
+        )
+
+        # Then
+        # 1. ReviewPromptWithFileContent 구조 검증
+        assert isinstance(review_prompt, ReviewPromptWithFileContent)
+        assert len(review_prompt.user_prompts) == 1
+
+        # 2. 파일 재작성의 경우 file_content가 빈 문자열이어야 함
+        user_prompt = review_prompt.user_prompts[0]
+        assert user_prompt.file_name == "rewritten.py"
+        assert user_prompt.file_content == ""  # 중복 제거를 위해 비워짐
+
+        # 3. hunks는 여전히 존재해야 함 (before_code와 after_code 모두 포함)
+        assert len(user_prompt.formatted_hunks) == 1
+        hunk = user_prompt.formatted_hunks[0]
+        assert "old_function()" in hunk.before_code
+        assert "def new_function():" in hunk.after_code
+        assert "return 'Rewritten'" in hunk.after_code
+
+    def test_new_file_condition_validation(
+        self, new_file_review_request: ReviewRequest
+    ):
+        """새 파일 생성 조건 검증"""
+        file_diff = new_file_review_request.processed_diff.files[0]
+        
+        # 새 파일 생성 조건: line_count == additions
+        assert file_diff.line_count == file_diff.additions
+        assert file_diff.line_count == 3
+        assert file_diff.additions == 3
+        assert file_diff.deletions == 0
+
+    def test_rewritten_file_condition_validation(
+        self, rewritten_file_review_request: ReviewRequest
+    ):
+        """파일 재작성 조건 검증"""
+        file_diff = rewritten_file_review_request.processed_diff.files[0]
+        
+        # 파일 재작성 조건: line_count == additions (but deletions > 0)
+        assert file_diff.line_count == file_diff.additions
+        assert file_diff.line_count == 3
+        assert file_diff.additions == 3
+        assert file_diff.deletions == 5  # 기존 내용이 삭제됨

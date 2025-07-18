@@ -396,7 +396,8 @@ class TestFileDiffCalculateLineCount:
             file_content="   \n  \t\n   ",
         )
         file_diff.calculate_line_count()
-        assert file_diff.line_count == 0
+        # 공백도 유효한 라인이므로 3라인으로 계산
+        assert file_diff.line_count == 3
 
     def test_calculate_line_count_none_content(self):
         """file_content가 None인 경우 테스트"""
@@ -441,8 +442,8 @@ class TestFileDiffCalculateLineCount:
             file_content="line1\nline2\nline3\n",
         )
         file_diff.calculate_line_count()
-        # 마지막 개행 문자 때문에 빈 문자열이 하나 더 생기므로 4라인
-        assert file_diff.line_count == 4
+        # 마지막 개행 문자는 제거되어 실제 라인 수인 3으로 계산
+        assert file_diff.line_count == 3
 
     def test_calculate_line_count_mixed_content(self):
         """다양한 내용이 혼재된 파일 테스트"""
@@ -452,3 +453,30 @@ class TestFileDiffCalculateLineCount:
         )
         file_diff.calculate_line_count()
         assert file_diff.line_count == 6
+
+    def test_calculate_line_count_without_trailing_newline(self):
+        """마지막에 개행 문자가 없는 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="line1\nline2\nline3",
+        )
+        file_diff.calculate_line_count()
+        # 마지막 개행 문자가 없으므로 그대로 3라인
+        assert file_diff.line_count == 3
+
+    def test_calculate_line_count_edge_cases(self):
+        """다양한 엣지 케이스 테스트"""
+        # 개행 문자만 있는 경우 (빈 라인 1개)
+        file_diff = FileDiff(filename="test.py", file_content="\n")
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 1
+        
+        # 여러 개행 문자로 끝나는 경우
+        file_diff = FileDiff(filename="test.py", file_content="line1\n\n\n")
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 3
+        
+        # 한 줄에 개행 문자가 있는 경우
+        file_diff = FileDiff(filename="test.py", file_content="single_line\n")
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 1

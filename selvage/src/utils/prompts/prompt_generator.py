@@ -136,6 +136,8 @@ class PromptGenerator:
                 if not file.file_content:
                     console.warning(f"파일 내용이 없습니다. 파일 경로: {file.filename}")
                     file_content = ""
+                elif file.line_count == file.additions:
+                    file_content = ""
                 else:
                     file_content = file.file_content
 
