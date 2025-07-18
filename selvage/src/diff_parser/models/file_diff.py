@@ -15,6 +15,7 @@ class FileDiff:
     language: str = ""
     additions: int = 0
     deletions: int = 0
+    line_count: int = 0
 
     def calculate_changes(self) -> None:
         """파일의 추가/삭제 라인 수를 계산합니다."""
@@ -31,3 +32,22 @@ class FileDiff:
     def detect_language(self) -> None:
         """파일 확장자를 기반으로 언어를 감지합니다."""
         self.language = detect_language_from_filename(self.filename)
+
+    def calculate_line_count(self) -> None:
+        """파일의 총 라인 수를 계산합니다."""
+        if self.file_content is None:
+            self.line_count = 0
+        elif self.file_content == "삭제된 파일":
+            self.line_count = 0
+        elif (
+            self.file_content.startswith("[파일 읽기 오류:")
+            or self.file_content.startswith("[파일 처리 중 예기치 않은 오류:")
+        ):
+            self.line_count = 0
+        else:
+            # 빈 파일의 경우 라인 수는 0
+            if not self.file_content.strip():
+                self.line_count = 0
+            else:
+                # 개행 문자로 분할하여 라인 수 계산
+                self.line_count = len(self.file_content.split('\n'))

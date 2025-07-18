@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
+from selvage.src.diff_parser.models.file_diff import FileDiff
 from selvage.src.diff_parser.parser import parse_git_diff
 from selvage.src.exceptions.diff_parsing_error import DiffParsingError
 
@@ -9,7 +10,8 @@ from selvage.src.exceptions.diff_parsing_error import DiffParsingError
 @pytest.fixture
 def one_file_one_diff_text():
     return (
-        "diff --git a/selvage/src/diff_parser/__init__.py b/selvage/src/diff_parser/__init__.py\n"
+        "diff --git a/selvage/src/diff_parser/__init__.py "
+        "b/selvage/src/diff_parser/__init__.py\n"
         "index f6b5043..4a57718 100644\n"
         "--- a/selvage/src/diff_parser/__init__.py\n"
         "+++ b/selvage/src/diff_parser/__init__.py\n"
@@ -25,7 +27,8 @@ def one_file_one_diff_text():
 @pytest.fixture
 def one_file_multiple_diff_text():
     return (
-        "diff --git a/selvage/src/diff_parser/parser.py b/selvage/src/diff_parser/parser.py\n"
+        "diff --git a/selvage/src/diff_parser/parser.py "
+        "b/selvage/src/diff_parser/parser.py\n"
         "index 3d1e1ea..b7e9e75 100644\n"
         "--- a/selvage/src/diff_parser/parser.py\n"
         "+++ b/selvage/src/diff_parser/parser.py\n"
@@ -53,7 +56,8 @@ def one_file_multiple_diff_text():
 @pytest.fixture
 def multiple_files_diff_text():
     return (
-        "diff --git a/selvage/src/diff_parser/__init__.py b/selvage/src/diff_parser/__init__.py\n"
+        "diff --git a/selvage/src/diff_parser/__init__.py "
+        "b/selvage/src/diff_parser/__init__.py\n"
         "index f6b5043..4a57718 100644\n"
         "--- a/selvage/src/diff_parser/__init__.py\n"
         "+++ b/selvage/src/diff_parser/__init__.py\n"
@@ -75,7 +79,8 @@ def multiple_files_diff_text():
         'diff_text = read_diff_file("middle.diff")\n'
         "-result = split_git_diff(diff_text)\n"
         "+result = parse_git_diff(diff_text)\n"
-        "diff --git a/legacy_tests/test_diff_parser.py b/legacy_tests/test_diff_parser.py\n"
+        "diff --git a/legacy_tests/test_diff_parser.py "
+        "b/legacy_tests/test_diff_parser.py\n"
         "index 334dbc1..5b2df91 100644\n"
         "--- a/legacy_tests/test_diff_parser.py\n"
         "+++ b/legacy_tests/test_diff_parser.py\n"
@@ -126,14 +131,14 @@ def code_with_null_path_text():
 
 def test_parse_git_diff_empty():
     with pytest.raises(DiffParsingError) as excinfo:
-        parse_git_diff("", use_full_context=True, repo_path=".")
+        parse_git_diff("", repo_path=".")
     assert "빈 diff가 제공되었습니다." in str(excinfo.value)
 
 
 def test_parse_git_diff_invalid():
     invalid_diff = "이것은 유효하지 않은 diff 형식입니다."
     with pytest.raises(DiffParsingError) as excinfo:
-        parse_git_diff(invalid_diff, use_full_context=True, repo_path=".")
+        parse_git_diff(invalid_diff, repo_path=".")
     assert "유효하지 않은 diff 형식입니다." in str(excinfo.value)
 
 
@@ -142,9 +147,7 @@ def test_parse_git_diff(mock_load_file_content, one_file_one_diff_text):
     # 모킹 설정
     mock_load_file_content.return_value = "파일 전체 내용 모킹"
 
-    result = parse_git_diff(
-        one_file_one_diff_text, use_full_context=True, repo_path="."
-    )
+    result = parse_git_diff(one_file_one_diff_text, repo_path=".")
     assert len(result.files) == 1
     assert result.files[0].filename == "selvage/src/diff_parser/__init__.py"
     assert len(result.files[0].hunks) == 1
@@ -165,6 +168,9 @@ def test_parse_git_diff(mock_load_file_content, one_file_one_diff_text):
         "selvage/src/diff_parser/__init__.py", "."
     )
 
+    # line_count 검증 추가
+    assert result.files[0].line_count == 1
+
 
 @patch("selvage.src.diff_parser.parser.load_file_content")
 def test_parse_git_diff_one_file_multiple_hunks(
@@ -173,9 +179,7 @@ def test_parse_git_diff_one_file_multiple_hunks(
     # 모킹 설정
     mock_load_file_content.return_value = "파서 파일 전체 내용"
 
-    result = parse_git_diff(
-        one_file_multiple_diff_text, use_full_context=True, repo_path="."
-    )
+    result = parse_git_diff(one_file_multiple_diff_text, repo_path=".")
 
     assert len(result.files) == 1
     assert result.files[0].filename == "selvage/src/diff_parser/parser.py"
@@ -213,6 +217,9 @@ def test_parse_git_diff_one_file_multiple_hunks(
         "selvage/src/diff_parser/parser.py", "."
     )
 
+    # line_count 검증 추가
+    assert result.files[0].line_count == 1
+
 
 @patch("selvage.src.diff_parser.parser.load_file_content")
 def test_parse_git_diff_multiple_files(
@@ -228,9 +235,7 @@ def test_parse_git_diff_multiple_files(
 
     mock_load_file_content.side_effect = mock_file_content
 
-    result = parse_git_diff(
-        multiple_files_diff_text, use_full_context=True, repo_path="."
-    )
+    result = parse_git_diff(multiple_files_diff_text, repo_path=".")
 
     assert len(result.files) == 2
 
@@ -251,6 +256,9 @@ def test_parse_git_diff_multiple_files(
     # 첫 번째 파일 file_content 검증
     assert result.files[0].file_content == "초기화 파일 내용"
 
+    # 첫 번째 파일 line_count 검증
+    assert result.files[0].line_count == 1
+
     # 두 번째 파일 확인
     assert result.files[1].filename == "legacy_tests/test_diff_parser.py"
     assert len(result.files[1].hunks) == 1
@@ -267,6 +275,9 @@ def test_parse_git_diff_multiple_files(
     # 두 번째 파일 file_content 검증
     assert result.files[1].file_content == "테스트 파일 내용"
 
+    # 두 번째 파일 line_count 검증
+    assert result.files[1].line_count == 1
+
     # 파일 별로 파일 내용을 불러오는지 확인
     assert mock_load_file_content.call_count == 2
     mock_load_file_content.assert_any_call("selvage/src/diff_parser/__init__.py", ".")
@@ -277,30 +288,33 @@ def test_parse_git_diff_multiple_files(
 def test_parse_git_diff_without_full_context(
     mock_load_file_content, one_file_one_diff_text
 ):
-    """use_full_context=False일 때 file_content가 None인지 검증하는 테스트"""
+    """use_full_context 플래그와 상관없이 file_content를 로드하는지 검증하는 테스트"""
+    # 모킹 설정
+    mock_load_file_content.return_value = "파일 전체 내용"
 
-    result = parse_git_diff(
-        one_file_one_diff_text, use_full_context=False, repo_path="."
-    )
+    result = parse_git_diff(one_file_one_diff_text, repo_path=".")
 
     assert len(result.files) == 1
     assert result.files[0].filename == "selvage/src/diff_parser/__init__.py"
     assert len(result.files[0].hunks) == 1
 
-    # use_full_context=False일 때 file_content는 None이어야 함
-    assert result.files[0].file_content is None
+    # use_full_context=False여도 file_content를 로드해야 함 (파서 변경 사항)
+    assert result.files[0].file_content == "파일 전체 내용"
 
-    # load_file_content가 호출되지 않았는지 확인
-    mock_load_file_content.assert_not_called()
+    # line_count 검증
+    assert result.files[0].line_count == 1
+
+    # load_file_content가 호출되었는지 확인
+    mock_load_file_content.assert_called_once_with(
+        "selvage/src/diff_parser/__init__.py", "."
+    )
 
 
 @patch("selvage.src.diff_parser.parser.load_file_content")
 def test_parse_git_diff_deleted_file(mock_load_file_content, deleted_file_diff_text):
     """파일이 삭제된 경우 file_content가 '삭제된 파일'로 설정되는지 검증하는 테스트"""
 
-    result = parse_git_diff(
-        deleted_file_diff_text, use_full_context=True, repo_path="."
-    )
+    result = parse_git_diff(deleted_file_diff_text, repo_path=".")
 
     assert len(result.files) == 1
     assert result.files[0].filename == "deleted_file.txt"
@@ -308,6 +322,9 @@ def test_parse_git_diff_deleted_file(mock_load_file_content, deleted_file_diff_t
 
     # 파일이 삭제된 경우 file_content는 "삭제된 파일"이어야 함
     assert result.files[0].file_content == "삭제된 파일"
+
+    # 삭제된 파일의 line_count는 0이어야 함
+    assert result.files[0].line_count == 0
 
     # load_file_content가 호출되지 않았는지 확인
     mock_load_file_content.assert_not_called()
@@ -317,19 +334,20 @@ def test_parse_git_diff_deleted_file(mock_load_file_content, deleted_file_diff_t
 def test_parse_git_diff_with_null_path_in_code(
     mock_load_file_content, code_with_null_path_text
 ):
-    """코드 내용에 '+++ /dev/null' 문자열이 포함된 경우에도 정상적으로 파싱되는지 검증"""
+    """코드 내용에 '+++ /dev/null' 문자열이 포함된 경우에도 정상적으로 파싱되는지 검증"""  # noqa: E501
     # 모킹 설정
     mock_load_file_content.return_value = "실제 파일 내용입니다"
 
-    result = parse_git_diff(
-        code_with_null_path_text, use_full_context=True, repo_path="."
-    )
+    result = parse_git_diff(code_with_null_path_text, repo_path=".")
 
     assert len(result.files) == 1
     assert result.files[0].filename == "example.py"
 
-    # 이 파일은 삭제된 파일이 아니므로 file_content는 load_file_content의 반환값이어야 함
+    # 이 파일은 삭제된 파일이 아니므로 file_content는 load_file_content의 반환값이어야 함  # noqa: E501
     assert result.files[0].file_content == "실제 파일 내용입니다"
+
+    # line_count 검증
+    assert result.files[0].line_count == 1
 
     # load_file_content가 호출되었는지 확인
     mock_load_file_content.assert_called_once_with("example.py", ".")
@@ -339,3 +357,98 @@ def test_parse_git_diff_with_null_path_in_code(
         "+    print('파일이 삭제되었을 때: +++ /dev/null')"
         in result.files[0].hunks[0].content
     )
+
+
+class TestFileDiffCalculateLineCount:
+    """FileDiff.calculate_line_count() 메서드 단위 테스트"""
+
+    def test_calculate_line_count_normal_file(self):
+        """정상적인 파일 내용이 있는 경우 라인 수 계산 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="line1\nline2\nline3\nline4",
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 4
+
+    def test_calculate_line_count_single_line(self):
+        """단일 라인 파일인 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="single line",
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 1
+
+    def test_calculate_line_count_empty_file(self):
+        """빈 파일인 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="",
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 0
+
+    def test_calculate_line_count_whitespace_only(self):
+        """공백만 있는 파일인 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="   \n  \t\n   ",
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 0
+
+    def test_calculate_line_count_none_content(self):
+        """file_content가 None인 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content=None,
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 0
+
+    def test_calculate_line_count_deleted_file(self):
+        """삭제된 파일인 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="삭제된 파일",
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 0
+
+    def test_calculate_line_count_file_read_error(self):
+        """파일 읽기 오류인 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="[파일 읽기 오류: test.py (FileNotFoundError)]",
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 0
+
+    def test_calculate_line_count_file_processing_error(self):
+        """파일 처리 오류인 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="[파일 처리 중 예기치 않은 오류: test.py (Exception)]",
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 0
+
+    def test_calculate_line_count_with_trailing_newline(self):
+        """마지막에 개행 문자가 있는 경우 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="line1\nline2\nline3\n",
+        )
+        file_diff.calculate_line_count()
+        # 마지막 개행 문자 때문에 빈 문자열이 하나 더 생기므로 4라인
+        assert file_diff.line_count == 4
+
+    def test_calculate_line_count_mixed_content(self):
+        """다양한 내용이 혼재된 파일 테스트"""
+        file_diff = FileDiff(
+            filename="test.py",
+            file_content="# 주석\n\ndef function():\n    pass\n\n# 마지막 주석",
+        )
+        file_diff.calculate_line_count()
+        assert file_diff.line_count == 6

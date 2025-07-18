@@ -472,7 +472,7 @@ def review_code(
 
     # repo_path 결정 - 사용자 입력 또는 프로젝트 루트
     repo_path = str(Path(repo_path)) if repo_path != "." else str(find_project_root())
-    diff_result = parse_git_diff(diff_content, use_full_context, repo_path)
+    diff_result = parse_git_diff(diff_content, repo_path)
     review_prompt = None
     # 리뷰 요청 생성
     review_request = ReviewRequest(
