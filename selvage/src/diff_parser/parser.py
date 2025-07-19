@@ -3,12 +3,12 @@ import re
 from selvage.src.exceptions.diff_parsing_error import DiffParsingError
 from selvage.src.utils import load_file_content
 
+from .constants import DELETED_FILE_PLACEHOLDER
 from .models import DiffResult, FileDiff, Hunk
 
 _PATTERN_DIFF_SPLIT = re.compile(r"(?=^diff --git)", flags=re.MULTILINE)
 _PATTERN_HUNK_SPLIT = re.compile(r"(?=^@@ )", flags=re.MULTILINE)
 _PATTERN_FILE_HEADER = re.compile(r"^diff --git a/(\S+) b/(\S+)", flags=re.MULTILINE)
-_DELETED_FILE_PLACEHOLDER = "삭제된 파일"
 _DELETED_FILE_PATTERN = re.compile(r"^--- a/.*\n^\+\+\+ /dev/null$", flags=re.MULTILINE)
 
 
@@ -37,7 +37,7 @@ def _parse_single_file_diff(raw_diff: str, repo_path: str) -> FileDiff | None:
 
     file_content: str | None
     if _is_deleted_file(raw_diff):
-        file_content = _DELETED_FILE_PLACEHOLDER
+        file_content = DELETED_FILE_PLACEHOLDER
     else:
         try:
             file_content = load_file_content(filename, repo_path)

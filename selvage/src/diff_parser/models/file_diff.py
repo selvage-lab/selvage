@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from selvage.src.utils.language_detector import detect_language_from_filename
 
+from ..constants import DELETED_FILE_PLACEHOLDER
 from .hunk import Hunk
 
 
@@ -37,7 +38,7 @@ class FileDiff:
         """파일의 총 라인 수를 계산합니다."""
         if self.file_content is None:
             self.line_count = 0
-        elif self.file_content == "삭제된 파일":
+        elif self.file_content == DELETED_FILE_PLACEHOLDER:
             self.line_count = 0
         elif (
             self.file_content.startswith("[파일 읽기 오류:")

@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
+from selvage.src.diff_parser.constants import DELETED_FILE_PLACEHOLDER
 from selvage.src.diff_parser.models.file_diff import FileDiff
 from selvage.src.diff_parser.parser import parse_git_diff
 from selvage.src.exceptions.diff_parsing_error import DiffParsingError
@@ -312,7 +313,7 @@ def test_parse_git_diff_without_full_context(
 
 @patch("selvage.src.diff_parser.parser.load_file_content")
 def test_parse_git_diff_deleted_file(mock_load_file_content, deleted_file_diff_text):
-    """파일이 삭제된 경우 file_content가 '삭제된 파일'로 설정되는지 검증하는 테스트"""
+    """파일이 삭제된 경우 file_content가 'Deleted file'로 설정되는지 검증하는 테스트"""
 
     result = parse_git_diff(deleted_file_diff_text, repo_path=".")
 
@@ -320,8 +321,8 @@ def test_parse_git_diff_deleted_file(mock_load_file_content, deleted_file_diff_t
     assert result.files[0].filename == "deleted_file.txt"
     assert len(result.files[0].hunks) == 1  # 삭제된 파일도 hunk 정보는 포함될 수 있음
 
-    # 파일이 삭제된 경우 file_content는 "삭제된 파일"이어야 함
-    assert result.files[0].file_content == "삭제된 파일"
+    # 파일이 삭제된 경우 file_content는 "Deleted file"이어야 함
+    assert result.files[0].file_content == DELETED_FILE_PLACEHOLDER
 
     # 삭제된 파일의 line_count는 0이어야 함
     assert result.files[0].line_count == 0
@@ -412,7 +413,7 @@ class TestFileDiffCalculateLineCount:
         """삭제된 파일인 경우 테스트"""
         file_diff = FileDiff(
             filename="test.py",
-            file_content="삭제된 파일",
+            file_content=DELETED_FILE_PLACEHOLDER,
         )
         file_diff.calculate_line_count()
         assert file_diff.line_count == 0
