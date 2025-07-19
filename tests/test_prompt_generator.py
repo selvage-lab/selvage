@@ -618,10 +618,14 @@ class TestPromptGeneratorNewFileAndRewrite:
         assert isinstance(review_prompt, ReviewPromptWithFileContent)
         assert len(review_prompt.user_prompts) == 1
 
-        # 2. 새 파일의 경우 file_content가 빈 문자열이어야 함
+        # 2. 새 파일의 경우 file_content에 설명 메시지가 포함되어야 함
         user_prompt = review_prompt.user_prompts[0]
         assert user_prompt.file_name == "new_file.py"
-        assert user_prompt.file_content == ""  # 중복 제거를 위해 비워짐
+        expected_message = (
+            "This file is newly added or completely rewritten. "
+            "The complete content is shown in the after_code field below."
+        )
+        assert user_prompt.file_content == expected_message
 
         # 3. hunks는 여전히 존재해야 함 (after_code에 전체 파일 내용 포함)
         assert len(user_prompt.formatted_hunks) == 1
@@ -652,10 +656,14 @@ class TestPromptGeneratorNewFileAndRewrite:
         assert isinstance(review_prompt, ReviewPromptWithFileContent)
         assert len(review_prompt.user_prompts) == 1
 
-        # 2. 파일 재작성의 경우 file_content가 빈 문자열이어야 함
+        # 2. 파일 재작성의 경우 file_content에 설명 메시지가 포함되어야 함
         user_prompt = review_prompt.user_prompts[0]
         assert user_prompt.file_name == "rewritten.py"
-        assert user_prompt.file_content == ""  # 중복 제거를 위해 비워짐
+        expected_message = (
+            "This file is newly added or completely rewritten. "
+            "The complete content is shown in the after_code field below."
+        )
+        assert user_prompt.file_content == expected_message
 
         # 3. hunks는 여전히 존재해야 함 (before_code와 after_code 모두 포함)
         assert len(user_prompt.formatted_hunks) == 1

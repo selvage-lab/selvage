@@ -133,11 +133,15 @@ class PromptGenerator:
 
             try:
                 # 파일 내용 읽기 시도
+                is_entirely_new_content = file.line_count == file.additions
                 if not file.file_content:
                     console.warning(f"파일 내용이 없습니다. 파일 경로: {file.filename}")
                     file_content = ""
-                elif file.line_count == file.additions:
-                    file_content = ""
+                elif is_entirely_new_content:
+                    file_content = (
+                        "This file is newly added or completely rewritten. "
+                        "The complete content is shown in the after_code field below."
+                    )
                 else:
                     file_content = file.file_content
 
