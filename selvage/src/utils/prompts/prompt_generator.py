@@ -14,6 +14,7 @@ from .models import (
     UserPrompt,
     UserPromptWithFileContent,
 )
+from .prompt_constants import get_entirely_new_content_rule
 
 PROMPT_PATH = "selvage.resources.prompt"
 PROMPT_FILE_NAME = "code_review_system_prompt"
@@ -24,7 +25,9 @@ class PromptGenerator:
     """프롬프트 생성기 클래스"""
 
     @classmethod
-    def _get_code_review_system_prompt(cls) -> str:
+    def _get_code_review_system_prompt(
+        cls, is_include_entirely_new_content: bool
+    ) -> str:
         """코드 리뷰 시스템 프롬프트를 불러옵니다.
 
         Returns:
@@ -40,10 +43,25 @@ class PromptGenerator:
                 # 템플릿 변수 처리
                 language = get_default_language()
                 prompt_content = prompt_content.replace("{{LANGUAGE}}", language)
+                prompt_content = prompt_content.replace(
+                    "{{IS_INCLUDE_ENTIRELY_NEW_CONTENT}}",
+                    "true" if is_include_entirely_new_content else "false",
+                )
+
+                prompt_content = prompt_content.replace(
+                    "{{ENTIRELY_NEW_CONTENT_RULE}}",
+                    get_entirely_new_content_rule()
+                    if is_include_entirely_new_content
+                    else "",
+                )
 
                 return prompt_content
         except Exception as e:
-            error_message = f"시스템 프롬프트 파일을 찾을 수 없습니다 (경로: '{PROMPT_PATH}.{VERSION}/{PROMPT_FILE_NAME}_{VERSION}.txt'). 원본 오류: {e}"
+            error_message = (
+                f"시스템 프롬프트 파일을 찾을 수 없습니다 "
+                f"(경로: '{PROMPT_PATH}.{VERSION}/{PROMPT_FILE_NAME}_{VERSION}.txt'). "
+                f"원본 오류: {e}"
+            )
             console.error(error_message, exception=e)
             raise FileNotFoundError(error_message) from e
 
@@ -76,7 +94,9 @@ class PromptGenerator:
         Returns:
             ReviewPrompt: 생성된 리뷰 프롬프트 객체
         """
-        system_prompt_content = self._get_code_review_system_prompt()
+        system_prompt_content = self._get_code_review_system_prompt(
+            is_include_entirely_new_content=review_request.is_include_entirely_new_content()
+        )
         system_prompt = SystemPrompt(role="system", content=system_prompt_content)
         user_prompts = []
 
@@ -119,7 +139,9 @@ class PromptGenerator:
         if not review_request.use_full_context:
             raise ValueError("full context 플래그가 켜져있어야 합니다.")
 
-        system_prompt_content = self._get_code_review_system_prompt()
+        system_prompt_content = self._get_code_review_system_prompt(
+            is_include_entirely_new_content=review_request.is_include_entirely_new_content()
+        )
 
         # 시스템 프롬프트 생성
         system_prompt = SystemPrompt(role="system", content=system_prompt_content)
@@ -133,11 +155,10 @@ class PromptGenerator:
 
             try:
                 # 파일 내용 읽기 시도
-                is_entirely_new_content = file.line_count == file.additions
                 if not file.file_content:
                     console.warning(f"파일 내용이 없습니다. 파일 경로: {file.filename}")
                     file_content = ""
-                elif is_entirely_new_content:
+                elif file.is_entirely_new_content():
                     file_content = (
                         "This file is newly added or completely rewritten. "
                         "The complete content is shown in the after_code field below."

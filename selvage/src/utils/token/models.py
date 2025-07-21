@@ -47,6 +47,10 @@ class ReviewRequest(BaseModel):
     model: str
     repo_path: str = "."
 
+    def is_include_entirely_new_content(self) -> bool:
+        """전체 새로운 내용을 포함하는 파일이 있는지 확인합니다."""
+        return self.processed_diff.is_include_entirely_new_content()
+
 
 class ReviewIssue(BaseModel):
     """코드 리뷰 이슈 모델"""

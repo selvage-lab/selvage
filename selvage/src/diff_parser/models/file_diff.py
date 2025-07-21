@@ -40,23 +40,26 @@ class FileDiff:
             self.line_count = 0
         elif self.file_content == DELETED_FILE_PLACEHOLDER:
             self.line_count = 0
-        elif (
-            self.file_content.startswith("[파일 읽기 오류:")
-            or self.file_content.startswith("[파일 처리 중 예기치 않은 오류:")
-        ):
+        elif self.file_content.startswith(
+            "[파일 읽기 오류:"
+        ) or self.file_content.startswith("[파일 처리 중 예기치 않은 오류:"):
             self.line_count = 0
         else:
             # 완전히 빈 파일의 경우 라인 수는 0
-            if self.file_content == '':
+            if self.file_content == "":
                 self.line_count = 0
             else:
                 # 개행 문자로 분할하여 라인 수 계산
-                lines = self.file_content.split('\n')
+                lines = self.file_content.split("\n")
                 # 마지막이 빈 문자열이면 제거 (파일 끝 개행 문자 처리)
-                if lines and lines[-1] == '':
+                if lines and lines[-1] == "":
                     lines = lines[:-1]
                 # 빈 라인들만 있는 경우 처리
                 if not lines:
                     self.line_count = 0
                 else:
                     self.line_count = len(lines)
+
+    def is_entirely_new_content(self) -> bool:
+        """파일 내용이 전체 새로운 내용인지 확인합니다."""
+        return self.line_count == self.additions
