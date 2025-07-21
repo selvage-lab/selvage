@@ -446,6 +446,7 @@ class ReviewDisplay:
                 ModelProvider.OPENAI,
                 ModelProvider.ANTHROPIC,
                 ModelProvider.GOOGLE,
+                ModelProvider.OPENROUTER,
             ]:
                 if provider not in providers_data:
                     continue

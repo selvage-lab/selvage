@@ -139,3 +139,93 @@ models:
       description: "$0.15/$0.60 per 1M tokens (Gemini 2.5 Flash)"
     context_limit: 1048576
     openrouter_name: "google/gemini-2.5-flash"
+
+  kimi-k2:
+    full_name: "kimi-k2"
+    aliases: ["kimi-k2"]
+    description: "Moonshot AI의 대용량 컨텍스트 처리 모델"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.14
+      output: 2.49
+      description: "$0.14/$2.49 per 1M tokens"
+    context_limit: 63000
+    openrouter_name: "moonshotai/kimi-k2"
+
+  kimi-k2-free:
+    full_name: "kimi-k2-free"
+    aliases: ["kimi-k2-free"]
+    description: "Moonshot AI의 대용량 컨텍스트 처리 모델 (무료)"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.0
+      output: 0.0
+      description: "Free tier"
+    context_limit: 63000
+    openrouter_name: "moonshotai/kimi-k2:free"
+
+  deepseek-v3-0324:
+    full_name: "deepseek-v3-0324"
+    aliases: ["deepseek-v3-0324"]
+    description: "DeepSeek의 고급 대화 모델 v3.0"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.25
+      output: 0.85
+      description: "$0.25/$0.85 per 1M tokens"
+    context_limit: 163840
+    openrouter_name: "deepseek/deepseek-chat-v3-0324"
+
+  deepseek-v3-0324-free:
+    full_name: "deepseek-v3-0324-free"
+    aliases: ["deepseek-v3-0324-free"]
+    description: "DeepSeek의 고급 대화 모델 v3.0 (무료)"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.0
+      output: 0.0
+      description: "Free tier"
+    context_limit: 32768
+    openrouter_name: "deepseek/deepseek-chat-v3-0324:free"
+
+  deepseek-r1-0528:
+    full_name: "deepseek-r1-0528"
+    aliases: ["deepseek-r1-0528"]
+    description: "DeepSeek의 추론 특화 모델 R1"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.272
+      output: 0.272
+      description: "$0.272/$0.272 per 1M tokens"
+    context_limit: 163840
+    openrouter_name: "deepseek/deepseek-r1-0528"
+
+  deepseek-r1-0528-free:
+    full_name: "deepseek-r1-0528-free"
+    aliases: ["deepseek-r1-0528-free"]
+    description: "DeepSeek의 추론 특화 모델 R1 (무료)"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.0
+      output: 0.0
+      description: "Free tier"
+    context_limit: 163840
+    openrouter_name: "deepseek/deepseek-r1-0528:free"
