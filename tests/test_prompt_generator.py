@@ -485,23 +485,17 @@ def new_file_review_request() -> ReviewRequest:
                 FileDiff(
                     filename="new_file.py",
                     file_content=(
-                        "def hello():\n"
-                        "    print('Hello')\n"
-                        "    return True\n"
+                        "def hello():\n    print('Hello')\n    return True\n"
                     ),
                     hunks=[
                         Hunk(
                             header="@@ -0,0 +1,3 @@",
                             content=(
-                                "+def hello():\n"
-                                "+    print('Hello')\n"
-                                "+    return True\n"
+                                "+def hello():\n+    print('Hello')\n+    return True\n"
                             ),
                             before_code="",
                             after_code=(
-                                "def hello():\n"
-                                "    print('Hello')\n"
-                                "    return True\n"
+                                "def hello():\n    print('Hello')\n    return True\n"
                             ),
                             start_line_original=0,
                             line_count_original=0,
@@ -677,7 +671,7 @@ class TestPromptGeneratorNewFileAndRewrite:
     ):
         """새 파일 생성 조건 검증"""
         file_diff = new_file_review_request.processed_diff.files[0]
-        
+
         # 새 파일 생성 조건: line_count == additions
         assert file_diff.line_count == file_diff.additions
         assert file_diff.line_count == 3
@@ -689,9 +683,136 @@ class TestPromptGeneratorNewFileAndRewrite:
     ):
         """파일 재작성 조건 검증"""
         file_diff = rewritten_file_review_request.processed_diff.files[0]
-        
+
         # 파일 재작성 조건: line_count == additions (but deletions > 0)
         assert file_diff.line_count == file_diff.additions
         assert file_diff.line_count == 3
         assert file_diff.additions == 3
         assert file_diff.deletions == 5  # 기존 내용이 삭제됨
+
+
+class TestPromptGeneratorTemplateProcessing:
+    """프롬프트 생성기의 템플릿 변수 처리 테스트"""
+
+    def test_get_code_review_system_prompt_with_entirely_new_content_true(self):
+        """is_include_entirely_new_content=True일 때 ENTIRELY_NEW_CONTENT_RULE 포함"""
+        # Given
+        generator = PromptGenerator()
+
+        # When
+        system_prompt = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=True
+        )
+
+        # Then
+        assert "{{LANGUAGE}}" not in system_prompt
+        assert "{{ENTIRELY_NEW_CONTENT_RULE}}" not in system_prompt
+        assert "10. **Newly Added or Completely Rewritten Files**" in system_prompt
+        assert "treat the `after_code` as the entire file content" in system_prompt
+
+    def test_get_code_review_system_prompt_with_entirely_new_content_false(self):
+        """is_include_entirely_new_content=False일 때 ENTIRELY_NEW_CONTENT_RULE 제외"""
+        # Given
+        generator = PromptGenerator()
+
+        # When
+        system_prompt = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False
+        )
+
+        # Then
+        assert "{{LANGUAGE}}" not in system_prompt
+        assert "{{ENTIRELY_NEW_CONTENT_RULE}}" not in system_prompt
+        assert "10. **Newly Added or Completely Rewritten Files**" not in system_prompt
+        assert "treat the `after_code` as the entire file content" not in system_prompt
+
+    def test_template_variable_replacement_completeness(self):
+        """모든 템플릿 변수가 올바르게 치환되는지 확인"""
+        # Given
+        generator = PromptGenerator()
+
+        # When - is_include_entirely_new_content=True 케이스
+        system_prompt_with_rule = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=True
+        )
+
+        # When - is_include_entirely_new_content=False 케이스
+        system_prompt_without_rule = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False
+        )
+
+        # Then - 템플릿 변수가 남아있지 않아야 함
+        template_variables = [
+            "{{LANGUAGE}}",
+            "{{ENTIRELY_NEW_CONTENT_RULE}}",
+        ]
+
+        for template_var in template_variables:
+            assert template_var not in system_prompt_with_rule
+            assert template_var not in system_prompt_without_rule
+
+    def test_system_prompt_difference_with_rule_parameter(self):
+        """is_include_entirely_new_content 파라미터에 따른 시스템 프롬프트 차이 검증"""
+        # Given
+        generator = PromptGenerator()
+
+        # When
+        prompt_with_rule = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=True
+        )
+        prompt_without_rule = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False
+        )
+
+        # Then
+        # 1. 두 프롬프트는 달라야 함
+        assert prompt_with_rule != prompt_without_rule
+
+        # 2. rule이 포함된 버전이 더 길어야 함
+        assert len(prompt_with_rule) > len(prompt_without_rule)
+
+        # 3. rule이 포함된 버전에서 rule 제거하면 rule이 없는 버전과 유사해야 함
+        rule_text = (
+            "10. **Newly Added or Completely Rewritten Files**: "
+            "When `file_content` is contains a message like "
+            '"This file is newly added or completely rewritten", '
+            "treat the `after_code` as the entire file content "
+            "(in this case, `before_code` and `file_content` are "
+            "empty and should be ignored)."
+        )
+        prompt_with_rule_cleaned = prompt_with_rule.replace(rule_text, "")
+        assert prompt_with_rule_cleaned.strip() == prompt_without_rule.strip()
+
+
+class TestPromptConstants:
+    """prompt_constants.py 모듈의 함수 테스트"""
+
+    def test_get_entirely_new_content_rule(self):
+        """get_entirely_new_content_rule 함수 출력 검증"""
+        from selvage.src.utils.prompts.prompt_constants import (
+            get_entirely_new_content_rule,
+        )
+
+        # When
+        rule = get_entirely_new_content_rule()
+
+        # Then
+        assert isinstance(rule, str)
+        assert len(rule) > 0
+        assert "10. **Newly Added or Completely Rewritten Files**" in rule
+        assert "treat the `after_code` as the entire file content" in rule
+        assert "This file is newly added or completely rewritten" in rule
+
+    def test_get_entirely_new_content_rule_consistency(self):
+        """get_entirely_new_content_rule 함수의 일관성 검증"""
+        from selvage.src.utils.prompts.prompt_constants import (
+            get_entirely_new_content_rule,
+        )
+
+        # When - 여러 번 호출
+        rule1 = get_entirely_new_content_rule()
+        rule2 = get_entirely_new_content_rule()
+        rule3 = get_entirely_new_content_rule()
+
+        # Then - 항상 동일한 결과 반환
+        assert rule1 == rule2 == rule3
