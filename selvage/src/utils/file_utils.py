@@ -118,6 +118,40 @@ def is_ignore_file(filename: str) -> bool:
     )
 
 
+def get_file_path(filename: str, repo_path: str) -> str:
+    """저장소 내부의 안전한 절대 파일 경로를 반환합니다.
+
+    Path traversal 공격을 방지하기 위해 파일 경로가 지정된 저장소
+    경로 내부에 있는지 확인하고, 검증된 절대 경로를 반환합니다.
+
+    Args:
+        filename (str): 대상 파일 경로 (상대 경로)
+        repo_path (str): 저장소 루트 경로
+
+    Returns:
+        str: 검증된 절대 파일 경로
+
+    Raises:
+        PermissionError: 저장소 외부 파일 접근 시도 시
+    """
+    # 파일 경로 완성 및 보안 검사
+    abs_repo_path = os.path.abspath(repo_path)
+    # filename이 repo_path에 대한 상대 경로라고 가정합니다.
+    # 악의적인 filename (예: "../../../etc/passwd")을 방지합니다.
+    prospective_path = os.path.join(abs_repo_path, filename)
+    abs_file_path = os.path.abspath(prospective_path)
+
+    # resolved_path가 resolved_repo_path로 시작하는지 확인합니다.
+    # os.sep을 추가하여 "/foo/bar"와 "/foo/barbaz" 같은 경우를 구분합니다.
+    if (
+        not abs_file_path.startswith(abs_repo_path + os.sep)
+        and abs_file_path != abs_repo_path
+    ):
+        raise PermissionError(f"접근 권한이 없습니다: {filename}")
+
+    return abs_file_path
+
+
 def load_file_content(filename: str, repo_path: str) -> str:
     """파일 전체 내용을 읽어옵니다. 지정된 저장소 경로를 기준으로 파일을 찾습니다.
 
@@ -133,22 +167,8 @@ def load_file_content(filename: str, repo_path: str) -> str:
         PermissionError: 저장소 외부의 파일에 접근하려고 시도한 경우
     """
     try:
-        # 파일 경로 완성 및 보안 검사
-        abs_repo_path = os.path.abspath(repo_path)
-        # filename이 repo_path에 대한 상대 경로라고 가정합니다.
-        # 악의적인 filename (예: "../../../etc/passwd")을 방지합니다.
-        prospective_path = os.path.join(abs_repo_path, filename)
-        abs_file_path = os.path.abspath(prospective_path)
-
-        # resolved_path가 resolved_repo_path로 시작하는지 확인합니다.
-        # os.sep을 추가하여 "/foo/bar"와 "/foo/barbaz" 같은 경우를 구분합니다.
-        if (
-            not abs_file_path.startswith(abs_repo_path + os.sep)
-            and abs_file_path != abs_repo_path
-        ):
-            raise PermissionError(f"접근 권한이 없습니다: {filename}")
-
-        file_path = abs_file_path  # 검증된 절대 경로 사용
+        # 보안 검사를 통한 안전한 파일 경로 획득
+        file_path = get_file_path(filename, repo_path)
 
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"파일을 찾을 수 없습니다: {filename}")
