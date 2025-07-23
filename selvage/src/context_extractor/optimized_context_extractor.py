@@ -8,6 +8,44 @@ from pathlib import Path
 
 from tree_sitter import Language, Node, Parser
 
+
+class DeclarationOnlyNode:
+    """클래스나 함수의 선언부만을 나타내는 래퍼 노드."""
+    
+    def __init__(self, original_node: Node):
+        self._original_node = original_node
+        self._is_declaration_only = True
+    
+    @property
+    def start_point(self) -> tuple[int, int]:
+        """시작 지점 반환."""
+        return self._original_node.start_point
+    
+    @property 
+    def end_point(self) -> tuple[int, int]:
+        """끝 지점을 선언부 라인의 끝으로 제한."""
+        # 첫 번째 라인의 끝으로 제한
+        start_line = self._original_node.start_point[0]
+        original_text = self._original_node.text.decode('utf-8')
+        first_line = original_text.split('\n')[0]
+        return (start_line, len(first_line))
+    
+    @property
+    def text(self) -> bytes:
+        """선언부 텍스트만 반환."""
+        original_text = self._original_node.text.decode('utf-8')
+        first_line = original_text.split('\n')[0]
+        return first_line.encode('utf-8')
+    
+    @property
+    def type(self) -> str:
+        """원본 노드의 타입 반환."""
+        return self._original_node.type
+    
+    def __getattr__(self, name):
+        """다른 속성들은 원본 노드에 위임."""
+        return getattr(self._original_node, name)
+
 # tree_sitter_language_pack 대신 tree_sitter_languages 사용
 # (selvage 프로젝트에 맞게 조정)
 try:
@@ -402,13 +440,33 @@ class OptimizedContextExtractor:
     
     def _handle_class_declaration(self, node: Node) -> Node | None:
         """클래스 선언부의 적절한 컨텍스트를 결정한다."""
-        # 클래스 정의를 찾아서 반환 (전체 클래스)
+        # 클래스 정의를 찾기
         current = node
+        class_def_node = None
         while current:
             if current.type == 'class_definition':
-                return current
+                class_def_node = current
+                break
             current = current.parent
-        return self._find_minimal_enclosing_block(node)
+        
+        if class_def_node is None:
+            return self._find_minimal_enclosing_block(node)
+        
+        # 클래스 선언부 라인인지 확인
+        class_start_line = class_def_node.start_point[0]
+        node_line = node.start_point[0]
+        
+        if node_line == class_start_line:
+            # 클래스 선언부만 변경된 경우: 선언부만 추출
+            return self._extract_class_declaration_only(class_def_node)
+        else:
+            # 클래스 내부가 변경된 경우: 전체 클래스 추출
+            return class_def_node
+    
+    def _extract_class_declaration_only(self, class_def_node: Node) -> Node | None:
+        """클래스 선언부만 추출한다 (첫 번째 라인만)."""
+        # 클래스 선언부만 포함하는 특별한 래퍼 노드 생성
+        return DeclarationOnlyNode(class_def_node)
     
     def _is_node_contained_in(self, inner: Node, outer: Node) -> bool:
         """inner 노드가 outer 노드에 완전히 포함되는지 확인한다."""
