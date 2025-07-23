@@ -226,12 +226,15 @@ class OptimizedContextExtractor:
                 tree.root_node, changed_range
             )
             for node in minimal_nodes:
-                block = self._find_minimal_enclosing_block(node)
+                block = self._get_appropriate_context_for_node(node)
                 if block is not None:
                     context_blocks.add(block)
 
-        # 4. 블록들을 위치 순으로 정렬하고 텍스트 추출
-        sorted_blocks = sorted(context_blocks, key=lambda n: n.start_point)
+        # 4. 포함 관계 중복 블록 제거
+        filtered_blocks = self._filter_nested_blocks(context_blocks)
+        
+        # 5. 블록들을 위치 순으로 정렬하고 텍스트 추출
+        sorted_blocks = sorted(filtered_blocks, key=lambda n: n.start_point)
 
         contexts = []
         for block in sorted_blocks:
@@ -299,6 +302,125 @@ class OptimizedContextExtractor:
             current = current.parent
         # 모든 상위가 module인 경우 원래 노드 반환 (파일 레벨 상수 등)
         return node if node.type != "module" else None
+
+    def _filter_nested_blocks(self, blocks: set[Node]) -> set[Node]:
+        """포함 관계에 있는 중복 블록들을 제거하여 가장 큰 블록만 유지한다."""
+        if len(blocks) <= 1:
+            return blocks
+            
+        blocks_list = list(blocks)
+        filtered_blocks = set()
+        
+        for i, block in enumerate(blocks_list):
+            is_contained = False
+            
+            # 다른 블록들과 비교하여 포함 관계 확인
+            for j, other_block in enumerate(blocks_list):
+                if i != j and self._is_node_contained_in(block, other_block):
+                    is_contained = True
+                    break
+                    
+            # 다른 블록에 포함되지 않은 블록만 유지
+            if not is_contained:
+                filtered_blocks.add(block)
+                
+        return filtered_blocks
+    
+    def _get_appropriate_context_for_node(self, node: Node) -> Node | None:
+        """노드 타입에 따라 적절한 컨텍스트 블록을 결정한다."""
+        # 파일 레벨 assignment (상수) 처리
+        if self._is_file_level_assignment(node):
+            return self._handle_assignment_node(node)
+            
+        # 모듈 레벨에서 식별자인 경우 assignment 전체 반환
+        if node.type == 'identifier' and self._is_module_level_node(node):
+            return self._handle_assignment_node(node)
+            
+        # 클래스 선언부 처리
+        if node.type == 'class' or self._is_class_declaration_line(node):
+            return self._handle_class_declaration(node)
+            
+        # 일반적인 블록 처리
+        return self._find_minimal_enclosing_block(node)
+    
+    def _is_file_level_assignment(self, node: Node) -> bool:
+        """파일 레벨 assignment인지 확인한다."""
+        # 노드에서 상위로 올라가면서 assignment 찾기
+        current = node
+        while current:
+            # assignment이고 그 부모가 module인 경우
+            if current.type == 'assignment':
+                return current.parent and current.parent.type == 'module'
+            # expression_statement 안의 assignment인 경우
+            if current.type == 'expression_statement':
+                return current.parent and current.parent.type == 'module'
+            current = current.parent
+        return False
+    
+    def _is_module_level_node(self, node: Node) -> bool:
+        """노드가 모듈 레벨에 있는지 확인한다."""
+        # 최대 2-3단계까지만 올라가서 module 찾기
+        current = node
+        depth = 0
+        while current and depth < 3:
+            if current.parent and current.parent.type == 'module':
+                return True
+            current = current.parent
+            depth += 1
+        return False
+    
+    def _handle_assignment_node(self, node: Node) -> Node | None:
+        """파일 레벨 assignment의 적절한 컨텍스트를 찾는다."""
+        # assignment나 expression_statement를 찾아서 반환
+        current = node
+        while current:
+            if current.type in ['assignment', 'expression_statement']:
+                return current
+            current = current.parent
+            
+        # 식별자인 경우, 부모에서 assignment 찾기
+        if node.type == 'identifier':
+            parent = node.parent
+            while parent:
+                if parent.type in ['assignment', 'expression_statement']:
+                    return parent
+                parent = parent.parent
+                
+        return node
+    
+    def _is_class_declaration_line(self, node: Node) -> bool:
+        """클래스 선언부 라인인지 확인한다."""
+        current = node
+        while current:
+            if current.type == 'class_definition':
+                # 클래스 정의의 첫 번째 라인(선언부)인지 확인
+                class_start_line = current.start_point[0]
+                node_line = node.start_point[0]
+                return node_line == class_start_line
+            current = current.parent
+        return False
+    
+    def _handle_class_declaration(self, node: Node) -> Node | None:
+        """클래스 선언부의 적절한 컨텍스트를 결정한다."""
+        # 클래스 정의를 찾아서 반환 (전체 클래스)
+        current = node
+        while current:
+            if current.type == 'class_definition':
+                return current
+            current = current.parent
+        return self._find_minimal_enclosing_block(node)
+    
+    def _is_node_contained_in(self, inner: Node, outer: Node) -> bool:
+        """inner 노드가 outer 노드에 완전히 포함되는지 확인한다."""
+        return (
+            outer.start_point[0] <= inner.start_point[0] and
+            outer.end_point[0] >= inner.end_point[0] and
+            # 동일한 노드가 아닌 경우만
+            (
+                outer.start_point != inner.start_point 
+                or outer.end_point != inner.end_point
+            )
+        )
 
     def _find_nearest_block(self, node: Node) -> Node | None:
         """현재 노드에서 부모 방향으로 올라가며 가장 가까운 블록을 찾는다."""
