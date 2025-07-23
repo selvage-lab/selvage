@@ -229,3 +229,18 @@ models:
       description: "Free tier"
     context_limit: 163840
     openrouter_name: "deepseek/deepseek-r1-0528:free"
+
+  qwen3-coder:
+    full_name: "qwen3-coder"
+    aliases: ["qwen3-coder"]
+    description: "Qwen의 코더 모델"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 1.0
+      output: 5.0
+      description: "$1.00/$5.00 per 1M tokens"
+    context_limit: 1000000
+    openrouter_name: "qwen/qwen3-coder"
