@@ -26,14 +26,19 @@ class TestOptimizedContextExtractor:
         "changed_ranges,expected_blocks_info",
         [
             # 파일 상수 영역 (라인 7-8: MAX_CALCULATION_STEPS, DEFAULT_PRECISION)
+            ([LineRange(88, 129)], ["function_definition"]),
+            (
+                [LineRange(77, 80), LineRange(64, 84)],
+                ["module"],  # 파일 상수는 module 블록에 포함
+            ),
             (
                 [LineRange(7, 8)],
                 ["module"],  # 파일 상수는 module 블록에 포함
             ),
-            # 클래스 선언부 (라인 16: class SampleCalculator)
+            # 클래스 선언부 (라인 17: class SampleCalculator)
             (
-                [LineRange(16, 16)],
-                ["class_definition"],  # SampleCalculator 클래스 전체
+                [LineRange(17, 17)],
+                ["class_definition"],  # SampleCalculator 클래스 선언부만
             ),
             # 클래스 내부 __init__ 메서드 (라인 18-22)
             (
@@ -132,14 +137,14 @@ class TestOptimizedContextExtractor:
     ) -> None:
         """중첩 내부 함수를 구체적으로 테스트."""
         # multiply_recursive 함수 내부를 타겟팅
-        changed_ranges = [LineRange(55, 58)]  # multiply_recursive 함수
+        changed_ranges = [LineRange(56, 58)]  # multiply_recursive 함수 (빈 라인 제외)
 
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) > 0
-        # multiply_and_format 메서드 전체가 추출되어야 함
+        # multiply_recursive 함수 자체가 추출되어야 함 (가장 작은 범위)
         assert any(
-            "multiply_and_format" in context and "multiply_recursive" in context
+            "multiply_recursive" in context and "재귀적 곱셈 함수" in context
             for context in contexts
         )
 

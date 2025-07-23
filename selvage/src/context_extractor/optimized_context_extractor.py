@@ -8,7 +8,8 @@ from pathlib import Path
 
 from tree_sitter import Language, Node, Parser
 
-# tree_sitter_language_pack 대신 tree_sitter_languages 사용 (selvage 프로젝트에 맞게 조정)
+# tree_sitter_language_pack 대신 tree_sitter_languages 사용
+# (selvage 프로젝트에 맞게 조정)
 try:
     from tree_sitter_language_pack import get_language, get_parser
 except ImportError:
@@ -217,11 +218,15 @@ class OptimizedContextExtractor:
         except Exception as e:
             raise ValueError(f"파싱 실패 ({file_path}): {e}") from e
 
-        # 3. 변경 범위와 겹치는 블록들 찾기
+        # 3. 변경 범위의 각 라인에 대해 최소 블록들 찾기
         context_blocks: set[Node] = set()
-        for node in self._iter_nodes(tree.root_node):
-            if self._node_overlaps_line_ranges(node, changed_ranges):
-                block = self._find_nearest_block(node)
+        for changed_range in changed_ranges:
+            # 각 LineRange에 대해 최소 노드들 찾기
+            minimal_nodes = self._find_minimal_nodes_for_range(
+                tree.root_node, changed_range
+            )
+            for node in minimal_nodes:
+                block = self._find_minimal_enclosing_block(node)
                 if block is not None:
                     context_blocks.add(block)
 
@@ -264,6 +269,36 @@ class OptimizedContextExtractor:
                 return True
 
         return False
+
+    def _find_node_by_line(self, root: Node, line_no: int) -> Node:
+        """DFS로 해당 라인을 가장 작게 감싸는 노드를 찾는다 (1-based)."""
+        for child in root.children:
+            if child.start_point[0] + 1 <= line_no <= child.end_point[0] + 1:
+                return self._find_node_by_line(child, line_no)
+        return root
+
+    def _find_minimal_nodes_for_range(
+        self, root: Node, line_range: LineRange
+    ) -> set[Node]:
+        """LineRange의 각 라인에 대해 가장 작은 노드를 찾아 집합으로 반환"""
+        minimal_nodes: set[Node] = set()
+        for line_no in range(line_range.start_line, line_range.end_line + 1):
+            smallest_node = self._find_node_by_line(root, line_no)
+            # module 노드(빈 라인이나 의미 없는 라인)는 제외
+            if smallest_node.type != 'module':
+                minimal_nodes.add(smallest_node)
+        return minimal_nodes
+
+    def _find_minimal_enclosing_block(self, node: Node) -> Node | None:
+        """현재 노드에서 부모 방향으로 올라가며 가장 가까운 블록을 찾는다.
+        module은 제외."""
+        current = node
+        while current is not None:
+            if current.type in self._block_types and current.type != "module":
+                return current
+            current = current.parent
+        # 모든 상위가 module인 경우 원래 노드 반환 (파일 레벨 상수 등)
+        return node if node.type != "module" else None
 
     def _find_nearest_block(self, node: Node) -> Node | None:
         """현재 노드에서 부모 방향으로 올라가며 가장 가까운 블록을 찾는다."""
