@@ -378,6 +378,10 @@ class OptimizedContextExtractor:
         if node.type == 'class' or self._is_class_declaration_line(node):
             return self._handle_class_declaration(node)
             
+        # 함수 선언부 처리
+        if node.type == 'function_definition' or self._is_function_declaration_line(node):
+            return self._handle_function_declaration(node)
+            
         # 일반적인 블록 처리
         return self._find_minimal_enclosing_block(node)
     
@@ -438,6 +442,18 @@ class OptimizedContextExtractor:
             current = current.parent
         return False
     
+    def _is_function_declaration_line(self, node: Node) -> bool:
+        """함수 선언부 라인인지 확인한다."""
+        current = node
+        while current:
+            if current.type == 'function_definition':
+                # 함수 정의의 첫 번째 라인(선언부)인지 확인
+                func_start_line = current.start_point[0]
+                node_line = node.start_point[0]
+                return node_line == func_start_line
+            current = current.parent
+        return False
+    
     def _handle_class_declaration(self, node: Node) -> Node | None:
         """클래스 선언부의 적절한 컨텍스트를 결정한다."""
         # 클래스 정의를 찾기
@@ -467,6 +483,31 @@ class OptimizedContextExtractor:
         """클래스 선언부만 추출한다 (첫 번째 라인만)."""
         # 클래스 선언부만 포함하는 특별한 래퍼 노드 생성
         return DeclarationOnlyNode(class_def_node)
+    
+    def _handle_function_declaration(self, node: Node) -> Node | None:
+        """함수 선언부의 적절한 컨텍스트를 결정한다."""
+        # 함수 정의를 찾기
+        current = node
+        func_def_node = None
+        while current:
+            if current.type == 'function_definition':
+                func_def_node = current
+                break
+            current = current.parent
+        
+        if func_def_node is None:
+            return self._find_minimal_enclosing_block(node)
+        
+        # 함수 선언부 라인인지 확인
+        func_start_line = func_def_node.start_point[0]
+        node_line = node.start_point[0]
+        
+        if node_line == func_start_line:
+            # 함수 선언부만 변경된 경우: 선언부만 추출
+            return DeclarationOnlyNode(func_def_node)
+        else:
+            # 함수 내부가 변경된 경우: 전체 함수 추출
+            return func_def_node
     
     def _is_node_contained_in(self, inner: Node, outer: Node) -> bool:
         """inner 노드가 outer 노드에 완전히 포함되는지 확인한다."""

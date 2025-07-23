@@ -33,7 +33,11 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 선언부만 검증
         assert "class SampleCalculator:" in all_context
+        # 클래스 내부 코드는 포함되지 않아야 함 (선언부만 추출 확인)
+        assert "def __init__" not in all_context
+        assert "def add_numbers" not in all_context
 
     def test_init_method(
         self,
@@ -46,7 +50,12 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 선언부 검증
         assert "def __init__(self, initial_value: int = 0):" in all_context
+        # 내부 코드 블록 검증 (전체 메서드 추출 확인)
+        assert "self.value = initial_value" in all_context
+        assert "self.history = []" in all_context
+        assert 'self.mode = CALCULATION_MODES["basic"]' in all_context
 
     def test_class_method(
         self,
@@ -59,7 +68,12 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 선언부 검증
         assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
+        # 내부 코드 블록 검증 (전체 메서드 추출 확인)
+        assert "def validate_inputs(x: int, y: int) -> bool:" in all_context
+        assert "result = a + b" in all_context
+        assert "self.value = result" in all_context
 
     def test_complex_method(
         self,
@@ -72,10 +86,18 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 선언부 검증
         assert (
             "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:"
             in all_context
         )
+        # 내부 코드 블록 검증 (전체 메서드 추출 확인)
+        assert "def calculate_product(nums: list[int]) -> int:" in all_context
+        assert (
+            "def format_result(value: int, count: int) -> dict[str, Any]:"
+            in all_context
+        )
+        assert "result = calculate_product(numbers)" in all_context
 
     def test_nested_inner_function(
         self,
@@ -88,7 +110,15 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 선언부 검증
         assert "def calculate_product(nums: list[int]) -> int:" in all_context
+        # 내부 코드 블록 검증 (전체 함수 추출 확인)
+        assert (
+            "def multiply_recursive(items: list[int], index: int = 0) -> int:"
+            in all_context
+        )
+        assert "return multiply_recursive(nums)" in all_context
+        assert "if not nums:" in all_context
 
     def test_external_function(
         self,
@@ -96,12 +126,19 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """클래스 외부 함수 추출 테스트."""
-        changed_ranges = [LineRange(98, 100)]
+        changed_ranges = [LineRange(110, 111)]  # helper_function 내부 코드 범위
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 선언부 검증
         assert "def helper_function(data: dict) -> str:" in all_context
+        # 내부 코드 블록 검증 (전체 함수 추출 확인)
+        assert "def format_dict_items(items: dict) -> list[str]:" in all_context
+        assert "formatted_items = format_dict_items(data)" in all_context
+        assert (
+            "return f\"Helper processed: {', '.join(formatted_items)}\"" in all_context
+        )
 
     def test_factory_function(
         self,
@@ -114,10 +151,48 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 선언부 검증
         assert (
             'def advanced_calculator_factory(mode: str = "basic") -> SampleCalculator:'
             in all_context
         )
+        # 내부 코드 블록 검증 (전체 함수 추출 확인)
+        assert (
+            "def create_calculator_with_mode(calc_mode: str) -> SampleCalculator:"
+            in all_context
+        )
+        assert "def validate_mode(m: str) -> bool:" in all_context
+        assert "return create_calculator_with_mode(mode)" in all_context
+
+    def test_method_declaration_only(
+        self,
+        extractor: OptimizedContextExtractor,
+        sample_file_path: Path,
+    ) -> None:
+        """메서드 선언부만 추출 테스트."""
+        changed_ranges = [LineRange(26, 26)]  # add_numbers 선언부만
+        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+
+        assert len(contexts) >= 1
+        all_context = "\n".join(contexts)
+        assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
+        # 메서드 내부 코드는 포함되지 않아야 함
+        assert "def validate_inputs" not in all_context
+
+    def test_external_function_declaration_only(
+        self,
+        extractor: OptimizedContextExtractor,
+        sample_file_path: Path,
+    ) -> None:
+        """외부 함수 선언부만 추출 테스트."""
+        changed_ranges = [LineRange(100, 100)]  # helper_function 선언부만
+        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+
+        assert len(contexts) >= 1
+        all_context = "\n".join(contexts)
+        assert "def helper_function(data: dict) -> str:" in all_context
+        # 함수 내부 코드는 포함되지 않아야 함
+        assert "def format_dict_items" not in all_context
 
 
 class TestModuleLevelElements:
@@ -226,9 +301,9 @@ class TestMultiRangeExtraction:
     ) -> None:
         """비연속적인 여러 범위 추출 테스트."""
         changed_ranges = [
-            LineRange(7, 8),    # 파일 상수들
+            LineRange(7, 8),  # 파일 상수들
             LineRange(89, 91),  # validate_radius 내부 함수
-            LineRange(135, 136), # 모듈 레벨 상수들
+            LineRange(135, 136),  # 모듈 레벨 상수들
         ]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
