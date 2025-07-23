@@ -11,40 +11,41 @@ from tree_sitter import Language, Node, Parser
 
 class DeclarationOnlyNode:
     """클래스나 함수의 선언부만을 나타내는 래퍼 노드."""
-    
+
     def __init__(self, original_node: Node):
         self._original_node = original_node
         self._is_declaration_only = True
-    
+
     @property
     def start_point(self) -> tuple[int, int]:
         """시작 지점 반환."""
         return self._original_node.start_point
-    
-    @property 
+
+    @property
     def end_point(self) -> tuple[int, int]:
         """끝 지점을 선언부 라인의 끝으로 제한."""
         # 첫 번째 라인의 끝으로 제한
         start_line = self._original_node.start_point[0]
-        original_text = self._original_node.text.decode('utf-8')
-        first_line = original_text.split('\n')[0]
+        original_text = self._original_node.text.decode("utf-8")
+        first_line = original_text.split("\n")[0]
         return (start_line, len(first_line))
-    
+
     @property
     def text(self) -> bytes:
         """선언부 텍스트만 반환."""
-        original_text = self._original_node.text.decode('utf-8')
-        first_line = original_text.split('\n')[0]
-        return first_line.encode('utf-8')
-    
+        original_text = self._original_node.text.decode("utf-8")
+        first_line = original_text.split("\n")[0]
+        return first_line.encode("utf-8")
+
     @property
     def type(self) -> str:
         """원본 노드의 타입 반환."""
         return self._original_node.type
-    
+
     def __getattr__(self, name):
         """다른 속성들은 원본 노드에 위임."""
         return getattr(self._original_node, name)
+
 
 # tree_sitter_language_pack 대신 tree_sitter_languages 사용
 # (selvage 프로젝트에 맞게 조정)
@@ -231,8 +232,7 @@ class OptimizedContextExtractor:
 
         Raises:
             FileNotFoundError: 파일이 존재하지 않는 경우
-            UnicodeDecodeError: 파일 인코딩 오류
-            ValueError: 파싱 오류
+            ValueError: 파일 인코딩 오류 또는 파싱 오류
         """
         if not changed_ranges:
             return []
@@ -246,7 +246,7 @@ class OptimizedContextExtractor:
             code_text = file_path.read_text(encoding="utf-8")
             code_bytes = code_text.encode("utf-8")
         except UnicodeDecodeError as e:
-            raise UnicodeDecodeError(f"파일 인코딩 오류 ({file_path}): {e}") from e
+            raise ValueError(f"파일 인코딩 오류 ({file_path}): {e}") from e
 
         # 2. AST 파싱
         try:
@@ -270,7 +270,7 @@ class OptimizedContextExtractor:
 
         # 4. 포함 관계 중복 블록 제거
         filtered_blocks = self._filter_nested_blocks(context_blocks)
-        
+
         # 5. 블록들을 위치 순으로 정렬하고 텍스트 추출
         sorted_blocks = sorted(filtered_blocks, key=lambda n: n.start_point)
 
@@ -326,7 +326,7 @@ class OptimizedContextExtractor:
         for line_no in range(line_range.start_line, line_range.end_line + 1):
             smallest_node = self._find_node_by_line(root, line_no)
             # module 노드(빈 라인이나 의미 없는 라인)는 제외
-            if smallest_node.type != 'module':
+            if smallest_node.type != "module":
                 minimal_nodes.add(smallest_node)
         return minimal_nodes
 
@@ -345,178 +345,181 @@ class OptimizedContextExtractor:
         """포함 관계에 있는 중복 블록들을 제거하여 가장 큰 블록만 유지한다."""
         if len(blocks) <= 1:
             return blocks
-            
+
         blocks_list = list(blocks)
         filtered_blocks = set()
-        
+
         for i, block in enumerate(blocks_list):
             is_contained = False
-            
+
             # 다른 블록들과 비교하여 포함 관계 확인
             for j, other_block in enumerate(blocks_list):
                 if i != j and self._is_node_contained_in(block, other_block):
                     is_contained = True
                     break
-                    
+
             # 다른 블록에 포함되지 않은 블록만 유지
             if not is_contained:
                 filtered_blocks.add(block)
-                
+
         return filtered_blocks
-    
+
     def _get_appropriate_context_for_node(self, node: Node) -> Node | None:
         """노드 타입에 따라 적절한 컨텍스트 블록을 결정한다."""
         # 파일 레벨 assignment (상수) 처리
         if self._is_file_level_assignment(node):
             return self._handle_assignment_node(node)
-            
+
         # 모듈 레벨에서 식별자인 경우 assignment 전체 반환
-        if node.type == 'identifier' and self._is_module_level_node(node):
+        if node.type == "identifier" and self._is_module_level_node(node):
             return self._handle_assignment_node(node)
-            
+
         # 클래스 선언부 처리
-        if node.type == 'class' or self._is_class_declaration_line(node):
+        if node.type == "class" or self._is_class_declaration_line(node):
             return self._handle_class_declaration(node)
-            
+
         # 함수 선언부 처리
-        if node.type == 'function_definition' or self._is_function_declaration_line(node):
+        if node.type == "function_definition" or self._is_function_declaration_line(
+            node
+        ):
             return self._handle_function_declaration(node)
-            
+
         # 일반적인 블록 처리
         return self._find_minimal_enclosing_block(node)
-    
+
     def _is_file_level_assignment(self, node: Node) -> bool:
         """파일 레벨 assignment인지 확인한다."""
         # 노드에서 상위로 올라가면서 assignment 찾기
         current = node
         while current:
             # assignment이고 그 부모가 module인 경우
-            if current.type == 'assignment':
-                return current.parent and current.parent.type == 'module'
+            if current.type == "assignment":
+                return current.parent and current.parent.type == "module"
             # expression_statement 안의 assignment인 경우
-            if current.type == 'expression_statement':
-                return current.parent and current.parent.type == 'module'
+            if current.type == "expression_statement":
+                return current.parent and current.parent.type == "module"
             current = current.parent
         return False
-    
+
     def _is_module_level_node(self, node: Node) -> bool:
         """노드가 모듈 레벨에 있는지 확인한다."""
         # 최대 2-3단계까지만 올라가서 module 찾기
         current = node
         depth = 0
         while current and depth < 3:
-            if current.parent and current.parent.type == 'module':
+            if current.parent and current.parent.type == "module":
                 return True
             current = current.parent
             depth += 1
         return False
-    
+
     def _handle_assignment_node(self, node: Node) -> Node | None:
         """파일 레벨 assignment의 적절한 컨텍스트를 찾는다."""
         # assignment나 expression_statement를 찾아서 반환
         current = node
         while current:
-            if current.type in ['assignment', 'expression_statement']:
+            if current.type in ["assignment", "expression_statement"]:
                 return current
             current = current.parent
-            
+
         # 식별자인 경우, 부모에서 assignment 찾기
-        if node.type == 'identifier':
+        if node.type == "identifier":
             parent = node.parent
             while parent:
-                if parent.type in ['assignment', 'expression_statement']:
+                if parent.type in ["assignment", "expression_statement"]:
                     return parent
                 parent = parent.parent
-                
+
         return node
-    
+
     def _is_class_declaration_line(self, node: Node) -> bool:
         """클래스 선언부 라인인지 확인한다."""
         current = node
         while current:
-            if current.type == 'class_definition':
+            if current.type == "class_definition":
                 # 클래스 정의의 첫 번째 라인(선언부)인지 확인
                 class_start_line = current.start_point[0]
                 node_line = node.start_point[0]
                 return node_line == class_start_line
             current = current.parent
         return False
-    
+
     def _is_function_declaration_line(self, node: Node) -> bool:
         """함수 선언부 라인인지 확인한다."""
         current = node
         while current:
-            if current.type == 'function_definition':
+            if current.type == "function_definition":
                 # 함수 정의의 첫 번째 라인(선언부)인지 확인
                 func_start_line = current.start_point[0]
                 node_line = node.start_point[0]
                 return node_line == func_start_line
             current = current.parent
         return False
-    
+
     def _handle_class_declaration(self, node: Node) -> Node | None:
         """클래스 선언부의 적절한 컨텍스트를 결정한다."""
         # 클래스 정의를 찾기
         current = node
         class_def_node = None
         while current:
-            if current.type == 'class_definition':
+            if current.type == "class_definition":
                 class_def_node = current
                 break
             current = current.parent
-        
+
         if class_def_node is None:
             return self._find_minimal_enclosing_block(node)
-        
+
         # 클래스 선언부 라인인지 확인
         class_start_line = class_def_node.start_point[0]
         node_line = node.start_point[0]
-        
+
         if node_line == class_start_line:
             # 클래스 선언부만 변경된 경우: 선언부만 추출
             return self._extract_class_declaration_only(class_def_node)
         else:
             # 클래스 내부가 변경된 경우: 전체 클래스 추출
             return class_def_node
-    
+
     def _extract_class_declaration_only(self, class_def_node: Node) -> Node | None:
         """클래스 선언부만 추출한다 (첫 번째 라인만)."""
         # 클래스 선언부만 포함하는 특별한 래퍼 노드 생성
         return DeclarationOnlyNode(class_def_node)
-    
+
     def _handle_function_declaration(self, node: Node) -> Node | None:
         """함수 선언부의 적절한 컨텍스트를 결정한다."""
         # 함수 정의를 찾기
         current = node
         func_def_node = None
         while current:
-            if current.type == 'function_definition':
+            if current.type == "function_definition":
                 func_def_node = current
                 break
             current = current.parent
-        
+
         if func_def_node is None:
             return self._find_minimal_enclosing_block(node)
-        
+
         # 함수 선언부 라인인지 확인
         func_start_line = func_def_node.start_point[0]
         node_line = node.start_point[0]
-        
+
         if node_line == func_start_line:
             # 함수 선언부만 변경된 경우: 선언부만 추출
             return DeclarationOnlyNode(func_def_node)
         else:
             # 함수 내부가 변경된 경우: 전체 함수 추출
             return func_def_node
-    
+
     def _is_node_contained_in(self, inner: Node, outer: Node) -> bool:
         """inner 노드가 outer 노드에 완전히 포함되는지 확인한다."""
         return (
-            outer.start_point[0] <= inner.start_point[0] and
-            outer.end_point[0] >= inner.end_point[0] and
+            outer.start_point[0] <= inner.start_point[0]
+            and outer.end_point[0] >= inner.end_point[0]
+            and
             # 동일한 노드가 아닌 경우만
             (
-                outer.start_point != inner.start_point 
+                outer.start_point != inner.start_point
                 or outer.end_point != inner.end_point
             )
         )
