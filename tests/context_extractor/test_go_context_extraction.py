@@ -57,6 +57,8 @@ class TestBasicFunctionExtraction:
         assert "fmt" in all_context
         assert "math" in all_context
         assert "strings" in all_context
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
         assert "func NewSampleCalculator" in all_context or "func" in all_context
         assert "value" in all_context
         assert "history" in all_context
@@ -76,6 +78,8 @@ class TestBasicFunctionExtraction:
         assert "fmt" in all_context
         assert "math" in all_context
         assert "strings" in all_context
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
         assert "func" in all_context and "AddNumbers" in all_context
 
     def test_complex_method(
@@ -89,6 +93,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
         assert "MultiplyAndFormat" in all_context
 
     def test_nested_inner_function(
@@ -102,6 +108,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
+        # 부모 메서드 선언부 검증
+        assert "MultiplyAndFormat" in all_context
         assert "multiplyRecursive" in all_context
 
     def test_external_function(
@@ -141,6 +151,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
         assert "AddNumbers" in all_context
 
     def test_external_function_declaration_only(

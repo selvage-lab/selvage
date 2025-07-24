@@ -59,6 +59,7 @@ class TestBasicFunctionExtraction:
         assert "import * as fs from 'fs'" in all_context
         assert "import { join, resolve } from 'path'" in all_context
         assert "import { promisify } from 'util'" in all_context
+        assert "class SampleCalculator" in all_context
         assert "constructor(" in all_context
         assert (
             "this.value = initialValue" in all_context
@@ -77,6 +78,7 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        assert "class SampleCalculator" in all_context
         assert "addNumbers" in all_context
         assert "number" in all_context  # TypeScript 타입 시스템
 
@@ -91,6 +93,7 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        assert "class SampleCalculator" in all_context
         assert "multiplyAndFormat" in all_context
 
     def test_nested_inner_function(
@@ -104,6 +107,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator" in all_context
+        assert "multiplyAndFormat" in all_context
         assert "multiplyRecursive" in all_context or "function" in all_context
 
     def test_external_function(
@@ -145,6 +151,7 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        assert "class SampleCalculator" in all_context
         assert "addNumbers" in all_context
 
     def test_external_function_declaration_only(

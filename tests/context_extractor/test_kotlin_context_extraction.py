@@ -51,6 +51,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator" in all_context
         assert "init" in all_context
         assert "history" in all_context or "mode" in all_context
 
@@ -65,6 +67,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator" in all_context
         assert "fun addNumbers" in all_context or "addNumbers" in all_context
 
     def test_complex_method(
@@ -78,6 +82,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator" in all_context
         assert (
             "fun multiplyAndFormat" in all_context or "multiplyAndFormat" in all_context
         )
@@ -93,6 +99,12 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator" in all_context
+        # 부모 메서드 선언부 검증
+        assert (
+            "fun multiplyAndFormat" in all_context or "multiplyAndFormat" in all_context
+        )
         assert (
             "fun multiplyRecursive" in all_context or "multiplyRecursive" in all_context
         )
@@ -137,6 +149,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator" in all_context
         assert "addNumbers" in all_context
 
     def test_external_function_declaration_only(

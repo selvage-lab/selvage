@@ -67,6 +67,7 @@ class TestBasicFunctionExtraction:
         assert "import { readFile, writeFile } from 'fs/promises'" in all_context
         assert "import { basename, dirname } from 'path'" in all_context
         assert "import axios from 'axios'" in all_context
+        assert "class SampleCalculator" in all_context
         assert "constructor(initialValue = 0)" in all_context
         assert "this.value = initialValue" in all_context
         assert "this.history = []" in all_context
@@ -90,6 +91,7 @@ class TestBasicFunctionExtraction:
         assert "import { readFile, writeFile } from 'fs/promises'" in all_context
         assert "import { basename, dirname } from 'path'" in all_context
         assert "import axios from 'axios'" in all_context
+        assert "class SampleCalculator" in all_context
         assert "addNumbers(a, b)" in all_context
 
     def test_complex_method(
@@ -111,6 +113,7 @@ class TestBasicFunctionExtraction:
         assert "import { readFile, writeFile } from 'fs/promises'" in all_context
         assert "import { basename, dirname } from 'path'" in all_context
         assert "import axios from 'axios'" in all_context
+        assert "class SampleCalculator" in all_context
         assert "multiplyAndFormat(numbers)" in all_context
 
     def test_nested_inner_function(
@@ -132,6 +135,9 @@ class TestBasicFunctionExtraction:
         assert "import { readFile, writeFile } from 'fs/promises'" in all_context
         assert "import { basename, dirname } from 'path'" in all_context
         assert "import axios from 'axios'" in all_context
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator" in all_context
+        assert "multiplyAndFormat" in all_context
         assert (
             "function multiplyRecursive" in all_context
             or "multiplyRecursive" in all_context
@@ -174,6 +180,7 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        assert "class SampleCalculator" in all_context
         assert "addNumbers(a, b)" in all_context
 
     def test_external_function_declaration_only(

@@ -55,6 +55,7 @@ class TestBasicFunctionExtraction:
         all_context = "\n".join(contexts)
         # import 문 검증
         assert "import Foundation" in all_context
+        assert "class SampleCalculator" in all_context
         assert "init(" in all_context
         assert "value" in all_context
         assert "history" in all_context
@@ -72,6 +73,7 @@ class TestBasicFunctionExtraction:
         all_context = "\n".join(contexts)
         # import 문 검증
         assert "import Foundation" in all_context
+        assert "class SampleCalculator" in all_context
         assert "func addNumbers" in all_context
 
     def test_complex_method(
@@ -85,6 +87,7 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        assert "class SampleCalculator" in all_context
         assert "func multiplyAndFormat" in all_context
 
     def test_nested_inner_function(
@@ -98,6 +101,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator" in all_context
+        assert "func multiplyAndFormat" in all_context
         assert (
             "func multiplyRecursive" in all_context
             or "multiplyRecursive" in all_context
@@ -140,6 +146,7 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        assert "class SampleCalculator" in all_context
         assert "addNumbers" in all_context
 
     def test_external_function_declaration_only(

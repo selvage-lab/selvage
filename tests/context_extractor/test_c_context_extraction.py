@@ -99,6 +99,7 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        assert "multiply_and_format" in all_context
         assert "multiply_recursive" in all_context
 
     def test_external_function(
