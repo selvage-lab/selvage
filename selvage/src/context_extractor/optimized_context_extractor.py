@@ -132,19 +132,6 @@ class OptimizedContextExtractor:
                 "package_clause",
             }
         ),
-        "rust": frozenset(
-            {
-                "struct_item",
-                "enum_item",
-                "union_item",
-                "type_item",
-                "function_item",
-                "trait_item",
-                "mod_item",
-                "impl_item",
-                "source_file",
-            }
-        ),
         "java": frozenset(
             {
                 "class_declaration",
@@ -181,6 +168,24 @@ class OptimizedContextExtractor:
                 "enum_declaration",
                 "namespace_declaration",
                 "compilation_unit",
+            }
+        ),
+        "kotlin": frozenset(
+            {
+                "class_declaration",
+                "function_declaration",
+                "object_declaration",
+            }
+        ),
+        "swift": frozenset(
+            {
+                "class_declaration",
+                "protocol_declaration",
+                "function_declaration",
+                "property_declaration",
+                "init_declaration",
+                "deinit_declaration",
+                "subscript_declaration",
             }
         ),
     }

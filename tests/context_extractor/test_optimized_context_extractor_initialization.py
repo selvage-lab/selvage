@@ -1,4 +1,5 @@
 import pytest
+
 from selvage.src.context_extractor import OptimizedContextExtractor
 
 
@@ -11,8 +12,14 @@ class TestOptimizedContextExtractorInitialization:
 
         # 필수 언어들이 모두 포함되어 있는지 확인
         required_languages = {
-            "python", "javascript", "typescript", "java", "c",
-            "cpp", "rust", "go", "csharp"
+            "python",
+            "javascript",
+            "typescript",
+            "java",
+            "c",
+            "cpp",
+            "go",
+            "csharp",
         }
 
         for lang in required_languages:
@@ -20,7 +27,7 @@ class TestOptimizedContextExtractorInitialization:
 
     def test_valid_language_initialization(self):
         """유효한 언어로 초기화가 정상 동작하는지 테스트한다."""
-        for language in ["python", "javascript", "java", "rust"]:
+        for language in ["python", "javascript", "java"]:
             extractor = OptimizedContextExtractor(language)
             assert extractor._language_name == language
 
@@ -35,10 +42,13 @@ class TestOptimizedContextExtractorInitialization:
             ("python", {"function_definition", "class_definition"}),
             ("javascript", {"function_declaration", "class"}),
             ("java", {"method_declaration", "class_declaration"}),
-            ("rust", {"function_item", "struct_item"}),
         ]
 
         for language, expected_block_types in test_cases:
-            block_types = OptimizedContextExtractor.get_block_types_for_language(language)
+            block_types = OptimizedContextExtractor.get_block_types_for_language(
+                language
+            )
             for expected_type in expected_block_types:
-                assert expected_type in block_types, f"{language}에서 {expected_type}이 누락됨"
+                assert expected_type in block_types, (
+                    f"{language}에서 {expected_type}이 누락됨"
+                )
