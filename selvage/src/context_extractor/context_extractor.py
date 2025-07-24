@@ -7,6 +7,9 @@ from collections.abc import Generator, Sequence
 from pathlib import Path
 
 from tree_sitter import Language, Node, Parser
+from tree_sitter_language_pack import get_language, get_parser
+
+from .line_range import LineRange
 
 
 class DeclarationOnlyNode:
@@ -46,32 +49,6 @@ class DeclarationOnlyNode:
         """다른 속성들은 원본 노드에 위임."""
         return getattr(self._original_node, name)
 
-
-# tree_sitter_language_pack 대신 tree_sitter_languages 사용
-# (selvage 프로젝트에 맞게 조정)
-try:
-    from tree_sitter_language_pack import get_language, get_parser
-except ImportError:
-    try:
-        import tree_sitter_languages as tsl
-
-        def get_language(language: str) -> Language:
-            return tsl.get_language(language)
-
-        def get_parser(language: str) -> Parser:
-            return tsl.get_parser(language)
-    except ImportError:
-        # 기본 fallback
-        from tree_sitter import Language, Parser
-
-        def get_language(language: str) -> Language:
-            raise ImportError(f"Tree-sitter language '{language}'를 로드할 수 없습니다")
-
-        def get_parser(language: str) -> Parser:
-            raise ImportError(f"Tree-sitter parser '{language}'를 로드할 수 없습니다")
-
-
-from .line_range import LineRange
 
 logger = logging.getLogger(__name__)
 
@@ -289,8 +266,6 @@ class ContextExtractor:
                 continue
 
         return contexts
-
-    # ── Private Helper Methods ──────────────────────────────────────
 
     def _iter_nodes(self, node: Node) -> Generator[Node, None, None]:
         """DFS 방식으로 모든 노드를 순회한다."""
