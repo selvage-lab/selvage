@@ -271,7 +271,7 @@ class TestMultiRangeExtraction:
         changed_ranges = [LineRange(88, 129)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 3
+        assert len(contexts) == 5  # 3개 함수 + 2개 import 문
         all_context = "\n".join(contexts)
         assert "def calculate_circle_area(self, radius: float) -> float:" in all_context
         assert "def helper_function(data: dict) -> str:" in all_context

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Generator, Sequence
 from pathlib import Path
+from typing import Any
 
 from tree_sitter import Language, Node, Parser
 from tree_sitter_language_pack import get_language, get_parser
@@ -15,7 +16,7 @@ from .line_range import LineRange
 class DeclarationOnlyNode:
     """클래스나 함수의 선언부만을 나타내는 래퍼 노드."""
 
-    def __init__(self, original_node: Node):
+    def __init__(self, original_node: Node) -> None:
         self._original_node = original_node
         self._is_declaration_only = True
 
@@ -45,7 +46,7 @@ class DeclarationOnlyNode:
         """원본 노드의 타입 반환."""
         return self._original_node.type
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """다른 속성들은 원본 노드에 위임."""
         return getattr(self._original_node, name)
 
@@ -167,6 +168,93 @@ class ContextExtractor:
         ),
     }
 
+    # 언어별 의존성 관련 노드 타입들 (import, require 등)
+    LANGUAGE_DEPENDENCY_TYPES = {
+        "python": frozenset(
+            {
+                "import_statement",
+                "import_from_statement",
+                "future_import_statement",
+            }
+        ),
+        "javascript": frozenset(
+            {
+                "import_statement",
+                "import_declaration", 
+                "export_statement",
+                "call_expression",  # require() 호출
+            }
+        ),
+        "typescript": frozenset(
+            {
+                "import_statement",
+                "import_declaration",
+                "export_statement", 
+                "import_require_clause",
+                "type_alias_declaration",
+                "interface_declaration",
+                "call_expression",  # require() 호출
+            }
+        ),
+        "rust": frozenset(
+            {
+                "use_declaration",
+                "extern_crate_declaration",
+                "mod_declaration",
+            }
+        ),
+        "go": frozenset(
+            {
+                "package_clause",
+                "import_declaration",
+                "import_spec",
+                "import_spec_list",
+            }
+        ),
+        "java": frozenset(
+            {
+                "import_declaration",
+                "package_declaration",
+                "static_import_declaration",
+            }
+        ),
+        "c": frozenset(
+            {
+                "preproc_include",
+                "preproc_def",
+                "preproc_ifdef",
+                "preproc_ifndef",
+            }
+        ),
+        "cpp": frozenset(
+            {
+                "preproc_include",
+                "namespace_definition",
+                "using_declaration",
+                "namespace_alias_definition",
+            }
+        ),
+        "csharp": frozenset(
+            {
+                "using_directive",
+                "namespace_declaration",
+                "extern_alias_directive",
+            }
+        ),
+        "kotlin": frozenset(
+            {
+                "import_header",
+                "import_list",
+                "package_header",
+            }
+        ),
+        "swift": frozenset(
+            {
+                "import_declaration",
+            }
+        ),
+    }
+
     def __init__(self, language: str = "python") -> None:
         """추출기 초기화.
 
@@ -187,6 +275,9 @@ class ContextExtractor:
             self._parser: Parser = get_parser(language)
             self._language_name = language
             self._block_types = self.LANGUAGE_BLOCK_TYPES[language]
+            self._dependency_types = self.LANGUAGE_DEPENDENCY_TYPES.get(
+                language, frozenset()
+            )
         except Exception as e:
             raise ValueError(f"언어 '{language}' 초기화 실패: {e}") from e
 
@@ -250,19 +341,30 @@ class ContextExtractor:
                 if block is not None:
                     context_blocks.add(block)
 
-        # 4. 포함 관계 중복 블록 제거
+        # 4. 의존성 노드들 수집
+        dependency_nodes = self._collect_dependency_nodes(tree.root_node)
+        
+        # 5. 컨텍스트와 관련된 의존성들만 필터링
+        related_dependencies = self._filter_related_dependencies(dependency_nodes)
+
+        # 6. 포함 관계 중복 블록 제거
         filtered_blocks = self._filter_nested_blocks(context_blocks)
 
-        # 5. 블록들을 위치 순으로 정렬하고 텍스트 추출
-        sorted_blocks = sorted(filtered_blocks, key=lambda n: n.start_point)
+        # 7. 모든 노드들을 합치고 위치 순으로 정렬
+        all_nodes = list(filtered_blocks) + related_dependencies
+        sorted_nodes = sorted(all_nodes, key=lambda n: n.start_point)
 
+        # 8. 중복 제거 (같은 노드가 context와 dependency에 모두 포함된 경우)
+        unique_nodes = self._remove_duplicate_nodes(sorted_nodes)
+
+        # 9. 텍스트 추출
         contexts = []
-        for block in sorted_blocks:
+        for node in unique_nodes:
             try:
-                block_text = block.text.decode("utf-8")
-                contexts.append(block_text)
+                node_text = node.text.decode("utf-8")
+                contexts.append(node_text)
             except UnicodeDecodeError:
-                logger.error(f"블록 텍스트 디코딩 실패: {block.start_point}")
+                logger.error(f"노드 텍스트 디코딩 실패: {node.start_point}")
                 continue
 
         return contexts
@@ -512,3 +614,103 @@ class ContextExtractor:
                 return current
             current = current.parent
         return None
+
+    def _collect_dependency_nodes(self, root: Node) -> list[Node]:
+        """전체 AST에서 의존성 관련 노드들을 수집한다.
+        
+        Args:
+            root: AST 루트 노드
+            
+        Returns:
+            의존성 노드들의 리스트 (위치 순으로 정렬됨)
+        """
+        if not self._dependency_types:
+            return []
+            
+        dependency_nodes = []
+        
+        for node in self._iter_nodes(root):
+            if self._is_dependency_node(node):
+                dependency_nodes.append(node)
+        
+        # 위치 순으로 정렬
+        return sorted(dependency_nodes, key=lambda n: n.start_point)
+    
+    def _is_dependency_node(self, node: Node) -> bool:
+        """노드가 의존성 관련 노드인지 확인한다.
+        
+        Args:
+            node: 확인할 노드
+            
+        Returns:
+            의존성 노드 여부
+        """
+        if node.type in self._dependency_types:
+            # JavaScript/TypeScript의 경우 require() 호출인지 추가 확인
+            if node.type == "call_expression":
+                return self._is_require_call(node)
+            return True
+        return False
+    
+    def _is_require_call(self, node: Node) -> bool:
+        """call_expression이 require() 호출인지 확인한다.
+        
+        Args:
+            node: call_expression 노드
+            
+        Returns:
+            require 호출 여부
+        """
+        if node.type != "call_expression":
+            return False
+            
+        # 첫 번째 자식이 identifier이고 그 텍스트가 'require'인지 확인
+        if node.children and node.children[0].type == "identifier":
+            try:
+                function_name = node.children[0].text.decode("utf-8")
+                return function_name == "require"
+            except UnicodeDecodeError:
+                return False
+        return False
+    
+    def _filter_related_dependencies(
+        self, dependency_nodes: list[Node]
+    ) -> list[Node]:
+        """컨텍스트 블록들과 관련된 의존성 노드들만 필터링한다.
+        
+        현재는 모든 의존성을 포함하지만, 향후 스마트 필터링 로직을 추가할 수 있다.
+        
+        Args:
+            dependency_nodes: 수집된 의존성 노드들
+            
+        Returns:
+            필터링된 의존성 노드들
+        """
+        # 현재는 파일 최상단 및 모든 의존성을 포함
+        # 향후 실제 사용되는 의존성만 필터링하는 로직을 추가할 수 있음
+        return dependency_nodes
+    
+    def _remove_duplicate_nodes(self, nodes: list[Node]) -> list[Node]:
+        """중복된 노드들을 제거한다.
+        
+        같은 위치의 노드들은 중복으로 간주하여 제거한다.
+        
+        Args:
+            nodes: 노드들의 리스트
+            
+        Returns:
+            중복이 제거된 노드들의 리스트
+        """
+        if not nodes:
+            return []
+            
+        unique_nodes = []
+        seen_positions = set()
+        
+        for node in nodes:
+            position = (node.start_point, node.end_point)
+            if position not in seen_positions:
+                unique_nodes.append(node)
+                seen_positions.add(position)
+                
+        return unique_nodes
