@@ -38,6 +38,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # require 문 검증
+        assert "require('fs')" in all_context
+        assert "require('path')" in all_context
+        assert "require('util')" in all_context
         assert "SampleCalculator" in all_context or "class" in all_context
 
     def test_constructor_method(
@@ -51,6 +55,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # require 문 검증
+        assert "require('fs')" in all_context
+        assert "require('path')" in all_context
+        assert "require('util')" in all_context
         assert "constructor(initialValue = 0)" in all_context
         assert "this.value = initialValue" in all_context
         assert "this.history = []" in all_context
@@ -61,11 +69,15 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """클래스 메서드 추출 테스트."""
-        changed_ranges = [LineRange(30, 57)]  # addNumbers 메서드
+        changed_ranges = [LineRange(33, 60)]  # addNumbers 메서드 (require 문 추가로 인한 라인 번호 조정)
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # require 문 검증
+        assert "require('fs')" in all_context
+        assert "require('path')" in all_context
+        assert "require('util')" in all_context
         assert "addNumbers(a, b)" in all_context
 
     def test_complex_method(
@@ -79,6 +91,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # require 문 검증
+        assert "require('fs')" in all_context
+        assert "require('path')" in all_context
+        assert "require('util')" in all_context
         assert "multiplyAndFormat(numbers)" in all_context
 
     def test_nested_inner_function(
@@ -92,6 +108,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # require 문 검증
+        assert "require('fs')" in all_context
+        assert "require('path')" in all_context
+        assert "require('util')" in all_context
         assert (
             "function multiplyRecursive" in all_context
             or "multiplyRecursive" in all_context
@@ -129,7 +149,7 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """메서드 선언부만 추출 테스트."""
-        changed_ranges = [LineRange(30, 30)]  # addNumbers 선언부만
+        changed_ranges = [LineRange(34, 34)]  # addNumbers 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
@@ -142,7 +162,7 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """외부 함수 선언부만 추출 테스트."""
-        changed_ranges = [LineRange(123, 123)]  # helperFunction 선언부만
+        changed_ranges = [LineRange(126, 126)]  # helperFunction 선언부만 (require 문 추가로 3줄 증가)
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
@@ -201,7 +221,7 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """모듈 하단 상수들 추출 테스트."""
-        changed_ranges = [LineRange(168, 168)]  # MODULE_VERSION
+        changed_ranges = [LineRange(171, 171)]  # MODULE_VERSION (require 문 추가로 3줄 증가)
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1

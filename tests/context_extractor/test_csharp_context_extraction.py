@@ -38,6 +38,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # using 문 검증
+        assert "using System;" in all_context
+        assert "using System.Collections.Generic;" in all_context
+        assert "using System.Linq;" in all_context
         assert (
             "public class SampleCalculator" in all_context
             or "class SampleCalculator" in all_context
@@ -54,6 +58,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # using 문 검증
+        assert "using System;" in all_context
+        assert "using System.Collections.Generic;" in all_context
+        assert "using System.Linq;" in all_context
         assert (
             "public SampleCalculator" in all_context
             or "SampleCalculator(" in all_context
@@ -72,6 +80,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # using 문 검증
+        assert "using System;" in all_context
+        assert "using System.Collections.Generic;" in all_context
+        assert "using System.Linq;" in all_context
         assert "AddNumbers" in all_context
         assert "public" in all_context or "private" in all_context
 
@@ -86,6 +98,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # using 문 검증
+        assert "using System;" in all_context
+        assert "using System.Collections.Generic;" in all_context
+        assert "using System.Linq;" in all_context
         assert "MultiplyAndFormat" in all_context
 
     def test_nested_inner_function(

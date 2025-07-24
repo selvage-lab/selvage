@@ -38,6 +38,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import Foundation" in all_context
         assert "class SampleCalculator" in all_context
 
     def test_constructor_method(
@@ -51,6 +53,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import Foundation" in all_context
         assert "init(" in all_context
         assert "value" in all_context
         assert "history" in all_context
@@ -66,6 +70,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import Foundation" in all_context
         assert "func addNumbers" in all_context
 
     def test_complex_method(

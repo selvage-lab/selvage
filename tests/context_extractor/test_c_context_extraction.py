@@ -33,6 +33,12 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # #include 문 검증
+        assert "#include <stdio.h>" in all_context
+        assert "#include <stdlib.h>" in all_context
+        assert "#include <string.h>" in all_context
+        assert "#include <stdbool.h>" in all_context
+        assert "#include <math.h>" in all_context
         assert "SampleCalculator" in all_context
 
     def test_constructor_method(
@@ -46,6 +52,12 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # #include 문 검증
+        assert "#include <stdio.h>" in all_context
+        assert "#include <stdlib.h>" in all_context
+        assert "#include <string.h>" in all_context
+        assert "#include <stdbool.h>" in all_context
+        assert "#include <math.h>" in all_context
         assert "create_sample_calculator" in all_context
         assert "value" in all_context
         assert "history" in all_context

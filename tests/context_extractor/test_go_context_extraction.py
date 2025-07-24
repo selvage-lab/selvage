@@ -33,6 +33,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "fmt" in all_context
+        assert "math" in all_context
+        assert "strings" in all_context
         assert (
             "type SampleCalculator struct" in all_context
             or "SampleCalculator struct" in all_context
@@ -49,6 +53,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "fmt" in all_context
+        assert "math" in all_context
+        assert "strings" in all_context
         assert "func NewSampleCalculator" in all_context or "func" in all_context
         assert "value" in all_context
         assert "history" in all_context
@@ -64,6 +72,10 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "fmt" in all_context
+        assert "math" in all_context
+        assert "strings" in all_context
         assert "func" in all_context and "AddNumbers" in all_context
 
     def test_complex_method(

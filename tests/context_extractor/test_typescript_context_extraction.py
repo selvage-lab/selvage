@@ -33,11 +33,15 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """클래스 선언부 추출 테스트."""
-        changed_ranges = [LineRange(27, 27)]  # SampleCalculator 클래스 선언부
+        changed_ranges = [LineRange(30, 30)]  # SampleCalculator 클래스 선언부 (import 문 추가로 3줄 증가)
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import * as fs from 'fs'" in all_context
+        assert "import { join, resolve } from 'path'" in all_context
+        assert "import { promisify } from 'util'" in all_context
         assert "class SampleCalculator" in all_context
 
     def test_constructor_method(
@@ -46,11 +50,15 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """생성자 메서드 추출 테스트."""
-        changed_ranges = [LineRange(36, 43)]  # constructor 메서드
+        changed_ranges = [LineRange(39, 46)]  # constructor 메서드 (import 문 추가로 3줄 증가)
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import * as fs from 'fs'" in all_context
+        assert "import { join, resolve } from 'path'" in all_context
+        assert "import { promisify } from 'util'" in all_context
         assert "constructor(" in all_context
         assert (
             "this.value = initialValue" in all_context
@@ -132,7 +140,7 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """메서드 선언부만 추출 테스트."""
-        changed_ranges = [LineRange(45, 45)]  # addNumbers 선언부만
+        changed_ranges = [LineRange(48, 48)]  # addNumbers 선언부만 (import 문 추가로 3줄 증가)
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
@@ -204,7 +212,7 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """모듈 하단 상수들 추출 테스트."""
-        changed_ranges = [LineRange(183, 183)]  # MODULE_VERSION
+        changed_ranges = [LineRange(186, 186)]  # MODULE_VERSION (import 문 추가로 3줄 증가)
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1

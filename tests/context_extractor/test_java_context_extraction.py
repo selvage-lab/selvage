@@ -38,6 +38,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import java.util.*;" in all_context
         # 클래스 검증 (Java는 전체 클래스가 추출됨)
         assert "public class SampleCalculator" in all_context
         # Java에서는 클래스 전체가 추출되므로 내부 요소들도 포함됨
@@ -54,6 +56,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import java.util.*;" in all_context
         # 선언부 검증
         assert "public SampleCalculator(int initialValue)" in all_context
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
@@ -72,6 +76,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import java.util.*;" in all_context
         # 선언부 검증
         assert "public int addNumbers(int a, int b)" in all_context
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
@@ -93,6 +99,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import java.util.*;" in all_context
         # 선언부 검증
         assert (
             "public Map<String, Object> multiplyAndFormat(List<Integer> numbers)"
@@ -114,6 +122,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import java.util.*;" in all_context
         # 선언부 검증
         assert (
             "class ProductCalculator" in all_context
@@ -134,6 +144,8 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import java.util.*;" in all_context
         # 선언부 검증
         assert "public static String helperFunction" in all_context
         # 내부 코드 블록 검증 (전체 함수 추출 확인)

@@ -2,6 +2,10 @@
  * 테스트용 샘플 클래스 - tree-sitter 파싱 테스트에 사용됩니다.
  */
 
+import * as fs from 'fs';
+import { join, resolve } from 'path';
+import { promisify } from 'util';
+
 // 파일 상수들
 const MAX_CALCULATION_STEPS: number = 100;
 const DEFAULT_PRECISION: number = 2;

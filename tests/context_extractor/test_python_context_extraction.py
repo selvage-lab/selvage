@@ -33,6 +33,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부만 검증
         assert "class SampleCalculator:" in all_context
         # 클래스 내부 코드는 포함되지 않아야 함 (선언부만 추출 확인)
@@ -50,6 +53,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부 검증
         assert "def __init__(self, initial_value: int = 0):" in all_context
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
@@ -68,6 +74,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부 검증
         assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
@@ -86,6 +95,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부 검증
         assert (
             "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:"
@@ -110,6 +122,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부 검증
         assert "def calculate_product(nums: list[int]) -> int:" in all_context
         # 내부 코드 블록 검증 (전체 함수 추출 확인)
@@ -131,6 +146,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부 검증
         assert "def helper_function(data: dict) -> str:" in all_context
         # 내부 코드 블록 검증 (전체 함수 추출 확인)
@@ -151,6 +169,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부 검증
         assert (
             'def advanced_calculator_factory(mode: str = "basic") -> SampleCalculator:'
@@ -175,6 +196,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
         # 메서드 내부 코드는 포함되지 않아야 함
         assert "def validate_inputs" not in all_context
@@ -190,6 +214,9 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "def helper_function(data: dict) -> str:" in all_context
         # 함수 내부 코드는 포함되지 않아야 함
         assert "def format_dict_items" not in all_context
@@ -219,6 +246,9 @@ class TestModuleLevelElements:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "MAX_CALCULATION_STEPS = 100" in all_context
         assert "DEFAULT_PRECISION = 2" in all_context
 
@@ -233,6 +263,9 @@ class TestModuleLevelElements:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "CALCULATION_MODES = {" in all_context
 
     def test_module_bottom_constants(
@@ -246,6 +279,9 @@ class TestModuleLevelElements:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
 
 
@@ -291,6 +327,9 @@ class TestMultiRangeExtraction:
 
         assert len(contexts) >= 2
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
         assert "def helper_function(data: dict) -> str:" in all_context
 
@@ -309,6 +348,9 @@ class TestMultiRangeExtraction:
 
         assert len(contexts) >= 2
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "MAX_CALCULATION_STEPS = 100" in all_context
         assert "def validate_radius(r: float) -> bool:" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
@@ -338,6 +380,9 @@ class TestComplexScenarios:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "class SampleCalculator:" in all_context
         assert "def __init__(self, initial_value: int = 0):" in all_context
         assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
@@ -353,6 +398,9 @@ class TestComplexScenarios:
 
         assert len(contexts) >= 2
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "class SampleCalculator:" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
 

@@ -2,6 +2,10 @@
  * 테스트용 샘플 클래스 - tree-sitter 파싱 테스트에 사용됩니다.
  */
 
+const fs = require('fs');
+const path = require('path');
+const util = require('util');
+
 // 파일 상수들
 const MAX_CALCULATION_STEPS = 100;
 const DEFAULT_PRECISION = 2;
