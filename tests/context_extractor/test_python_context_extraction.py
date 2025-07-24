@@ -56,6 +56,8 @@ class TestBasicFunctionExtraction:
         # import 문 검증
         assert "import json" in all_context
         assert "from typing import Any" in all_context
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator:" in all_context
         # 선언부 검증
         assert "def __init__(self, initial_value: int = 0):" in all_context
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
@@ -77,6 +79,8 @@ class TestBasicFunctionExtraction:
         # import 문 검증
         assert "import json" in all_context
         assert "from typing import Any" in all_context
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator:" in all_context
         # 선언부 검증
         assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
@@ -98,6 +102,8 @@ class TestBasicFunctionExtraction:
         # import 문 검증
         assert "import json" in all_context
         assert "from typing import Any" in all_context
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator:" in all_context
         # 선언부 검증
         assert (
             "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:"
@@ -125,6 +131,13 @@ class TestBasicFunctionExtraction:
         # import 문 검증
         assert "import json" in all_context
         assert "from typing import Any" in all_context
+        # 부모 클래스 선언부 검증
+        assert "class SampleCalculator:" in all_context
+        # 부모 메서드 선언부 검증
+        assert (
+            "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:"
+            in all_context
+        )
         # 선언부 검증
         assert "def calculate_product(nums: list[int]) -> int:" in all_context
         # 내부 코드 블록 검증 (전체 함수 추출 확인)
@@ -307,8 +320,14 @@ class TestMultiRangeExtraction:
         changed_ranges = [LineRange(88, 129)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 5  # 3개 함수 + 2개 import 문
+        assert len(contexts) == 6  # 3개 함수 + 2개 import 문 + 1개 클래스 선언부
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        # 클래스 선언부 검증 (클래스 내부 메서드가 포함되어 있어서)
+        assert "class SampleCalculator:" in all_context
+        # 함수들 검증
         assert "def calculate_circle_area(self, radius: float) -> float:" in all_context
         assert "def helper_function(data: dict) -> str:" in all_context
         assert (
