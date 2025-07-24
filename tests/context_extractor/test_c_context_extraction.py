@@ -1,4 +1,4 @@
-"""OptimizedContextExtractor C 테스트 케이스."""
+"""ContextExtractor C 테스트 케이스."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from selvage.src.context_extractor import LineRange, OptimizedContextExtractor
+from selvage.src.context_extractor import ContextExtractor, LineRange
 
 
 class TestBasicFunctionExtraction:
@@ -18,13 +18,13 @@ class TestBasicFunctionExtraction:
         return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("c")
+    def extractor(self) -> ContextExtractor:
+        """C용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("c")
 
     def test_class_declaration(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """구조체 선언부 추출 테스트."""
@@ -37,7 +37,7 @@ class TestBasicFunctionExtraction:
 
     def test_constructor_method(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """초기화 함수 추출 테스트."""
@@ -52,7 +52,7 @@ class TestBasicFunctionExtraction:
 
     def test_class_method(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """함수 추출 테스트."""
@@ -65,7 +65,7 @@ class TestBasicFunctionExtraction:
 
     def test_complex_method(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """복잡한 함수 추출 테스트."""
@@ -78,7 +78,7 @@ class TestBasicFunctionExtraction:
 
     def test_nested_inner_function(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """중첩 내부 함수 추출 테스트."""
@@ -91,7 +91,7 @@ class TestBasicFunctionExtraction:
 
     def test_external_function(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """외부 함수 추출 테스트."""
@@ -104,7 +104,7 @@ class TestBasicFunctionExtraction:
 
     def test_factory_function(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """팩토리 함수 추출 테스트."""
@@ -117,7 +117,7 @@ class TestBasicFunctionExtraction:
 
     def test_method_declaration_only(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """함수 선언부만 추출 테스트."""
@@ -130,7 +130,7 @@ class TestBasicFunctionExtraction:
 
     def test_external_function_declaration_only(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """외부 함수 선언부만 추출 테스트."""
@@ -151,13 +151,13 @@ class TestModuleLevelElements:
         return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("c")
+    def extractor(self) -> ContextExtractor:
+        """C용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("c")
 
     def test_basic_constants(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """기본 상수들 추출 테스트."""
@@ -171,7 +171,7 @@ class TestModuleLevelElements:
 
     def test_object_constant(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """구조체 상수 추출 테스트."""
@@ -184,7 +184,7 @@ class TestModuleLevelElements:
 
     def test_module_bottom_constants(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """모듈 하단 상수들 추출 테스트."""
@@ -205,17 +205,19 @@ class TestMultiRangeExtraction:
         return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("c")
+    def extractor(self) -> ContextExtractor:
+        """C용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("c")
 
     def test_three_cross_functions(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """3개 함수에 걸친 영역 추출 테스트."""
-        changed_ranges = [LineRange(137, 209)]  # calculate_circle_area ~ advanced_calculator_factory
+        changed_ranges = [
+            LineRange(137, 209)
+        ]  # calculate_circle_area ~ advanced_calculator_factory
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
@@ -226,7 +228,7 @@ class TestMultiRangeExtraction:
 
     def test_two_blocks_cross_methods(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """2개 블록에 걸친 함수 추출 테스트."""
@@ -240,14 +242,14 @@ class TestMultiRangeExtraction:
 
     def test_non_contiguous_ranges(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """비연속적인 여러 범위 추출 테스트."""
         changed_ranges = [
-            LineRange(12, 14),   # 파일 상수들
-            LineRange(143, 145), # validate_radius 내부 함수
-            LineRange(219, 221), # 모듈 레벨 상수들
+            LineRange(12, 14),  # 파일 상수들
+            LineRange(143, 145),  # validate_radius 내부 함수
+            LineRange(219, 221),  # 모듈 레벨 상수들
         ]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
@@ -266,13 +268,13 @@ class TestComplexScenarios:
         return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("c")
+    def extractor(self) -> ContextExtractor:
+        """C용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("c")
 
     def test_entire_class_extraction(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """전체 구조체와 관련 함수 추출 테스트."""
@@ -281,13 +283,16 @@ class TestComplexScenarios:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "struct SampleCalculator" in all_context or "SampleCalculator" in all_context
+        assert (
+            "struct SampleCalculator" in all_context
+            or "SampleCalculator" in all_context
+        )
         assert "create_sample_calculator" in all_context
         assert "add_numbers" in all_context
 
     def test_class_and_module_constants(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """구조체와 모듈 상수 동시 추출 테스트."""
@@ -309,13 +314,13 @@ class TestEdgeCases:
         return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("c")
+    def extractor(self) -> ContextExtractor:
+        """C용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("c")
 
     def test_invalid_line_ranges(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """파일 범위를 벗어나는 라인 범위 테스트."""
@@ -332,7 +337,7 @@ class TestEdgeCases:
 
     def test_empty_line_ranges(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """빈 라인 범위 처리 테스트."""

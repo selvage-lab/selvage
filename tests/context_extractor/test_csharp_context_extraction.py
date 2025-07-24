@@ -1,4 +1,4 @@
-"""OptimizedContextExtractor C# 테스트 케이스."""
+"""ContextExtractor C# 테스트 케이스."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from selvage.src.context_extractor import LineRange, OptimizedContextExtractor
+from selvage.src.context_extractor import ContextExtractor, LineRange
 
 
 class TestBasicFunctionExtraction:
@@ -15,16 +15,21 @@ class TestBasicFunctionExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "csharp" / "SampleCalculator.cs"
+        return (
+            Path(__file__).parent
+            / "language_samples"
+            / "csharp"
+            / "SampleCalculator.cs"
+        )
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C#용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("csharp")
+    def extractor(self) -> ContextExtractor:
+        """C#용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("csharp")
 
     def test_class_declaration(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """클래스 선언부 추출 테스트."""
@@ -33,11 +38,14 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "public class SampleCalculator" in all_context or "class SampleCalculator" in all_context
+        assert (
+            "public class SampleCalculator" in all_context
+            or "class SampleCalculator" in all_context
+        )
 
     def test_constructor_method(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """생성자 메서드 추출 테스트."""
@@ -46,13 +54,16 @@ class TestBasicFunctionExtraction:
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "public SampleCalculator" in all_context or "SampleCalculator(" in all_context
+        assert (
+            "public SampleCalculator" in all_context
+            or "SampleCalculator(" in all_context
+        )
         assert "value" in all_context
         assert "history" in all_context
 
     def test_class_method(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """클래스 메서드 추출 테스트."""
@@ -66,7 +77,7 @@ class TestBasicFunctionExtraction:
 
     def test_complex_method(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """복잡한 메서드 추출 테스트."""
@@ -79,7 +90,7 @@ class TestBasicFunctionExtraction:
 
     def test_nested_inner_function(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """중첩 내부 함수 추출 테스트."""
@@ -92,7 +103,7 @@ class TestBasicFunctionExtraction:
 
     def test_external_function(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """정적 메서드 추출 테스트."""
@@ -105,7 +116,7 @@ class TestBasicFunctionExtraction:
 
     def test_factory_function(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """팩토리 메서드 추출 테스트."""
@@ -118,7 +129,7 @@ class TestBasicFunctionExtraction:
 
     def test_method_declaration_only(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """메서드 선언부만 추출 테스트."""
@@ -131,7 +142,7 @@ class TestBasicFunctionExtraction:
 
     def test_external_function_declaration_only(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """정적 메서드 선언부만 추출 테스트."""
@@ -149,16 +160,21 @@ class TestModuleLevelElements:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "csharp" / "SampleCalculator.cs"
+        return (
+            Path(__file__).parent
+            / "language_samples"
+            / "csharp"
+            / "SampleCalculator.cs"
+        )
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C#용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("csharp")
+    def extractor(self) -> ContextExtractor:
+        """C#용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("csharp")
 
     def test_basic_constants(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """기본 상수들 추출 테스트."""
@@ -172,7 +188,7 @@ class TestModuleLevelElements:
 
     def test_object_constant(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """객체 상수 추출 테스트."""
@@ -185,7 +201,7 @@ class TestModuleLevelElements:
 
     def test_module_bottom_constants(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """모듈 하단 상수들 추출 테스트."""
@@ -203,20 +219,27 @@ class TestMultiRangeExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "csharp" / "SampleCalculator.cs"
+        return (
+            Path(__file__).parent
+            / "language_samples"
+            / "csharp"
+            / "SampleCalculator.cs"
+        )
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C#용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("csharp")
+    def extractor(self) -> ContextExtractor:
+        """C#용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("csharp")
 
     def test_three_cross_functions(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """3개 메서드에 걸친 영역 추출 테스트."""
-        changed_ranges = [LineRange(151, 230)]  # CalculateCircleArea ~ AdvancedCalculatorFactory
+        changed_ranges = [
+            LineRange(151, 230)
+        ]  # CalculateCircleArea ~ AdvancedCalculatorFactory
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
@@ -227,7 +250,7 @@ class TestMultiRangeExtraction:
 
     def test_two_blocks_cross_methods(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """2개 블록에 걸친 메서드 추출 테스트."""
@@ -241,14 +264,14 @@ class TestMultiRangeExtraction:
 
     def test_non_contiguous_ranges(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """비연속적인 여러 범위 추출 테스트."""
         changed_ranges = [
-            LineRange(12, 14),   # 파일 상수들
-            LineRange(158, 161), # ValidateRadius 내부 함수
-            LineRange(236, 238), # 모듈 레벨 상수들
+            LineRange(12, 14),  # 파일 상수들
+            LineRange(158, 161),  # ValidateRadius 내부 함수
+            LineRange(236, 238),  # 모듈 레벨 상수들
         ]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
@@ -264,16 +287,21 @@ class TestComplexScenarios:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "csharp" / "SampleCalculator.cs"
+        return (
+            Path(__file__).parent
+            / "language_samples"
+            / "csharp"
+            / "SampleCalculator.cs"
+        )
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C#용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("csharp")
+    def extractor(self) -> ContextExtractor:
+        """C#용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("csharp")
 
     def test_entire_class_extraction(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """전체 클래스 추출 테스트."""
@@ -288,7 +316,7 @@ class TestComplexScenarios:
 
     def test_class_and_module_constants(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """클래스와 모듈 상수 동시 추출 테스트."""
@@ -307,16 +335,21 @@ class TestEdgeCases:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "csharp" / "SampleCalculator.cs"
+        return (
+            Path(__file__).parent
+            / "language_samples"
+            / "csharp"
+            / "SampleCalculator.cs"
+        )
 
     @pytest.fixture
-    def extractor(self) -> OptimizedContextExtractor:
-        """C#용 OptimizedContextExtractor 인스턴스를 반환합니다."""
-        return OptimizedContextExtractor("csharp")
+    def extractor(self) -> ContextExtractor:
+        """C#용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("csharp")
 
     def test_invalid_line_ranges(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """파일 범위를 벗어나는 라인 범위 테스트."""
@@ -333,7 +366,7 @@ class TestEdgeCases:
 
     def test_empty_line_ranges(
         self,
-        extractor: OptimizedContextExtractor,
+        extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
         """빈 라인 범위 처리 테스트."""

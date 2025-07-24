@@ -2,10 +2,10 @@
 
 from .line_range import LineRange
 from .line_ranges_result import LineRangesResult
-from .optimized_context_extractor import OptimizedContextExtractor
+from .optimized_context_extractor import ContextExtractor
 
 __all__ = [
     "LineRange",
     "LineRangesResult",
-    "OptimizedContextExtractor",
+    "ContextExtractor",
 ]

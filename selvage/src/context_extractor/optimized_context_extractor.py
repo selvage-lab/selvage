@@ -1,4 +1,4 @@
-"""OptimizedContextExtractor: 최적화된 tree-sitter 기반 컨텍스트 추출기."""
+"""ContextExtractor: 최적화된 tree-sitter 기반 컨텍스트 추출기."""
 
 from __future__ import annotations
 
@@ -76,7 +76,7 @@ from .line_range import LineRange
 logger = logging.getLogger(__name__)
 
 
-class OptimizedContextExtractor:
+class ContextExtractor:
     """최적화된 tree-sitter 기반 컨텍스트 추출기.
 
     주요 특징:
