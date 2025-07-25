@@ -116,7 +116,6 @@ class ContextExtractor:
                 "method_declaration",
                 "interface_declaration",
                 "enum_declaration",
-                "program",
             }
         ),
         "c": frozenset(
@@ -180,7 +179,7 @@ class ContextExtractor:
         "javascript": frozenset(
             {
                 "import_statement",
-                "import_declaration", 
+                "import_declaration",
                 "export_statement",
                 "call_expression",  # require() 호출
             }
@@ -189,7 +188,7 @@ class ContextExtractor:
             {
                 "import_statement",
                 "import_declaration",
-                "export_statement", 
+                "export_statement",
                 "import_require_clause",
                 "type_alias_declaration",
                 "interface_declaration",
@@ -255,6 +254,54 @@ class ContextExtractor:
         ),
     }
 
+    # 언어별 루트 노드 타입 매핑
+    LANGUAGE_ROOT_TYPES = {
+        "python": "module",
+        "java": "program",
+        "javascript": "program",
+        "typescript": "program",
+        "go": "source_file",
+        "c": "translation_unit",
+        "cpp": "translation_unit",
+        "csharp": "compilation_unit",
+        "kotlin": "source_file",
+        "swift": "source_file",
+    }
+
+    # 언어별 클래스 선언 타입 매핑
+    LANGUAGE_CLASS_TYPES = {
+        "python": frozenset({"class_definition"}),
+        "javascript": frozenset({"class_declaration"}),
+        "typescript": frozenset({"class_declaration"}),
+        "java": frozenset({"class_declaration"}),
+        "c": frozenset({"struct_specifier"}),  # C는 struct
+        "cpp": frozenset({"class_specifier", "struct_specifier"}),
+        "csharp": frozenset({"class_declaration", "struct_declaration"}),
+        "kotlin": frozenset({"class_declaration"}),
+        "swift": frozenset({"class_declaration"}),
+        "go": frozenset({"type_declaration"}),  # Go는 type
+    }
+
+    # 언어별 함수 선언 타입 매핑
+    LANGUAGE_FUNCTION_TYPES = {
+        "python": frozenset({"function_definition", "async_function_definition"}),
+        "javascript": frozenset(
+            {"function_declaration", "function_expression", "method_definition"}
+        ),
+        "typescript": frozenset(
+            {"function_declaration", "function_expression", "method_definition"}
+        ),
+        "java": frozenset({"method_declaration"}),
+        "c": frozenset({"function_definition"}),
+        "cpp": frozenset({"function_definition"}),
+        "csharp": frozenset({"method_declaration"}),
+        "kotlin": frozenset({"function_declaration"}),
+        "swift": frozenset(
+            {"function_declaration", "init_declaration", "deinit_declaration"}
+        ),
+        "go": frozenset({"function_declaration", "method_declaration"}),
+    }
+
     def __init__(self, language: str = "python") -> None:
         """추출기 초기화.
 
@@ -278,6 +325,10 @@ class ContextExtractor:
             self._dependency_types = self.LANGUAGE_DEPENDENCY_TYPES.get(
                 language, frozenset()
             )
+            self._class_types = self.LANGUAGE_CLASS_TYPES.get(language, frozenset())
+            self._function_types = self.LANGUAGE_FUNCTION_TYPES.get(
+                language, frozenset()
+            )
         except Exception as e:
             raise ValueError(f"언어 '{language}' 초기화 실패: {e}") from e
 
@@ -290,6 +341,18 @@ class ContextExtractor:
     def get_block_types_for_language(cls, language: str) -> frozenset[str]:
         """특정 언어의 블록 타입들을 반환한다."""
         return cls.LANGUAGE_BLOCK_TYPES.get(language, frozenset())
+
+    def _is_root_node(self, node: Node) -> bool:
+        """노드가 루트(전체 파일) 노드인지 확인한다.
+
+        Args:
+            node: 확인할 노드
+
+        Returns:
+            루트 노드 여부
+        """
+        root_type = self.LANGUAGE_ROOT_TYPES.get(self._language_name)
+        return root_type and node.type == root_type
 
     def extract_contexts(
         self, file_path: str | Path, changed_ranges: Sequence[LineRange]
@@ -343,7 +406,7 @@ class ContextExtractor:
 
         # 4. 의존성 노드들 수집
         dependency_nodes = self._collect_dependency_nodes(tree.root_node)
-        
+
         # 5. 컨텍스트와 관련된 의존성들만 필터링
         related_dependencies = self._filter_related_dependencies(dependency_nodes)
 
@@ -407,21 +470,21 @@ class ContextExtractor:
         minimal_nodes: set[Node] = set()
         for line_no in range(line_range.start_line, line_range.end_line + 1):
             smallest_node = self._find_node_by_line(root, line_no)
-            # module 노드(빈 라인이나 의미 없는 라인)는 제외
-            if smallest_node.type != "module":
+            # 루트 노드(빈 라인이나 의미 없는 라인)는 제외
+            if not self._is_root_node(smallest_node):
                 minimal_nodes.add(smallest_node)
         return minimal_nodes
 
     def _find_minimal_enclosing_block(self, node: Node) -> Node | None:
         """현재 노드에서 부모 방향으로 올라가며 가장 가까운 블록을 찾는다.
-        module은 제외."""
+        루트 노드(program, module 등)는 제외."""
         current = node
         while current is not None:
-            if current.type in self._block_types and current.type != "module":
+            if current.type in self._block_types and not self._is_root_node(current):
                 return current
             current = current.parent
-        # 모든 상위가 module인 경우 원래 노드 반환 (파일 레벨 상수 등)
-        return node if node.type != "module" else None
+        # 적절한 블록을 찾지 못한 경우 원래 노드 반환 (파일 레벨 상수 등)
+        return node if not self._is_root_node(node) else None
 
     def _filter_nested_blocks(self, blocks: set[Node]) -> set[Node]:
         """포함 관계에 있는 중복 블록들을 제거하여 가장 큰 블록만 유지한다."""
@@ -460,97 +523,112 @@ class ContextExtractor:
             return [assignment_node] if assignment_node else []
 
         # 클래스 선언부 처리
-        if node.type == "class" or self._is_class_declaration_line(node):
+        if (
+            node.type == "class"
+            or node.type in self._class_types
+            or self._is_class_declaration_line(node)
+        ):
             class_node = self._handle_class_declaration(node)
+            if class_node and self._language_name == "java":
+                # Java의 경우 부모 선언들도 수집
+                parent_declarations = self._collect_parent_declarations(node)
+                context_nodes = parent_declarations + [class_node]
+                return self._remove_duplicate_context_nodes(context_nodes)
             return [class_node] if class_node else []
 
         # 함수 선언부 처리
-        if node.type == "function_definition" or self._is_function_declaration_line(
-            node
+        if (
+            node.type == "function_definition"
+            or node.type in self._function_types
+            or self._is_function_declaration_line(node)
         ):
             func_node = self._handle_function_declaration(node)
+            if func_node and self._language_name == "java":
+                # Java의 경우 부모 선언들도 수집
+                parent_declarations = self._collect_parent_declarations(node)
+                context_nodes = parent_declarations + [func_node]
+                return self._remove_duplicate_context_nodes(context_nodes)
             return [func_node] if func_node else []
 
         # 일반적인 블록 처리 - 상위 declaration들과 함께 반환
         main_block = self._find_minimal_enclosing_block(node)
         if main_block is None:
             return []
-            
+
         # 상위 declaration들 수집
         parent_declarations = self._collect_parent_declarations(node)
-        
+
         # 상위 선언부들 + 실제 변경된 블록 조합
         context_nodes = parent_declarations + [main_block]
-        
+
         # 중복 제거 (같은 노드가 중복될 수 있음)
         return self._remove_duplicate_context_nodes(context_nodes)
 
     def _collect_parent_declarations(self, node: Node) -> list[Node]:
         """변경된 노드의 상위 declaration들을 수집한다.
-        
+
         Args:
             node: 변경된 노드
-            
+
         Returns:
             상위 declaration들의 리스트 (DeclarationOnlyNode들)
         """
         parent_declarations = []
         current = node.parent
         main_block = self._find_minimal_enclosing_block(node)
-        
+
         while current is not None:
-            # 블록 타입이면서 module이 아닌 경우
-            if current.type in self._block_types and current.type != "module":
+            # 블록 타입이면서 제외 대상이 아닌 경우
+            if current.type in self._block_types and not self._is_root_node(current):
                 # 메인 블록과 같은 노드는 제외 (중복 방지)
                 if current == main_block:
                     current = current.parent
                     continue
-                    
+
                 # 클래스나 함수 정의인 경우 선언부만 추출
-                if current.type in {
-                    "class_definition", 
-                    "function_definition", 
-                    "async_function_definition"
-                }:
+                if (
+                    current.type in self._class_types
+                    or current.type in self._function_types
+                ):
                     declaration_node = DeclarationOnlyNode(current)
                     parent_declarations.append(declaration_node)
                 # 기타 블록 타입들 (interface, namespace 등)
                 else:
                     parent_declarations.append(current)
-            
+
             current = current.parent
-        
+
         # 상위에서 하위 순으로 정렬 (클래스 -> 메서드 순)
         parent_declarations.reverse()
         return parent_declarations
 
     def _remove_duplicate_context_nodes(self, nodes: list[Node]) -> list[Node]:
         """컨텍스트 노드들에서 중복을 제거한다.
-        
+
         Args:
             nodes: 노드들의 리스트
-            
+
         Returns:
             중복이 제거된 노드들의 리스트
         """
         if not nodes:
             return []
-            
+
         unique_nodes = []
         seen_positions = set()
-        
+
         for node in nodes:
             # DeclarationOnlyNode의 경우 원본 노드의 위치 사용
-            if hasattr(node, '_original_node'):
+            if hasattr(node, "_original_node"):
                 original = node._original_node
                 position = (original.start_point, original.end_point)
             else:
                 position = (node.start_point, node.end_point)
-                
+
             if position not in seen_positions:
                 unique_nodes.append(node)
                 seen_positions.add(position)
-                
+
         return unique_nodes
 
     def _is_file_level_assignment(self, node: Node) -> bool:
@@ -558,22 +636,31 @@ class ContextExtractor:
         # 노드에서 상위로 올라가면서 assignment 찾기
         current = node
         while current:
-            # assignment이고 그 부모가 module인 경우
+            # assignment이고 그 부모가 루트 노드인 경우
             if current.type == "assignment":
-                return current.parent and current.parent.type == "module"
+                return current.parent and self._is_root_node(current.parent)
             # expression_statement 안의 assignment인 경우
             if current.type == "expression_statement":
-                return current.parent and current.parent.type == "module"
+                return current.parent and self._is_root_node(current.parent)
+            # JavaScript/TypeScript의 lexical_declaration (const, let, var)인 경우
+            if current.type == "lexical_declaration":
+                return current.parent and self._is_root_node(current.parent)
+            # Go의 const/var 선언인 경우
+            if current.type in ["const_declaration", "var_declaration"]:
+                return current.parent and self._is_root_node(current.parent)
+            # C의 전처리기 지시문인 경우
+            if current.type in ["preproc_def", "preproc_include"]:
+                return current.parent and self._is_root_node(current.parent)
             current = current.parent
         return False
 
     def _is_module_level_node(self, node: Node) -> bool:
         """노드가 모듈 레벨에 있는지 확인한다."""
-        # 최대 2-3단계까지만 올라가서 module 찾기
+        # 최대 2-3단계까지만 올라가서 루트 노드 찾기
         current = node
         depth = 0
         while current and depth < 3:
-            if current.parent and current.parent.type == "module":
+            if current.parent and self._is_root_node(current.parent):
                 return True
             current = current.parent
             depth += 1
@@ -581,10 +668,18 @@ class ContextExtractor:
 
     def _handle_assignment_node(self, node: Node) -> Node | None:
         """파일 레벨 assignment의 적절한 컨텍스트를 찾는다."""
-        # assignment나 expression_statement를 찾아서 반환
+        # assignment, expression_statement, lexical_declaration을 찾아서 반환
         current = node
         while current:
-            if current.type in ["assignment", "expression_statement"]:
+            if current.type in [
+                "assignment",
+                "expression_statement",
+                "lexical_declaration",
+                "const_declaration",
+                "var_declaration",
+                "preproc_def",
+                "preproc_include",
+            ]:
                 return current
             current = current.parent
 
@@ -592,7 +687,15 @@ class ContextExtractor:
         if node.type == "identifier":
             parent = node.parent
             while parent:
-                if parent.type in ["assignment", "expression_statement"]:
+                if parent.type in [
+                    "assignment",
+                    "expression_statement",
+                    "lexical_declaration",
+                    "const_declaration",
+                    "var_declaration",
+                    "preproc_def",
+                    "preproc_include",
+                ]:
                     return parent
                 parent = parent.parent
 
@@ -602,7 +705,7 @@ class ContextExtractor:
         """클래스 선언부 라인인지 확인한다."""
         current = node
         while current:
-            if current.type == "class_definition":
+            if current.type in self._class_types:
                 # 클래스 정의의 첫 번째 라인(선언부)인지 확인
                 class_start_line = current.start_point[0]
                 node_line = node.start_point[0]
@@ -614,7 +717,7 @@ class ContextExtractor:
         """함수 선언부 라인인지 확인한다."""
         current = node
         while current:
-            if current.type == "function_definition":
+            if current.type in self._function_types:
                 # 함수 정의의 첫 번째 라인(선언부)인지 확인
                 func_start_line = current.start_point[0]
                 node_line = node.start_point[0]
@@ -628,7 +731,7 @@ class ContextExtractor:
         current = node
         class_def_node = None
         while current:
-            if current.type == "class_definition":
+            if current.type in self._class_types:
                 class_def_node = current
                 break
             current = current.parent
@@ -641,8 +744,12 @@ class ContextExtractor:
         node_line = node.start_point[0]
 
         if node_line == class_start_line:
-            # 클래스 선언부만 변경된 경우: 선언부만 추출
-            return self._extract_class_declaration_only(class_def_node)
+            # Java의 경우 클래스 선언부 변경 시에도 전체 클래스 추출
+            if self._language_name == "java":
+                return class_def_node
+            else:
+                # Python 등 다른 언어는 선언부만 추출
+                return self._extract_class_declaration_only(class_def_node)
         else:
             # 클래스 내부가 변경된 경우: 전체 클래스 추출
             return class_def_node
@@ -658,7 +765,7 @@ class ContextExtractor:
         current = node
         func_def_node = None
         while current:
-            if current.type == "function_definition":
+            if current.type in self._function_types:
                 func_def_node = current
                 break
             current = current.parent
@@ -671,8 +778,12 @@ class ContextExtractor:
         node_line = node.start_point[0]
 
         if node_line == func_start_line:
-            # 함수 선언부만 변경된 경우: 선언부만 추출
-            return DeclarationOnlyNode(func_def_node)
+            # Java의 경우 메서드 선언부 변경 시에도 전체 메서드 추출
+            if self._language_name == "java":
+                return func_def_node
+            else:
+                # Python 등 다른 언어는 선언부만 추출
+                return DeclarationOnlyNode(func_def_node)
         else:
             # 함수 내부가 변경된 경우: 전체 함수 추출
             return func_def_node
@@ -701,31 +812,31 @@ class ContextExtractor:
 
     def _collect_dependency_nodes(self, root: Node) -> list[Node]:
         """전체 AST에서 의존성 관련 노드들을 수집한다.
-        
+
         Args:
             root: AST 루트 노드
-            
+
         Returns:
             의존성 노드들의 리스트 (위치 순으로 정렬됨)
         """
         if not self._dependency_types:
             return []
-            
+
         dependency_nodes = []
-        
+
         for node in self._iter_nodes(root):
             if self._is_dependency_node(node):
                 dependency_nodes.append(node)
-        
+
         # 위치 순으로 정렬
         return sorted(dependency_nodes, key=lambda n: n.start_point)
-    
+
     def _is_dependency_node(self, node: Node) -> bool:
         """노드가 의존성 관련 노드인지 확인한다.
-        
+
         Args:
             node: 확인할 노드
-            
+
         Returns:
             의존성 노드 여부
         """
@@ -735,19 +846,19 @@ class ContextExtractor:
                 return self._is_require_call(node)
             return True
         return False
-    
+
     def _is_require_call(self, node: Node) -> bool:
         """call_expression이 require() 호출인지 확인한다.
-        
+
         Args:
             node: call_expression 노드
-            
+
         Returns:
             require 호출 여부
         """
         if node.type != "call_expression":
             return False
-            
+
         # 첫 번째 자식이 identifier이고 그 텍스트가 'require'인지 확인
         if node.children and node.children[0].type == "identifier":
             try:
@@ -756,45 +867,43 @@ class ContextExtractor:
             except UnicodeDecodeError:
                 return False
         return False
-    
-    def _filter_related_dependencies(
-        self, dependency_nodes: list[Node]
-    ) -> list[Node]:
+
+    def _filter_related_dependencies(self, dependency_nodes: list[Node]) -> list[Node]:
         """컨텍스트 블록들과 관련된 의존성 노드들만 필터링한다.
-        
+
         현재는 모든 의존성을 포함하지만, 향후 스마트 필터링 로직을 추가할 수 있다.
-        
+
         Args:
             dependency_nodes: 수집된 의존성 노드들
-            
+
         Returns:
             필터링된 의존성 노드들
         """
         # 현재는 파일 최상단 및 모든 의존성을 포함
         # 향후 실제 사용되는 의존성만 필터링하는 로직을 추가할 수 있음
         return dependency_nodes
-    
+
     def _remove_duplicate_nodes(self, nodes: list[Node]) -> list[Node]:
         """중복된 노드들을 제거한다.
-        
+
         같은 위치의 노드들은 중복으로 간주하여 제거한다.
-        
+
         Args:
             nodes: 노드들의 리스트
-            
+
         Returns:
             중복이 제거된 노드들의 리스트
         """
         if not nodes:
             return []
-            
+
         unique_nodes = []
         seen_positions = set()
-        
+
         for node in nodes:
             position = (node.start_point, node.end_point)
             if position not in seen_positions:
                 unique_nodes.append(node)
                 seen_positions.add(position)
-                
+
         return unique_nodes
