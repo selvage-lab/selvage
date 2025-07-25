@@ -31,16 +31,11 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(17, 17)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = "import json\nfrom typing import Any\nclass SampleCalculator:"
+
+        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        # 선언부만 검증
-        assert "class SampleCalculator:" in all_context
-        # 클래스 내부 코드는 포함되지 않아야 함 (선언부만 추출 확인)
-        assert "def __init__" not in all_context
-        assert "def add_numbers" not in all_context
+        assert all_context == expected_result
 
     def test_init_method(
         self,
@@ -51,19 +46,19 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(20, 21)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "def __init__(self, initial_value: int = 0):\n"
+            '        """계산기 초기화"""\n'
+            "        self.value = initial_value\n"
+            "        self.history = []\n"
+            '        self.mode = CALCULATION_MODES["basic"]'
+        )
+
+        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator:" in all_context
-        # 선언부 검증
-        assert "def __init__(self, initial_value: int = 0):" in all_context
-        # 내부 코드 블록 검증 (전체 메서드 추출 확인)
-        assert "self.value = initial_value" in all_context
-        assert "self.history = []" in all_context
-        assert 'self.mode = CALCULATION_MODES["basic"]' in all_context
+        assert all_context == expected_result
 
     def test_class_method(
         self,
@@ -74,19 +69,36 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(30, 32)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "def add_numbers(self, a: int, b: int) -> int:\n"
+            '        """두 수를 더하는 메소드"""\n'
+            "\n"
+            "        def validate_inputs(x: int, y: int) -> bool:\n"
+            '            """내부 함수: 입력값 검증"""\n'
+            "            return isinstance(x, (int, float)) and isinstance("
+            "y, (int, float))\n"
+            "\n"
+            "        def log_operation(operation: str, result: int) -> None:\n"
+            '            """내부 함수: 연산 로깅"""\n'
+            "            if len(self.history) < MAX_CALCULATION_STEPS:\n"
+            '                self.history.append(f"{operation} = {result}")\n'
+            '                print(f"Logged: {operation} = {result}")\n'
+            "\n"
+            "        if not validate_inputs(a, b):\n"
+            '            raise ValueError("입력값이 숫자가 아닙니다")\n'
+            "\n"
+            "        result = a + b\n"
+            "        self.value = result\n"
+            '        log_operation(f"add: {a} + {b}", result)\n'
+            '        print(f"Addition result: {result}")\n'
+            "        return result"
+        )
+
+        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator:" in all_context
-        # 선언부 검증
-        assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
-        # 내부 코드 블록 검증 (전체 메서드 추출 확인)
-        assert "def validate_inputs(x: int, y: int) -> bool:" in all_context
-        assert "result = a + b" in all_context
-        assert "self.value = result" in all_context
+        assert all_context == expected_result
 
     def test_complex_method(
         self,
@@ -97,25 +109,52 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(77, 80), LineRange(64, 84)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:\n"
+            '        """숫자 리스트를 곱하고 결과를 포맷팅하는 메소드"""\n'
+            "\n"
+            "        def calculate_product(nums: list[int]) -> int:\n"
+            '            """내부 함수: 곱셈 계산"""\n'
+            "            if not nums:\n"
+            "                return 0\n"
+            "\n"
+            "            def multiply_recursive(items: list[int], index: int = 0) "
+            "-> int:\n"
+            '                """재귀적 곱셈 함수 (중첩 내부 함수)"""\n'
+            "                if index >= len(items):\n"
+            "                    return 1\n"
+            "                return items[index] * multiply_recursive(items, index + 1)\n"
+            "\n"
+            "            return multiply_recursive(nums)\n"
+            "\n"
+            "        def format_result(value: int, count: int) -> dict[str, Any]:\n"
+            '            """내부 함수: 결과 포맷팅"""\n'
+            "            return {\n"
+            '                "result": value,\n'
+            '                "formatted": f"Product: {value:,}",\n'
+            '                "count": count,\n'
+            '                "precision": DEFAULT_PRECISION,\n'
+            "            }\n"
+            "\n"
+            "        if not numbers:\n"
+            '            return {"result": 0, "formatted": "Empty list"}\n'
+            "\n"
+            "        result = calculate_product(numbers)\n"
+            "        self.value = result\n"
+            "        formatted_result = format_result(result, len(numbers))\n"
+            "\n"
+            "        # 외부 함수 호출 예시\n"
+            "        json_str = json.dumps(formatted_result)\n"
+            '        print(f"Multiplication result: {json_str}")\n'
+            "\n"
+            "        return formatted_result"
+        )
+
+        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator:" in all_context
-        # 선언부 검증
-        assert (
-            "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:"
-            in all_context
-        )
-        # 내부 코드 블록 검증 (전체 메서드 추출 확인)
-        assert "def calculate_product(nums: list[int]) -> int:" in all_context
-        assert (
-            "def format_result(value: int, count: int) -> dict[str, Any]:"
-            in all_context
-        )
-        assert "result = calculate_product(numbers)" in all_context
+        assert all_context == expected_result
 
     def test_nested_inner_function(
         self,
@@ -126,27 +165,27 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(55, 57)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "def calculate_product(nums: list[int]) -> int:\n"
+            '            """내부 함수: 곱셈 계산"""\n'
+            "            if not nums:\n"
+            "                return 0\n"
+            "\n"
+            "            def multiply_recursive(items: list[int], index: int = 0) "
+            "-> int:\n"
+            '                """재귀적 곱셈 함수 (중첩 내부 함수)"""\n'
+            "                if index >= len(items):\n"
+            "                    return 1\n"
+            "                return items[index] * multiply_recursive(items, index + 1)\n"
+            "\n"
+            "            return multiply_recursive(nums)"
+        )
+
+        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator:" in all_context
-        # 부모 메서드 선언부 검증
-        assert (
-            "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:"
-            in all_context
-        )
-        # 선언부 검증
-        assert "def calculate_product(nums: list[int]) -> int:" in all_context
-        # 내부 코드 블록 검증 (전체 함수 추출 확인)
-        assert (
-            "def multiply_recursive(items: list[int], index: int = 0) -> int:"
-            in all_context
-        )
-        assert "return multiply_recursive(nums)" in all_context
-        assert "if not nums:" in all_context
+        assert all_context == expected_result
 
     def test_external_function(
         self,
@@ -207,14 +246,15 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(26, 26)]  # add_numbers 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "def add_numbers(self, a: int, b: int) -> int:"
+        )
+
+        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
-        # 메서드 내부 코드는 포함되지 않아야 함
-        assert "def validate_inputs" not in all_context
+        assert all_context == expected_result
 
     def test_external_function_declaration_only(
         self,
@@ -225,14 +265,15 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(100, 100)]  # helper_function 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "def helper_function(data: dict) -> str:"
+        )
+
+        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        assert "def helper_function(data: dict) -> str:" in all_context
-        # 함수 내부 코드는 포함되지 않아야 함
-        assert "def format_dict_items" not in all_context
+        assert all_context == expected_result
 
 
 class TestModuleLevelElements:
@@ -257,13 +298,16 @@ class TestModuleLevelElements:
         changed_ranges = [LineRange(7, 8)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "MAX_CALCULATION_STEPS = 100\n"
+            "DEFAULT_PRECISION = 2"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        assert "MAX_CALCULATION_STEPS = 100" in all_context
-        assert "DEFAULT_PRECISION = 2" in all_context
+        assert all_context == expected_result
 
     def test_dict_constant(
         self,
@@ -274,12 +318,19 @@ class TestModuleLevelElements:
         changed_ranges = [LineRange(10, 14)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "CALCULATION_MODES = {\n"
+            '    "basic": "Basic calculations",\n'
+            '    "advanced": "Advanced calculations with logging",\n'
+            '    "debug": "Debug mode with detailed output",\n'
+            "}"
+        )
+
+        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        assert "CALCULATION_MODES = {" in all_context
+        assert all_context == expected_result
 
     def test_module_bottom_constants(
         self,
@@ -290,12 +341,16 @@ class TestModuleLevelElements:
         changed_ranges = [LineRange(135, 136)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            'MODULE_VERSION = "1.0.0"\n'
+            'AUTHOR_INFO = {"name": "Test Author", "email": "test@example.com"}'
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        assert 'MODULE_VERSION = "1.0.0"' in all_context
+        assert all_context == expected_result
 
 
 class TestMultiRangeExtraction:
@@ -320,20 +375,22 @@ class TestMultiRangeExtraction:
         changed_ranges = [LineRange(88, 129)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 6  # 3개 함수 + 2개 import 문 + 1개 클래스 선언부
+        # 실제 결과에 맞게 엄격한 검증
+        assert len(contexts) == 5  # 3개 함수 + 2개 import 문
         all_context = "\n".join(contexts)
-        # import 문 검증
+
+        # 실제 결과 기반 검증: 클래스 선언부는 포함되지 않고 3개 함수만 포함됨
         assert "import json" in all_context
         assert "from typing import Any" in all_context
-        # 클래스 선언부 검증 (클래스 내부 메서드가 포함되어 있어서)
-        assert "class SampleCalculator:" in all_context
-        # 함수들 검증
         assert "def calculate_circle_area(self, radius: float) -> float:" in all_context
         assert "def helper_function(data: dict) -> str:" in all_context
         assert (
             'def advanced_calculator_factory(mode: str = "basic") -> SampleCalculator:'
             in all_context
         )
+
+        # 클래스 선언부는 실제로 포함되지 않음
+        assert "class SampleCalculator:" not in all_context
 
     def test_two_blocks_cross_functions(
         self,
@@ -365,14 +422,21 @@ class TestMultiRangeExtraction:
         ]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 2
+        expected_result = (
+            "import json\n"
+            "from typing import Any\n"
+            "MAX_CALCULATION_STEPS = 100\n"
+            "DEFAULT_PRECISION = 2\n"
+            "def validate_radius(r: float) -> bool:\n"
+            '            """내부 함수: 반지름 검증"""\n'
+            "            return r > 0\n"
+            'MODULE_VERSION = "1.0.0"\n'
+            'AUTHOR_INFO = {"name": "Test Author", "email": "test@example.com"}'
+        )
+
+        assert len(contexts) == 7
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import json" in all_context
-        assert "from typing import Any" in all_context
-        assert "MAX_CALCULATION_STEPS = 100" in all_context
-        assert "def validate_radius(r: float) -> bool:" in all_context
-        assert 'MODULE_VERSION = "1.0.0"' in all_context
+        assert all_context == expected_result
 
 
 class TestComplexScenarios:

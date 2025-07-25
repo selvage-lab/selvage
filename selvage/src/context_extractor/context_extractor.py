@@ -400,9 +400,9 @@ class ContextExtractor:
                 tree.root_node, changed_range
             )
             for node in minimal_nodes:
-                context_nodes = self._get_appropriate_context_for_node(node)
-                for context_node in context_nodes:
-                    context_blocks.add(context_node)
+                block = self._get_appropriate_context_for_node(node)
+                if block is not None:
+                    context_blocks.add(block)
 
         # 4. 의존성 노드들 수집
         dependency_nodes = self._collect_dependency_nodes(tree.root_node)
@@ -477,13 +477,13 @@ class ContextExtractor:
 
     def _find_minimal_enclosing_block(self, node: Node) -> Node | None:
         """현재 노드에서 부모 방향으로 올라가며 가장 가까운 블록을 찾는다.
-        루트 노드(program, module 등)는 제외."""
+        module은 제외."""
         current = node
         while current is not None:
             if current.type in self._block_types and not self._is_root_node(current):
                 return current
             current = current.parent
-        # 적절한 블록을 찾지 못한 경우 원래 노드 반환 (파일 레벨 상수 등)
+        # 모든 상위가 루트 노드인 경우 원래 노드 반환 (파일 레벨 상수 등)
         return node if not self._is_root_node(node) else None
 
     def _filter_nested_blocks(self, blocks: set[Node]) -> set[Node]:
@@ -509,127 +509,28 @@ class ContextExtractor:
 
         return filtered_blocks
 
-    def _get_appropriate_context_for_node(self, node: Node) -> list[Node]:
-        """노드 타입에 따라 적절한 컨텍스트 블록을 결정한다.
-        상위 declaration들과 함께 반환한다."""
+    def _get_appropriate_context_for_node(self, node: Node) -> Node | None:
+        """노드 타입에 따라 적절한 컨텍스트 블록을 결정한다."""
         # 파일 레벨 assignment (상수) 처리
         if self._is_file_level_assignment(node):
-            assignment_node = self._handle_assignment_node(node)
-            return [assignment_node] if assignment_node else []
+            return self._handle_assignment_node(node)
 
-        # 모듈 레벨에서 식별자인 경우 assignment 전체 반환
-        if node.type == "identifier" and self._is_module_level_node(node):
-            assignment_node = self._handle_assignment_node(node)
-            return [assignment_node] if assignment_node else []
+        # 파일 레벨에서 식별자인 경우 assignment 전체 반환
+        if node.type == "identifier" and self._is_file_level_node(node):
+            return self._handle_assignment_node(node)
 
         # 클래스 선언부 처리
-        if (
-            node.type == "class"
-            or node.type in self._class_types
-            or self._is_class_declaration_line(node)
-        ):
-            class_node = self._handle_class_declaration(node)
-            if class_node and self._language_name == "java":
-                # Java의 경우 부모 선언들도 수집
-                parent_declarations = self._collect_parent_declarations(node)
-                context_nodes = parent_declarations + [class_node]
-                return self._remove_duplicate_context_nodes(context_nodes)
-            return [class_node] if class_node else []
+        if node.type in self._class_types or self._is_class_declaration_line(node):
+            return self._handle_class_declaration(node)
 
         # 함수 선언부 처리
-        if (
-            node.type == "function_definition"
-            or node.type in self._function_types
-            or self._is_function_declaration_line(node)
+        if node.type in self._function_types or self._is_function_declaration_line(
+            node
         ):
-            func_node = self._handle_function_declaration(node)
-            if func_node and self._language_name == "java":
-                # Java의 경우 부모 선언들도 수집
-                parent_declarations = self._collect_parent_declarations(node)
-                context_nodes = parent_declarations + [func_node]
-                return self._remove_duplicate_context_nodes(context_nodes)
-            return [func_node] if func_node else []
+            return self._handle_function_declaration(node)
 
-        # 일반적인 블록 처리 - 상위 declaration들과 함께 반환
-        main_block = self._find_minimal_enclosing_block(node)
-        if main_block is None:
-            return []
-
-        # 상위 declaration들 수집
-        parent_declarations = self._collect_parent_declarations(node)
-
-        # 상위 선언부들 + 실제 변경된 블록 조합
-        context_nodes = parent_declarations + [main_block]
-
-        # 중복 제거 (같은 노드가 중복될 수 있음)
-        return self._remove_duplicate_context_nodes(context_nodes)
-
-    def _collect_parent_declarations(self, node: Node) -> list[Node]:
-        """변경된 노드의 상위 declaration들을 수집한다.
-
-        Args:
-            node: 변경된 노드
-
-        Returns:
-            상위 declaration들의 리스트 (DeclarationOnlyNode들)
-        """
-        parent_declarations = []
-        current = node.parent
-        main_block = self._find_minimal_enclosing_block(node)
-
-        while current is not None:
-            # 블록 타입이면서 제외 대상이 아닌 경우
-            if current.type in self._block_types and not self._is_root_node(current):
-                # 메인 블록과 같은 노드는 제외 (중복 방지)
-                if current == main_block:
-                    current = current.parent
-                    continue
-
-                # 클래스나 함수 정의인 경우 선언부만 추출
-                if (
-                    current.type in self._class_types
-                    or current.type in self._function_types
-                ):
-                    declaration_node = DeclarationOnlyNode(current)
-                    parent_declarations.append(declaration_node)
-                # 기타 블록 타입들 (interface, namespace 등)
-                else:
-                    parent_declarations.append(current)
-
-            current = current.parent
-
-        # 상위에서 하위 순으로 정렬 (클래스 -> 메서드 순)
-        parent_declarations.reverse()
-        return parent_declarations
-
-    def _remove_duplicate_context_nodes(self, nodes: list[Node]) -> list[Node]:
-        """컨텍스트 노드들에서 중복을 제거한다.
-
-        Args:
-            nodes: 노드들의 리스트
-
-        Returns:
-            중복이 제거된 노드들의 리스트
-        """
-        if not nodes:
-            return []
-
-        unique_nodes = []
-        seen_positions = set()
-
-        for node in nodes:
-            # DeclarationOnlyNode의 경우 원본 노드의 위치 사용
-            if hasattr(node, "_original_node"):
-                original = node._original_node
-                position = (original.start_point, original.end_point)
-            else:
-                position = (node.start_point, node.end_point)
-
-            if position not in seen_positions:
-                unique_nodes.append(node)
-                seen_positions.add(position)
-
-        return unique_nodes
+        # 일반적인 블록 처리
+        return self._find_minimal_enclosing_block(node)
 
     def _is_file_level_assignment(self, node: Node) -> bool:
         """파일 레벨 assignment인지 확인한다."""
@@ -654,9 +555,9 @@ class ContextExtractor:
             current = current.parent
         return False
 
-    def _is_module_level_node(self, node: Node) -> bool:
-        """노드가 모듈 레벨에 있는지 확인한다."""
-        # 최대 2-3단계까지만 올라가서 루트 노드 찾기
+    def _is_file_level_node(self, node: Node) -> bool:
+        """노드가 파일 레벨에 있는지 확인한다."""
+        # 최대 2-3단계까지만 올라가서 module 찾기
         current = node
         depth = 0
         while current and depth < 3:
@@ -668,7 +569,7 @@ class ContextExtractor:
 
     def _handle_assignment_node(self, node: Node) -> Node | None:
         """파일 레벨 assignment의 적절한 컨텍스트를 찾는다."""
-        # assignment, expression_statement, lexical_declaration을 찾아서 반환
+        # assignment나 expression_statement를 찾아서 반환
         current = node
         while current:
             if current.type in [
@@ -744,12 +645,8 @@ class ContextExtractor:
         node_line = node.start_point[0]
 
         if node_line == class_start_line:
-            # Java의 경우 클래스 선언부 변경 시에도 전체 클래스 추출
-            if self._language_name == "java":
-                return class_def_node
-            else:
-                # Python 등 다른 언어는 선언부만 추출
-                return self._extract_class_declaration_only(class_def_node)
+            # 클래스 선언부만 변경된 경우: 선언부만 추출
+            return self._extract_class_declaration_only(class_def_node)
         else:
             # 클래스 내부가 변경된 경우: 전체 클래스 추출
             return class_def_node
@@ -778,12 +675,8 @@ class ContextExtractor:
         node_line = node.start_point[0]
 
         if node_line == func_start_line:
-            # Java의 경우 메서드 선언부 변경 시에도 전체 메서드 추출
-            if self._language_name == "java":
-                return func_def_node
-            else:
-                # Python 등 다른 언어는 선언부만 추출
-                return DeclarationOnlyNode(func_def_node)
+            # 함수 선언부만 변경된 경우: 선언부만 추출
+            return DeclarationOnlyNode(func_def_node)
         else:
             # 함수 내부가 변경된 경우: 전체 함수 추출
             return func_def_node
