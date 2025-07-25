@@ -1,4 +1,4 @@
-"""ContextExtractor Java 테스트 케이스."""
+"""ContextExtractor 테스트 케이스."""
 
 from __future__ import annotations
 
@@ -15,17 +15,12 @@ class TestBasicFunctionExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "java"
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "sample_class.py"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Java용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("java")
+        """Python용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("python")
 
     def test_class_declaration(
         self,
@@ -33,39 +28,42 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """클래스 선언부 추출 테스트."""
-        changed_ranges = [LineRange(20, 20)]  # SampleCalculator 클래스 선언부
+        changed_ranges = [LineRange(17, 17)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
-        assert "import java.util.*;" in all_context
-        # 클래스 검증 (Java는 전체 클래스가 추출됨)
-        assert "public class SampleCalculator" in all_context
-        # Java에서는 클래스 전체가 추출되므로 내부 요소들도 포함됨
-        assert "private int value" in all_context
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        # 선언부만 검증
+        assert "class SampleCalculator:" in all_context
+        # 클래스 내부 코드는 포함되지 않아야 함 (선언부만 추출 확인)
+        assert "def __init__" not in all_context
+        assert "def add_numbers" not in all_context
 
-    def test_constructor_method(
+    def test_init_method(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """생성자 메서드 추출 테스트."""
-        changed_ranges = [LineRange(33, 40)]  # 파라미터 있는 생성자
+        """__init__ 메서드 추출 테스트."""
+        changed_ranges = [LineRange(20, 21)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
-        assert "import java.util.*;" in all_context
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 부모 클래스 선언부 검증
-        assert "public class SampleCalculator" in all_context
+        assert "class SampleCalculator:" in all_context
         # 선언부 검증
-        assert "public SampleCalculator(int initialValue)" in all_context
+        assert "def __init__(self, initial_value: int = 0):" in all_context
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
-        assert "this.value = initialValue" in all_context
-        assert "this.history = new ArrayList<>()" in all_context
-        assert 'this.mode = Constants.CALCULATION_MODES.get("basic")' in all_context
+        assert "self.value = initial_value" in all_context
+        assert "self.history = []" in all_context
+        assert 'self.mode = CALCULATION_MODES["basic"]' in all_context
 
     def test_class_method(
         self,
@@ -73,21 +71,22 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """클래스 메서드 추출 테스트."""
-        changed_ranges = [LineRange(42, 44)]  # addNumbers 메서드
+        changed_ranges = [LineRange(30, 32)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
-        assert "import java.util.*;" in all_context
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 부모 클래스 선언부 검증
-        assert "public class SampleCalculator" in all_context
+        assert "class SampleCalculator:" in all_context
         # 선언부 검증
-        assert "public int addNumbers(int a, int b)" in all_context
+        assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
-        assert "class InputValidator" in all_context
-        assert "class OperationLogger" in all_context
-        assert "int result = a + b" in all_context
+        assert "def validate_inputs(x: int, y: int) -> bool:" in all_context
+        assert "result = a + b" in all_context
+        assert "self.value = result" in all_context
 
     def test_complex_method(
         self,
@@ -95,27 +94,28 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """복잡한 메서드 추출 테스트."""
-        changed_ranges = [
-            LineRange(75, 78),
-            LineRange(120, 125),
-        ]  # multiplyAndFormat 메서드
+        changed_ranges = [LineRange(77, 80), LineRange(64, 84)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
-        assert "import java.util.*;" in all_context
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 부모 클래스 선언부 검증
-        assert "public class SampleCalculator" in all_context
+        assert "class SampleCalculator:" in all_context
         # 선언부 검증
         assert (
-            "public Map<String, Object> multiplyAndFormat(List<Integer> numbers)"
+            "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:"
             in all_context
         )
         # 내부 코드 블록 검증 (전체 메서드 추출 확인)
-        assert "class ProductCalculator" in all_context
-        assert "class ResultFormatter" in all_context
-        assert "class RecursiveMultiplier" in all_context
+        assert "def calculate_product(nums: list[int]) -> int:" in all_context
+        assert (
+            "def format_result(value: int, count: int) -> dict[str, Any]:"
+            in all_context
+        )
+        assert "result = calculate_product(numbers)" in all_context
 
     def test_nested_inner_function(
         self,
@@ -123,28 +123,30 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """중첩 내부 함수 추출 테스트."""
-        changed_ranges = [LineRange(87, 95)]  # RecursiveMultiplier 내부 클래스
+        changed_ranges = [LineRange(55, 57)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
-        assert "import java.util.*;" in all_context
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 부모 클래스 선언부 검증
-        assert "public class SampleCalculator" in all_context
+        assert "class SampleCalculator:" in all_context
         # 부모 메서드 선언부 검증
         assert (
-            "public Map<String, Object> multiplyAndFormat(List<Integer> numbers)"
+            "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:"
             in all_context
         )
         # 선언부 검증
-        assert (
-            "class ProductCalculator" in all_context
-            or "class RecursiveMultiplier" in all_context
-        )
+        assert "def calculate_product(nums: list[int]) -> int:" in all_context
         # 내부 코드 블록 검증 (전체 함수 추출 확인)
-        assert "public int multiplyRecursive" in all_context
-        assert "if (index >= items.size())" in all_context
+        assert (
+            "def multiply_recursive(items: list[int], index: int = 0) -> int:"
+            in all_context
+        )
+        assert "return multiply_recursive(nums)" in all_context
+        assert "if not nums:" in all_context
 
     def test_external_function(
         self,
@@ -152,18 +154,22 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """클래스 외부 함수 추출 테스트."""
-        changed_ranges = [LineRange(155, 160)]  # helperFunction 내부 코드 범위
+        changed_ranges = [LineRange(110, 111)]  # helper_function 내부 코드 범위
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
-        assert "import java.util.*;" in all_context
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부 검증
-        assert "public static String helperFunction" in all_context
+        assert "def helper_function(data: dict) -> str:" in all_context
         # 내부 코드 블록 검증 (전체 함수 추출 확인)
-        assert "class DictFormatter" in all_context
-        assert "List<String> formattedItems" in all_context
+        assert "def format_dict_items(items: dict) -> list[str]:" in all_context
+        assert "formatted_items = format_dict_items(data)" in all_context
+        assert (
+            "return f\"Helper processed: {', '.join(formatted_items)}\"" in all_context
+        )
 
     def test_factory_function(
         self,
@@ -171,19 +177,26 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """팩토리 함수 추출 테스트."""
-        changed_ranges = [LineRange(182, 190)]  # advancedCalculatorFactory 메서드
+        changed_ranges = [LineRange(116, 118)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         # 선언부 검증
         assert (
-            "public static SampleCalculator advancedCalculatorFactory(String mode)"
+            'def advanced_calculator_factory(mode: str = "basic") -> SampleCalculator:'
             in all_context
         )
         # 내부 코드 블록 검증 (전체 함수 추출 확인)
-        assert "class CalculatorCreator" in all_context
-        assert "class ModeValidator" in all_context
+        assert (
+            "def create_calculator_with_mode(calc_mode: str) -> SampleCalculator:"
+            in all_context
+        )
+        assert "def validate_mode(m: str) -> bool:" in all_context
+        assert "return create_calculator_with_mode(mode)" in all_context
 
     def test_method_declaration_only(
         self,
@@ -191,16 +204,17 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """메서드 선언부만 추출 테스트."""
-        changed_ranges = [LineRange(42, 42)]  # addNumbers 선언부만
+        changed_ranges = [LineRange(26, 26)]  # add_numbers 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        # 부모 클래스 선언부 검증
-        assert "public class SampleCalculator" in all_context
-        assert "public int addNumbers(int a, int b)" in all_context
-        # Java에서는 메서드 전체가 추출되므로 내부 클래스도 포함됨
-        assert "class InputValidator" in all_context
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
+        # 메서드 내부 코드는 포함되지 않아야 함
+        assert "def validate_inputs" not in all_context
 
     def test_external_function_declaration_only(
         self,
@@ -208,14 +222,17 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """외부 함수 선언부만 추출 테스트."""
-        changed_ranges = [LineRange(155, 155)]  # helperFunction 선언부만
+        changed_ranges = [LineRange(100, 100)]  # helper_function 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "public static String helperFunction" in all_context
-        # Java에서는 메서드 전체가 추출되므로 내부 클래스도 포함됨
-        assert "class DictFormatter" in all_context
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        assert "def helper_function(data: dict) -> str:" in all_context
+        # 함수 내부 코드는 포함되지 않아야 함
+        assert "def format_dict_items" not in all_context
 
 
 class TestModuleLevelElements:
@@ -224,17 +241,12 @@ class TestModuleLevelElements:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "java"
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "sample_class.py"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Java용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("java")
+        """Python용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("python")
 
     def test_basic_constants(
         self,
@@ -242,26 +254,32 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """기본 상수들 추출 테스트."""
-        changed_ranges = [LineRange(9, 10)]  # Constants 클래스 내 상수들
+        changed_ranges = [LineRange(7, 8)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "MAX_CALCULATION_STEPS = 100" in all_context
         assert "DEFAULT_PRECISION = 2" in all_context
 
-    def test_map_constant(
+    def test_dict_constant(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """맵 상수 추출 테스트."""
-        changed_ranges = [LineRange(12, 16)]  # CALCULATION_MODES 맵
+        """딕셔너리 상수 추출 테스트."""
+        changed_ranges = [LineRange(10, 14)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "CALCULATION_MODES = Map.of(" in all_context
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        assert "CALCULATION_MODES = {" in all_context
 
     def test_module_bottom_constants(
         self,
@@ -269,11 +287,14 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """모듈 하단 상수들 추출 테스트."""
-        changed_ranges = [LineRange(212, 213)]  # MODULE_VERSION
+        changed_ranges = [LineRange(135, 136)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
 
 
@@ -283,48 +304,53 @@ class TestMultiRangeExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "java"
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "sample_class.py"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Java용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("java")
+        """Python용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("python")
 
-    def test_three_cross_classes(
+    def test_three_cross_functions(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """3개 클래스에 걸친 영역 추출 테스트."""
-        changed_ranges = [
-            LineRange(129, 210)
-        ]  # calculateCircleArea ~ CalculatorFactory
+        """3개 함수에 걸친 영역 추출 테스트."""
+        changed_ranges = [LineRange(88, 129)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        assert len(contexts) == 6  # 3개 함수 + 2개 import 문 + 1개 클래스 선언부
         all_context = "\n".join(contexts)
-        assert "public double calculateCircleArea" in all_context
-        assert "public static String helperFunction" in all_context
-        assert "public static SampleCalculator advancedCalculatorFactory" in all_context
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        # 클래스 선언부 검증 (클래스 내부 메서드가 포함되어 있어서)
+        assert "class SampleCalculator:" in all_context
+        # 함수들 검증
+        assert "def calculate_circle_area(self, radius: float) -> float:" in all_context
+        assert "def helper_function(data: dict) -> str:" in all_context
+        assert (
+            'def advanced_calculator_factory(mode: str = "basic") -> SampleCalculator:'
+            in all_context
+        )
 
-    def test_two_blocks_cross_methods(
+    def test_two_blocks_cross_functions(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """2개 블록에 걸친 메서드 추출 테스트."""
-        changed_ranges = [LineRange(42, 47), LineRange(155, 160)]
+        """2개 블록에 걸친 함수 추출 테스트."""
+        changed_ranges = [LineRange(26, 30), LineRange(100, 103)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 2
         all_context = "\n".join(contexts)
-        assert "public int addNumbers(int a, int b)" in all_context
-        assert "public static String helperFunction" in all_context
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
+        assert "def helper_function(data: dict) -> str:" in all_context
 
     def test_non_contiguous_ranges(
         self,
@@ -333,16 +359,19 @@ class TestMultiRangeExtraction:
     ) -> None:
         """비연속적인 여러 범위 추출 테스트."""
         changed_ranges = [
-            LineRange(9, 10),  # Constants 클래스 상수들
-            LineRange(135, 137),  # RadiusValidator 내부 클래스
-            LineRange(212, 213),  # 모듈 레벨 상수들
+            LineRange(7, 8),  # 파일 상수들
+            LineRange(89, 91),  # validate_radius 내부 함수
+            LineRange(135, 136),  # 모듈 레벨 상수들
         ]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 2
         all_context = "\n".join(contexts)
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
         assert "MAX_CALCULATION_STEPS = 100" in all_context
-        assert "class RadiusValidator" in all_context or "validateRadius" in all_context
+        assert "def validate_radius(r: float) -> bool:" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
 
 
@@ -352,17 +381,12 @@ class TestComplexScenarios:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "java"
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "sample_class.py"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Java용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("java")
+        """Python용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("python")
 
     def test_entire_class_extraction(
         self,
@@ -370,14 +394,17 @@ class TestComplexScenarios:
         sample_file_path: Path,
     ) -> None:
         """전체 클래스 추출 테스트."""
-        changed_ranges = [LineRange(20, 148)]  # SampleCalculator 전체 클래스
+        changed_ranges = [LineRange(16, 91)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "public class SampleCalculator" in all_context
-        assert "public SampleCalculator(int initialValue)" in all_context
-        assert "public int addNumbers(int a, int b)" in all_context
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        assert "class SampleCalculator:" in all_context
+        assert "def __init__(self, initial_value: int = 0):" in all_context
+        assert "def add_numbers(self, a: int, b: int) -> int:" in all_context
 
     def test_class_and_module_constants(
         self,
@@ -385,12 +412,15 @@ class TestComplexScenarios:
         sample_file_path: Path,
     ) -> None:
         """클래스와 모듈 상수 동시 추출 테스트."""
-        changed_ranges = [LineRange(8, 217)]  # Constants 클래스부터 모듈 상수까지
+        changed_ranges = [LineRange(10, 136)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        assert len(contexts) >= 2
         all_context = "\n".join(contexts)
-        assert "public class SampleCalculator" in all_context
+        # import 문 검증
+        assert "import json" in all_context
+        assert "from typing import Any" in all_context
+        assert "class SampleCalculator:" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
 
 
@@ -400,17 +430,12 @@ class TestEdgeCases:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "java"
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "sample_class.py"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Java용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("java")
+        """Python용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("python")
 
     def test_invalid_line_ranges(
         self,
@@ -435,7 +460,7 @@ class TestEdgeCases:
         sample_file_path: Path,
     ) -> None:
         """빈 라인 범위 처리 테스트."""
-        changed_ranges = [LineRange(15, 16)]  # 빈 라인 또는 주석
+        changed_ranges = [LineRange(15, 16)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         # 빈 라인 범위에서도 적절히 처리되어야 함

@@ -15,7 +15,7 @@ class TestBasicFunctionExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
+        return Path(__file__).parent / "SampleCalculator.c"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -161,7 +161,7 @@ class TestModuleLevelElements:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
+        return Path(__file__).parent / "SampleCalculator.c"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -215,7 +215,7 @@ class TestMultiRangeExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
+        return Path(__file__).parent / "SampleCalculator.c"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -278,7 +278,7 @@ class TestComplexScenarios:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
+        return Path(__file__).parent / "SampleCalculator.c"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -324,7 +324,7 @@ class TestEdgeCases:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "language_samples" / "c" / "SampleCalculator.c"
+        return Path(__file__).parent / "SampleCalculator.c"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:

@@ -1,4 +1,4 @@
-"""ContextExtractor Kotlin 테스트 케이스."""
+"""ContextExtractor Go 테스트 케이스."""
 
 from __future__ import annotations
 
@@ -15,61 +15,72 @@ class TestBasicFunctionExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "kotlin"
-            / "SampleCalculator.kt"
-        )
+        return Path(__file__).parent / "SampleCalculator.go"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Kotlin용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("kotlin")
+        """Go용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("go")
 
     def test_class_declaration(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """클래스 선언부 추출 테스트."""
-        changed_ranges = [LineRange(23, 23)]  # SampleCalculator 클래스 선언부
+        """구조체 선언부 추출 테스트."""
+        changed_ranges = [LineRange(33, 33)]  # SampleCalculator 구조체 선언부
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "class SampleCalculator" in all_context
+        # import 문 검증
+        assert "fmt" in all_context
+        assert "math" in all_context
+        assert "strings" in all_context
+        assert (
+            "type SampleCalculator struct" in all_context
+            or "SampleCalculator struct" in all_context
+        )
 
     def test_constructor_method(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """생성자 메서드 추출 테스트."""
-        changed_ranges = [LineRange(31, 37)]  # init 블록
+        """New 함수 추출 테스트."""
+        changed_ranges = [LineRange(42, 51)]  # NewSampleCalculator 함수
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator" in all_context
-        assert "init" in all_context
-        assert "history" in all_context or "mode" in all_context
+        # import 문 검증
+        assert "fmt" in all_context
+        assert "math" in all_context
+        assert "strings" in all_context
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
+        assert "func NewSampleCalculator" in all_context or "func" in all_context
+        assert "value" in all_context
+        assert "history" in all_context
 
     def test_class_method(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """클래스 메서드 추출 테스트."""
-        changed_ranges = [LineRange(39, 66)]  # addNumbers 메서드
+        """메서드(리시버 함수) 추출 테스트."""
+        changed_ranges = [LineRange(53, 82)]  # AddNumbers 메서드
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator" in all_context
-        assert "fun addNumbers" in all_context or "addNumbers" in all_context
+        # import 문 검증
+        assert "fmt" in all_context
+        assert "math" in all_context
+        assert "strings" in all_context
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
+        assert "func" in all_context and "AddNumbers" in all_context
 
     def test_complex_method(
         self,
@@ -77,16 +88,14 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """복잡한 메서드 추출 테스트."""
-        changed_ranges = [LineRange(68, 111)]  # multiplyAndFormat 메서드
+        changed_ranges = [LineRange(84, 133)]  # MultiplyAndFormat 메서드
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator" in all_context
-        assert (
-            "fun multiplyAndFormat" in all_context or "multiplyAndFormat" in all_context
-        )
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
+        assert "MultiplyAndFormat" in all_context
 
     def test_nested_inner_function(
         self,
@@ -94,33 +103,29 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """중첩 내부 함수 추출 테스트."""
-        changed_ranges = [LineRange(80, 85)]  # multiplyRecursive 내부 함수
+        changed_ranges = [LineRange(96, 102)]  # multiplyRecursive 내부 함수
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator" in all_context
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
         # 부모 메서드 선언부 검증
-        assert (
-            "fun multiplyAndFormat" in all_context or "multiplyAndFormat" in all_context
-        )
-        assert (
-            "fun multiplyRecursive" in all_context or "multiplyRecursive" in all_context
-        )
+        assert "MultiplyAndFormat" in all_context
+        assert "multiplyRecursive" in all_context
 
     def test_external_function(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """클래스 외부 함수 추출 테스트."""
-        changed_ranges = [LineRange(132, 148)]  # helperFunction
+        """외부 함수 추출 테스트."""
+        changed_ranges = [LineRange(154, 170)]  # HelperFunction
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "fun helperFunction" in all_context or "helperFunction" in all_context
+        assert "func HelperFunction" in all_context or "HelperFunction" in all_context
 
     def test_factory_function(
         self,
@@ -128,15 +133,12 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """팩토리 함수 추출 테스트."""
-        changed_ranges = [LineRange(150, 172)]  # advancedCalculatorFactory
+        changed_ranges = [LineRange(172, 201)]  # AdvancedCalculatorFactory
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert (
-            "fun advancedCalculatorFactory" in all_context
-            or "advancedCalculatorFactory" in all_context
-        )
+        assert "AdvancedCalculatorFactory" in all_context
 
     def test_method_declaration_only(
         self,
@@ -144,14 +146,14 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """메서드 선언부만 추출 테스트."""
-        changed_ranges = [LineRange(39, 39)]  # addNumbers 선언부만
+        changed_ranges = [LineRange(53, 53)]  # AddNumbers 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        # 부모 클래스 선언부 검증
-        assert "class SampleCalculator" in all_context
-        assert "addNumbers" in all_context
+        # 구조체 선언부 검증
+        assert "type SampleCalculator struct" in all_context
+        assert "AddNumbers" in all_context
 
     def test_external_function_declaration_only(
         self,
@@ -159,12 +161,12 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """외부 함수 선언부만 추출 테스트."""
-        changed_ranges = [LineRange(132, 132)]  # helperFunction 선언부만
+        changed_ranges = [LineRange(154, 154)]  # HelperFunction 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "helperFunction" in all_context
+        assert "HelperFunction" in all_context
 
 
 class TestModuleLevelElements:
@@ -173,17 +175,12 @@ class TestModuleLevelElements:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "kotlin"
-            / "SampleCalculator.kt"
-        )
+        return Path(__file__).parent / "SampleCalculator.go"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Kotlin용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("kotlin")
+        """Go용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("go")
 
     def test_basic_constants(
         self,
@@ -191,26 +188,26 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """기본 상수들 추출 테스트."""
-        changed_ranges = [LineRange(6, 8)]  # 상수 선언
+        changed_ranges = [LineRange(14, 18)]  # 상수 선언
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "const" in all_context
-        assert len(all_context) > 0
+        assert "MaxCalculationSteps" in all_context or "const" in all_context
+        assert "DefaultPrecision" in all_context
 
     def test_object_constant(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """객체 상수 추출 테스트."""
-        changed_ranges = [LineRange(10, 14)]  # CALCULATION_MODES 객체
+        """구조체 상수 추출 테스트."""
+        changed_ranges = [LineRange(20, 24)]  # CalculationModes 구조체
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "val" in all_context or "mapOf" in all_context
+        assert "CalculationModes" in all_context
 
     def test_module_bottom_constants(
         self,
@@ -218,12 +215,12 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """모듈 하단 상수들 추출 테스트."""
-        changed_ranges = [LineRange(175, 179)]  # MODULE_VERSION과 AUTHOR_INFO
+        changed_ranges = [LineRange(204, 204)]  # ModuleVersion
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "const" in all_context or "val" in all_context
+        assert "ModuleVersion" in all_context
 
 
 class TestMultiRangeExtraction:
@@ -232,17 +229,12 @@ class TestMultiRangeExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "kotlin"
-            / "SampleCalculator.kt"
-        )
+        return Path(__file__).parent / "SampleCalculator.go"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Kotlin용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("kotlin")
+        """Go용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("go")
 
     def test_three_cross_functions(
         self,
@@ -251,15 +243,15 @@ class TestMultiRangeExtraction:
     ) -> None:
         """3개 함수에 걸친 영역 추출 테스트."""
         changed_ranges = [
-            LineRange(113, 172)
-        ]  # calculateCircleArea ~ advancedCalculatorFactory
+            LineRange(135, 201)
+        ]  # CalculateCircleArea ~ AdvancedCalculatorFactory
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "calculateCircleArea" in all_context
-        assert "helperFunction" in all_context
-        assert "advancedCalculatorFactory" in all_context
+        assert "CalculateCircleArea" in all_context
+        assert "HelperFunction" in all_context
+        assert "AdvancedCalculatorFactory" in all_context
 
     def test_two_blocks_cross_methods(
         self,
@@ -267,13 +259,13 @@ class TestMultiRangeExtraction:
         sample_file_path: Path,
     ) -> None:
         """2개 블록에 걸친 메서드 추출 테스트."""
-        changed_ranges = [LineRange(39, 47), LineRange(132, 137)]
+        changed_ranges = [LineRange(53, 61), LineRange(154, 158)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "addNumbers" in all_context
-        assert "helperFunction" in all_context
+        assert "AddNumbers" in all_context
+        assert "HelperFunction" in all_context
 
     def test_non_contiguous_ranges(
         self,
@@ -282,16 +274,16 @@ class TestMultiRangeExtraction:
     ) -> None:
         """비연속적인 여러 범위 추출 테스트."""
         changed_ranges = [
-            LineRange(6, 8),  # 파일 상수들
-            LineRange(119, 121),  # validateRadius 내부 함수
-            LineRange(175, 177),  # 모듈 레벨 상수들
+            LineRange(14, 18),  # 파일 상수들
+            LineRange(141, 143),  # validateRadius 내부 함수
+            LineRange(204, 204),  # 모듈 레벨 상수들
         ]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "const" in all_context
-        assert "const" in all_context or "val" in all_context
+        assert "MaxCalculationSteps" in all_context or "const" in all_context
+        assert "ModuleVersion" in all_context
 
 
 class TestComplexScenarios:
@@ -300,46 +292,41 @@ class TestComplexScenarios:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "kotlin"
-            / "SampleCalculator.kt"
-        )
+        return Path(__file__).parent / "SampleCalculator.go"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Kotlin용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("kotlin")
+        """Go용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("go")
 
     def test_entire_class_extraction(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """전체 클래스 추출 테스트."""
-        changed_ranges = [LineRange(23, 130)]  # SampleCalculator 전체 클래스
+        """전체 구조체와 관련 메서드 추출 테스트."""
+        changed_ranges = [LineRange(33, 133)]  # SampleCalculator 전체 구조체와 메서드들
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "class SampleCalculator" in all_context
-        assert "init" in all_context
-        assert "addNumbers" in all_context
+        assert "SampleCalculator" in all_context
+        assert "func" in all_context
+        assert "AddNumbers" in all_context
 
     def test_class_and_module_constants(
         self,
         extractor: ContextExtractor,
         sample_file_path: Path,
     ) -> None:
-        """클래스와 모듈 상수 동시 추출 테스트."""
-        changed_ranges = [LineRange(6, 179)]  # 상수부터 모듈 끝까지
+        """구조체와 모듈 상수 동시 추출 테스트."""
+        changed_ranges = [LineRange(14, 209)]  # 상수부터 모듈 끝까지
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
         all_context = "\n".join(contexts)
-        assert "class SampleCalculator" in all_context
-        assert "const" in all_context or "val" in all_context
+        assert "SampleCalculator" in all_context
+        assert "ModuleVersion" in all_context
 
 
 class TestEdgeCases:
@@ -348,17 +335,12 @@ class TestEdgeCases:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "language_samples"
-            / "kotlin"
-            / "SampleCalculator.kt"
-        )
+        return Path(__file__).parent / "SampleCalculator.go"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
-        """Kotlin용 ContextExtractor 인스턴스를 반환합니다."""
-        return ContextExtractor("kotlin")
+        """Go용 ContextExtractor 인스턴스를 반환합니다."""
+        return ContextExtractor("go")
 
     def test_invalid_line_ranges(
         self,
