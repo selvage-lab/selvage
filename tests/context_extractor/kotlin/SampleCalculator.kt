@@ -1,6 +1,6 @@
-/**
- * 테스트용 샘플 클래스 - tree-sitter 파싱 테스트에 사용됩니다.
- */
+import kotlin.collections.*
+import kotlin.math.*
+import kotlin.text.*
 
 // 파일 상수들
 const val MAX_CALCULATION_STEPS = 100

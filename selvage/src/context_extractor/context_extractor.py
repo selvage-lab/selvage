@@ -115,6 +115,14 @@ class ContextExtractor:
                 "class_declaration",
                 "function_declaration",
                 "object_declaration",
+                "interface_declaration",
+                "type_alias",
+                "companion_object",
+                "secondary_constructor",
+                "enum_entry",
+                "annotation_declaration",
+                "init_block",
+                "lambda_expression",
             }
         ),
         "swift": frozenset(
@@ -227,40 +235,6 @@ class ContextExtractor:
         "swift": "source_file",
     }
 
-    # 언어별 클래스 선언 타입 매핑
-    LANGUAGE_CLASS_TYPES = {
-        "python": frozenset({"class_definition"}),
-        "javascript": frozenset({"class_declaration"}),
-        "typescript": frozenset({"class_declaration"}),
-        "java": frozenset({"class_declaration"}),
-        "c": frozenset({"struct_specifier"}),  # C는 struct
-        "cpp": frozenset({"class_specifier", "struct_specifier"}),
-        "csharp": frozenset({"class_declaration", "struct_declaration"}),
-        "kotlin": frozenset({"class_declaration"}),
-        "swift": frozenset({"class_declaration"}),
-        "go": frozenset({"type_declaration"}),  # Go는 type
-    }
-
-    # 언어별 함수 선언 타입 매핑
-    LANGUAGE_FUNCTION_TYPES = {
-        "python": frozenset({"function_definition", "async_function_definition"}),
-        "javascript": frozenset(
-            {"function_declaration", "function_expression", "method_definition"}
-        ),
-        "typescript": frozenset(
-            {"function_declaration", "function_expression", "method_definition"}
-        ),
-        "java": frozenset({"method_declaration"}),
-        "c": frozenset({"function_definition"}),
-        "cpp": frozenset({"function_definition"}),
-        "csharp": frozenset({"method_declaration"}),
-        "kotlin": frozenset({"function_declaration"}),
-        "swift": frozenset(
-            {"function_declaration", "init_declaration", "deinit_declaration"}
-        ),
-        "go": frozenset({"function_declaration", "method_declaration"}),
-    }
-
     def __init__(self, language: str = "python") -> None:
         """추출기 초기화.
 
@@ -282,10 +256,6 @@ class ContextExtractor:
             self._language_name = language
             self._block_types = self.LANGUAGE_BLOCK_TYPES[language]
             self._dependency_types = self.LANGUAGE_DEPENDENCY_TYPES.get(
-                language, frozenset()
-            )
-            self._class_types = self.LANGUAGE_CLASS_TYPES.get(language, frozenset())
-            self._function_types = self.LANGUAGE_FUNCTION_TYPES.get(
                 language, frozenset()
             )
         except Exception as e:
