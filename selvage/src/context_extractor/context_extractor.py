@@ -5,51 +5,11 @@ from __future__ import annotations
 import logging
 from collections.abc import Generator, Sequence
 from pathlib import Path
-from typing import Any
 
 from tree_sitter import Language, Node, Parser
 from tree_sitter_language_pack import get_language, get_parser
 
 from .line_range import LineRange
-
-
-class DeclarationOnlyNode:
-    """클래스나 함수의 선언부만을 나타내는 래퍼 노드."""
-
-    def __init__(self, original_node: Node) -> None:
-        self._original_node = original_node
-        self._is_declaration_only = True
-
-    @property
-    def start_point(self) -> tuple[int, int]:
-        """시작 지점 반환."""
-        return self._original_node.start_point
-
-    @property
-    def end_point(self) -> tuple[int, int]:
-        """끝 지점을 선언부 라인의 끝으로 제한."""
-        # 첫 번째 라인의 끝으로 제한
-        start_line = self._original_node.start_point[0]
-        original_text = self._original_node.text.decode("utf-8")
-        first_line = original_text.split("\n")[0]
-        return (start_line, len(first_line))
-
-    @property
-    def text(self) -> bytes:
-        """선언부 텍스트만 반환."""
-        original_text = self._original_node.text.decode("utf-8")
-        first_line = original_text.split("\n")[0]
-        return first_line.encode("utf-8")
-
-    @property
-    def type(self) -> str:
-        """원본 노드의 타입 반환."""
-        return self._original_node.type
-
-    def __getattr__(self, name: str) -> Any:
-        """다른 속성들은 원본 노드에 위임."""
-        return getattr(self._original_node, name)
-
 
 logger = logging.getLogger(__name__)
 
@@ -407,20 +367,17 @@ class ContextExtractor:
         # 4. 의존성 노드들 수집
         dependency_nodes = self._collect_dependency_nodes(tree.root_node)
 
-        # 5. 컨텍스트와 관련된 의존성들만 필터링
-        related_dependencies = self._filter_related_dependencies(dependency_nodes)
-
-        # 6. 포함 관계 중복 블록 제거
+        # 5. 포함 관계 중복 블록 제거
         filtered_blocks = self._filter_nested_blocks(context_blocks)
 
-        # 7. 모든 노드들을 합치고 위치 순으로 정렬
-        all_nodes = list(filtered_blocks) + related_dependencies
+        # 6. 모든 노드들을 합치고 위치 순으로 정렬
+        all_nodes = list(filtered_blocks) + dependency_nodes
         sorted_nodes = sorted(all_nodes, key=lambda n: n.start_point)
 
-        # 8. 중복 제거 (같은 노드가 context와 dependency에 모두 포함된 경우)
+        # 7. 중복 제거 (같은 노드가 context와 dependency에 모두 포함된 경우)
         unique_nodes = self._remove_duplicate_nodes(sorted_nodes)
 
-        # 9. 텍스트 추출
+        # 8. 텍스트 추출
         contexts = []
         for node in unique_nodes:
             try:
@@ -519,16 +476,6 @@ class ContextExtractor:
         if node.type == "identifier" and self._is_file_level_node(node):
             return self._handle_assignment_node(node)
 
-        # 클래스 선언부 처리
-        if node.type in self._class_types or self._is_class_declaration_line(node):
-            return self._handle_class_declaration(node)
-
-        # 함수 선언부 처리
-        if node.type in self._function_types or self._is_function_declaration_line(
-            node
-        ):
-            return self._handle_function_declaration(node)
-
         # 일반적인 블록 처리
         return self._find_minimal_enclosing_block(node)
 
@@ -601,85 +548,6 @@ class ContextExtractor:
                 parent = parent.parent
 
         return node
-
-    def _is_class_declaration_line(self, node: Node) -> bool:
-        """클래스 선언부 라인인지 확인한다."""
-        current = node
-        while current:
-            if current.type in self._class_types:
-                # 클래스 정의의 첫 번째 라인(선언부)인지 확인
-                class_start_line = current.start_point[0]
-                node_line = node.start_point[0]
-                return node_line == class_start_line
-            current = current.parent
-        return False
-
-    def _is_function_declaration_line(self, node: Node) -> bool:
-        """함수 선언부 라인인지 확인한다."""
-        current = node
-        while current:
-            if current.type in self._function_types:
-                # 함수 정의의 첫 번째 라인(선언부)인지 확인
-                func_start_line = current.start_point[0]
-                node_line = node.start_point[0]
-                return node_line == func_start_line
-            current = current.parent
-        return False
-
-    def _handle_class_declaration(self, node: Node) -> Node | None:
-        """클래스 선언부의 적절한 컨텍스트를 결정한다."""
-        # 클래스 정의를 찾기
-        current = node
-        class_def_node = None
-        while current:
-            if current.type in self._class_types:
-                class_def_node = current
-                break
-            current = current.parent
-
-        if class_def_node is None:
-            return self._find_minimal_enclosing_block(node)
-
-        # 클래스 선언부 라인인지 확인
-        class_start_line = class_def_node.start_point[0]
-        node_line = node.start_point[0]
-
-        if node_line == class_start_line:
-            # 클래스 선언부만 변경된 경우: 선언부만 추출
-            return self._extract_class_declaration_only(class_def_node)
-        else:
-            # 클래스 내부가 변경된 경우: 전체 클래스 추출
-            return class_def_node
-
-    def _extract_class_declaration_only(self, class_def_node: Node) -> Node | None:
-        """클래스 선언부만 추출한다 (첫 번째 라인만)."""
-        # 클래스 선언부만 포함하는 특별한 래퍼 노드 생성
-        return DeclarationOnlyNode(class_def_node)
-
-    def _handle_function_declaration(self, node: Node) -> Node | None:
-        """함수 선언부의 적절한 컨텍스트를 결정한다."""
-        # 함수 정의를 찾기
-        current = node
-        func_def_node = None
-        while current:
-            if current.type in self._function_types:
-                func_def_node = current
-                break
-            current = current.parent
-
-        if func_def_node is None:
-            return self._find_minimal_enclosing_block(node)
-
-        # 함수 선언부 라인인지 확인
-        func_start_line = func_def_node.start_point[0]
-        node_line = node.start_point[0]
-
-        if node_line == func_start_line:
-            # 함수 선언부만 변경된 경우: 선언부만 추출
-            return DeclarationOnlyNode(func_def_node)
-        else:
-            # 함수 내부가 변경된 경우: 전체 함수 추출
-            return func_def_node
 
     def _is_node_contained_in(self, inner: Node, outer: Node) -> bool:
         """inner 노드가 outer 노드에 완전히 포함되는지 확인한다."""
@@ -760,21 +628,6 @@ class ContextExtractor:
             except UnicodeDecodeError:
                 return False
         return False
-
-    def _filter_related_dependencies(self, dependency_nodes: list[Node]) -> list[Node]:
-        """컨텍스트 블록들과 관련된 의존성 노드들만 필터링한다.
-
-        현재는 모든 의존성을 포함하지만, 향후 스마트 필터링 로직을 추가할 수 있다.
-
-        Args:
-            dependency_nodes: 수집된 의존성 노드들
-
-        Returns:
-            필터링된 의존성 노드들
-        """
-        # 현재는 파일 최상단 및 모든 의존성을 포함
-        # 향후 실제 사용되는 의존성만 필터링하는 로직을 추가할 수 있음
-        return dependency_nodes
 
     def _remove_duplicate_nodes(self, nodes: list[Node]) -> list[Node]:
         """중복된 노드들을 제거한다.

@@ -31,7 +31,91 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(17, 17)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        expected_result = "import json\nfrom typing import Any\nclass SampleCalculator:"
+        expected_result = (
+            'import json\n'
+            'from typing import Any\n'
+            'class SampleCalculator:\n'
+            '    """간단한 계산기 클래스 - tree-sitter 테스트용"""\n'
+            '\n'
+            '    def __init__(self, initial_value: int = 0):\n'
+            '        """계산기 초기화"""\n'
+            '        self.value = initial_value\n'
+            '        self.history = []\n'
+            '        self.mode = CALCULATION_MODES["basic"]\n'
+            '\n'
+            '    def add_numbers(self, a: int, b: int) -> int:\n'
+            '        """두 수를 더하는 메소드"""\n'
+            '\n'
+            '        def validate_inputs(x: int, y: int) -> bool:\n'
+            '            """내부 함수: 입력값 검증"""\n'
+            '            return isinstance(x, (int, float)) and isinstance(y, (int, float))\n'
+            '\n'
+            '        def log_operation(operation: str, result: int) -> None:\n'
+            '            """내부 함수: 연산 로깅"""\n'
+            '            if len(self.history) < MAX_CALCULATION_STEPS:\n'
+            '                self.history.append(f"{operation} = {result}")\n'
+            '                print(f"Logged: {operation} = {result}")\n'
+            '\n'
+            '        if not validate_inputs(a, b):\n'
+            '            raise ValueError("입력값이 숫자가 아닙니다")\n'
+            '\n'
+            '        result = a + b\n'
+            '        self.value = result\n'
+            '        log_operation(f"add: {a} + {b}", result)\n'
+            '        print(f"Addition result: {result}")\n'
+            '        return result\n'
+            '\n'
+            '    def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:\n'
+            '        """숫자 리스트를 곱하고 결과를 포맷팅하는 메소드"""\n'
+            '\n'
+            '        def calculate_product(nums: list[int]) -> int:\n'
+            '            """내부 함수: 곱셈 계산"""\n'
+            '            if not nums:\n'
+            '                return 0\n'
+            '\n'
+            '            def multiply_recursive(items: list[int], index: int = 0) -> int:\n'
+            '                """재귀적 곱셈 함수 (중첩 내부 함수)"""\n'
+            '                if index >= len(items):\n'
+            '                    return 1\n'
+            '                return items[index] * multiply_recursive(items, index + 1)\n'
+            '\n'
+            '            return multiply_recursive(nums)\n'
+            '\n'
+            '        def format_result(value: int, count: int) -> dict[str, Any]:\n'
+            '            """내부 함수: 결과 포맷팅"""\n'
+            '            return {\n'
+            '                "result": value,\n'
+            '                "formatted": f"Product: {value:,}",\n'
+            '                "count": count,\n'
+            '                "precision": DEFAULT_PRECISION,\n'
+            '            }\n'
+            '\n'
+            '        if not numbers:\n'
+            '            return {"result": 0, "formatted": "Empty list"}\n'
+            '\n'
+            '        result = calculate_product(numbers)\n'
+            '        self.value = result\n'
+            '        formatted_result = format_result(result, len(numbers))\n'
+            '\n'
+            '        # 외부 함수 호출 예시\n'
+            '        json_str = json.dumps(formatted_result)\n'
+            '        print(f"Multiplication result: {json_str}")\n'
+            '\n'
+            '        return formatted_result\n'
+            '\n'
+            '    def calculate_circle_area(self, radius: float) -> float:\n'
+            '        """원의 넓이를 계산하는 메소드 (상수 사용)"""\n'
+            '\n'
+            '        def validate_radius(r: float) -> bool:\n'
+            '            """내부 함수: 반지름 검증"""\n'
+            '            return r > 0\n'
+            '\n'
+            '        if not validate_radius(radius):\n'
+            '            raise ValueError("반지름은 양수여야 합니다")\n'
+            '\n'
+            '        area = PI_CONSTANT * radius * radius\n'
+            '        return round(area, DEFAULT_PRECISION)'
+        )
 
         assert len(contexts) == 3
         all_context = "\n".join(contexts)
@@ -247,9 +331,30 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
-            "import json\n"
-            "from typing import Any\n"
-            "def add_numbers(self, a: int, b: int) -> int:"
+            'import json\n'
+            'from typing import Any\n'
+            'def add_numbers(self, a: int, b: int) -> int:\n'
+            '        """두 수를 더하는 메소드"""\n'
+            '\n'
+            '        def validate_inputs(x: int, y: int) -> bool:\n'
+            '            """내부 함수: 입력값 검증"""\n'
+            '            return isinstance(x, (int, float)) and isinstance('
+            'y, (int, float))\n'
+            '\n'
+            '        def log_operation(operation: str, result: int) -> None:\n'
+            '            """내부 함수: 연산 로깅"""\n'
+            '            if len(self.history) < MAX_CALCULATION_STEPS:\n'
+            '                self.history.append(f"{operation} = {result}")\n'
+            '                print(f"Logged: {operation} = {result}")\n'
+            '\n'
+            '        if not validate_inputs(a, b):\n'
+            '            raise ValueError("입력값이 숫자가 아닙니다")\n'
+            '\n'
+            '        result = a + b\n'
+            '        self.value = result\n'
+            '        log_operation(f"add: {a} + {b}", result)\n'
+            '        print(f"Addition result: {result}")\n'
+            '        return result'
         )
 
         assert len(contexts) == 3
@@ -266,9 +371,20 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
-            "import json\n"
-            "from typing import Any\n"
-            "def helper_function(data: dict) -> str:"
+            'import json\n'
+            'from typing import Any\n'
+            'def helper_function(data: dict) -> str:\n'
+            '    """도우미 함수 - 클래스 외부 함수"""\n'
+            '\n'
+            '    def format_dict_items(items: dict) -> list[str]:\n'
+            '        """내부 함수: 딕셔너리 아이템 포맷팅"""\n'
+            '        formatted = []\n'
+            '        for key, value in items.items():\n'
+            '            formatted.append(f"{key}: {value}")\n'
+            '        return formatted\n'
+            '\n'
+            '    formatted_items = format_dict_items(data)\n'
+            '    return f"Helper processed: {\', \'.join(formatted_items)}"'
         )
 
         assert len(contexts) == 3
