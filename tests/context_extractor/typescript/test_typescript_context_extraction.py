@@ -31,13 +31,125 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(31, 31)]  # SampleCalculator 클래스 선언부
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "class SampleCalculator {\n"
+            "    /**\n"
+            "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
+            "     */\n"
+            "    \n"
+            "    private value: number;\n"
+            "    private history: string[];\n"
+            "    private mode: string;\n"
+            "    \n"
+            "    constructor(initialValue: number = 0) {\n"
+            "        /**\n"
+            "         * 계산기 초기화\n"
+            "         */\n"
+            "        this.value = initialValue;\n"
+            "        this.history = [];\n"
+            "        this.mode = CALCULATION_MODES.basic;\n"
+            "    }\n"
+            "    \n"
+            "    public addNumbers(a: number, b: number): number {\n"
+            "        /**\n"
+            "         * 두 수를 더하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 입력값 검증\n"
+            "        function validateInputs(x: number, y: number): boolean {\n"
+            "            return typeof x === 'number' && typeof y === 'number';\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 연산 로깅\n"
+            "        const logOperation = (operation: string, result: number): void => {\n"
+            "            if (this.history.length < MAX_CALCULATION_STEPS) {\n"
+            "                this.history.push(`${operation} = ${result}`);\n"
+            "                console.log(`Logged: ${operation} = ${result}`);\n"
+            "            }\n"
+            "        };\n"
+            "        \n"
+            "        if (!validateInputs(a, b)) {\n"
+            "            throw new Error(\"입력값이 숫자가 아닙니다\");\n"
+            "        }\n"
+            "        \n"
+            "        const result: number = a + b;\n"
+            "        this.value = result;\n"
+            "        logOperation(`add: ${a} + ${b}`, result);\n"
+            "        console.log(`Addition result: ${result}`);\n"
+            "        return result;\n"
+            "    }\n"
+            "    \n"
+            "    public multiplyAndFormat(numbers: number[]): FormattedResult {\n"
+            "        /**\n"
+            "         * 숫자 리스트를 곱하고 결과를 포맷팅하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 곱셈 계산\n"
+            "        function calculateProduct(nums: number[]): number {\n"
+            "            if (nums.length === 0) {\n"
+            "                return 0;\n"
+            "            }\n"
+            "            \n"
+            "            // 재귀적 곱셈 함수 (중첩 내부 함수)\n"
+            "            function multiplyRecursive(items: number[], index: number = 0): number {\n"
+            "                if (index >= items.length) {\n"
+            "                    return 1;\n"
+            "                }\n"
+            "                return items[index] * multiplyRecursive(items, index + 1);\n"
+            "            }\n"
+            "            \n"
+            "            return multiplyRecursive(nums);\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 결과 포맷팅\n"
+            "        const formatResult = (value: number, count: number): FormattedResult => {\n"
+            "            return {\n"
+            "                result: value,\n"
+            "                formatted: `Product: ${value.toLocaleString()}`,\n"
+            "                count: count,\n"
+            "                precision: DEFAULT_PRECISION\n"
+            "            };\n"
+            "        };\n"
+            "        \n"
+            "        if (numbers.length === 0) {\n"
+            "            return { result: 0, formatted: \"Empty list\", count: 0, precision: DEFAULT_PRECISION };\n"
+            "        }\n"
+            "        \n"
+            "        const result: number = calculateProduct(numbers);\n"
+            "        this.value = result;\n"
+            "        const formattedResult: FormattedResult = formatResult(result, numbers.length);\n"
+            "        \n"
+            "        console.log(`Multiplication result: ${JSON.stringify(formattedResult)}`);\n"
+            "        \n"
+            "        return formattedResult;\n"
+            "    }\n"
+            "    \n"
+            "    public calculateCircleArea(radius: number): number {\n"
+            "        /**\n"
+            "         * 원의 넓이를 계산하는 메소드 (상수 사용)\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 반지름 검증\n"
+            "        function validateRadius(r: number): boolean {\n"
+            "            return r > 0;\n"
+            "        }\n"
+            "        \n"
+            "        if (!validateRadius(radius)) {\n"
+            "            throw new Error(\"반지름은 양수여야 합니다\");\n"
+            "        }\n"
+            "        \n"
+            "        const area: number = PI_CONSTANT * radius * radius;\n"
+            "        return Math.round(area * Math.pow(10, DEFAULT_PRECISION)) / Math.pow(10, DEFAULT_PRECISION);\n"
+            "    }\n"
+            "}"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import * as fs from 'fs'" in all_context
-        assert "import { join, resolve } from 'path'" in all_context
-        assert "import { promisify } from 'util'" in all_context
-        assert "class SampleCalculator" in all_context
+        assert all_context == expected_result
 
     def test_constructor_method(
         self,
@@ -46,23 +158,27 @@ class TestBasicFunctionExtraction:
     ) -> None:
         """생성자 메서드 추출 테스트."""
         changed_ranges = [
-            LineRange(41, 46)
-        ]  # constructor 메서드 (import 문 추가로 3줄 증가)
+            LineRange(40, 47)
+        ]  # constructor 메서드
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
-        all_context = "\n".join(contexts)
-        # import 문 검증
-        assert "import * as fs from 'fs'" in all_context
-        assert "import { join, resolve } from 'path'" in all_context
-        assert "import { promisify } from 'util'" in all_context
-        assert "class SampleCalculator" in all_context
-        assert "constructor(" in all_context
-        assert (
-            "this.value = initialValue" in all_context
-            or "this.value: number" in all_context
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "constructor(initialValue: number = 0) {\n"
+            "        /**\n"
+            "         * 계산기 초기화\n"
+            "         */\n"
+            "        this.value = initialValue;\n"
+            "        this.history = [];\n"
+            "        this.mode = CALCULATION_MODES.basic;\n"
+            "    }"
         )
-        assert "this.history" in all_context
+
+        assert len(contexts) == 4
+        all_context = "\n".join(contexts)
+        assert all_context == expected_result
 
     def test_class_method(
         self,
@@ -70,13 +186,46 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """클래스 메서드 추출 테스트."""
-        changed_ranges = [LineRange(49, 72)]  # addNumbers 메서드
+        changed_ranges = [LineRange(49, 76)]  # addNumbers 메서드
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "public addNumbers(a: number, b: number): number {\n"
+            "        /**\n"
+            "         * 두 수를 더하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 입력값 검증\n"
+            "        function validateInputs(x: number, y: number): boolean {\n"
+            "            return typeof x === 'number' && typeof y === 'number';\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 연산 로깅\n"
+            "        const logOperation = (operation: string, result: number): void => {\n"
+            "            if (this.history.length < MAX_CALCULATION_STEPS) {\n"
+            "                this.history.push(`${operation} = ${result}`);\n"
+            "                console.log(`Logged: ${operation} = ${result}`);\n"
+            "            }\n"
+            "        };\n"
+            "        \n"
+            "        if (!validateInputs(a, b)) {\n"
+            "            throw new Error(\"입력값이 숫자가 아닙니다\");\n"
+            "        }\n"
+            "        \n"
+            "        const result: number = a + b;\n"
+            "        this.value = result;\n"
+            "        logOperation(`add: ${a} + ${b}`, result);\n"
+            "        console.log(`Addition result: ${result}`);\n"
+            "        return result;\n"
+            "    }"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "addNumbers" in all_context
-        assert "number" in all_context  # TypeScript 타입 시스템
+        assert all_context == expected_result
 
     def test_complex_method(
         self,
@@ -84,12 +233,62 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """복잡한 메서드 추출 테스트."""
-        changed_ranges = [LineRange(79, 117)]  # multiplyAndFormat 메서드
+        changed_ranges = [LineRange(78, 121)]  # multiplyAndFormat 메서드
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "public multiplyAndFormat(numbers: number[]): FormattedResult {\n"
+            "        /**\n"
+            "         * 숫자 리스트를 곱하고 결과를 포맷팅하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 곱셈 계산\n"
+            "        function calculateProduct(nums: number[]): number {\n"
+            "            if (nums.length === 0) {\n"
+            "                return 0;\n"
+            "            }\n"
+            "            \n"
+            "            // 재귀적 곱셈 함수 (중첩 내부 함수)\n"
+            "            function multiplyRecursive(items: number[], index: number = 0): number {\n"
+            "                if (index >= items.length) {\n"
+            "                    return 1;\n"
+            "                }\n"
+            "                return items[index] * multiplyRecursive(items, index + 1);\n"
+            "            }\n"
+            "            \n"
+            "            return multiplyRecursive(nums);\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 결과 포맷팅\n"
+            "        const formatResult = (value: number, count: number): FormattedResult => {\n"
+            "            return {\n"
+            "                result: value,\n"
+            "                formatted: `Product: ${value.toLocaleString()}`,\n"
+            "                count: count,\n"
+            "                precision: DEFAULT_PRECISION\n"
+            "            };\n"
+            "        };\n"
+            "        \n"
+            "        if (numbers.length === 0) {\n"
+            "            return { result: 0, formatted: \"Empty list\", count: 0, precision: DEFAULT_PRECISION };\n"
+            "        }\n"
+            "        \n"
+            "        const result: number = calculateProduct(numbers);\n"
+            "        this.value = result;\n"
+            "        const formattedResult: FormattedResult = formatResult(result, numbers.length);\n"
+            "        \n"
+            "        console.log(`Multiplication result: ${JSON.stringify(formattedResult)}`);\n"
+            "        \n"
+            "        return formattedResult;\n"
+            "    }"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "multiplyAndFormat" in all_context
+        assert all_context == expected_result
 
     def test_nested_inner_function(
         self,
@@ -100,10 +299,21 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(90, 95)]  # multiplyRecursive 내부 함수
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "function multiplyRecursive(items: number[], index: number = 0): number {\n"
+            "                if (index >= items.length) {\n"
+            "                    return 1;\n"
+            "                }\n"
+            "                return items[index] * multiplyRecursive(items, index + 1);\n"
+            "            }"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "multiplyAndFormat" in all_context
-        assert "multiplyRecursive" in all_context or "function" in all_context
+        assert all_context == expected_result
 
     def test_external_function(
         self,
@@ -111,12 +321,35 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """클래스 외부 함수 추출 테스트."""
-        changed_ranges = [LineRange(142, 148)]  # helperFunction
+        changed_ranges = [LineRange(142, 158)]  # helperFunction
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "function helperFunction(data: Record<string, any>): string {\n"
+            "    /**\n"
+            "     * 도우미 함수 - 클래스 외부 함수\n"
+            "     */\n"
+            "    \n"
+            "    // 내부 함수: 딕셔너리 아이템 포맷팅\n"
+            "    function formatDictItems(items: Record<string, any>): string[] {\n"
+            "        const formatted: string[] = [];\n"
+            "        for (const [key, value] of Object.entries(items)) {\n"
+            "            formatted.push(`${key}: ${value}`);\n"
+            "        }\n"
+            "        return formatted;\n"
+            "    }\n"
+            "    \n"
+            "    const formattedItems: string[] = formatDictItems(data);\n"
+            "    return `Helper processed: ${formattedItems.join(', ')}`;\n"
+            "}"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "function helperFunction" in all_context
+        assert all_context == expected_result
 
     def test_factory_function(
         self,
@@ -124,12 +357,43 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """팩토리 함수 추출 테스트."""
-        changed_ranges = [LineRange(160, 174)]  # advancedCalculatorFactory
+        changed_ranges = [LineRange(160, 184)]  # advancedCalculatorFactory
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            'function advancedCalculatorFactory(mode: string = "basic"): SampleCalculator {\n'
+            "    /**\n"
+            "     * 계산기 팩토리 함수\n"
+            "     */\n"
+            "    \n"
+            "    // 내부 함수: 모드별 계산기 생성\n"
+            "    function createCalculatorWithMode(calcMode: string): SampleCalculator {\n"
+            "        const calc: SampleCalculator = new SampleCalculator();\n"
+            "        if (calcMode in CALCULATION_MODES) {\n"
+            "            calc['mode'] = CALCULATION_MODES[calcMode];\n"
+            "        }\n"
+            "        return calc;\n"
+            "    }\n"
+            "    \n"
+            "    // 내부 함수: 모드 검증\n"
+            "    function validateMode(m: string): boolean {\n"
+            "        return m in CALCULATION_MODES;\n"
+            "    }\n"
+            "    \n"
+            "    if (!validateMode(mode)) {\n"
+            '        mode = "basic";\n'
+            "    }\n"
+            "    \n"
+            "    return createCalculatorWithMode(mode);\n"
+            "}"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "advancedCalculatorFactory" in all_context
+        assert all_context == expected_result
 
     def test_method_declaration_only(
         self,
@@ -139,12 +403,46 @@ class TestBasicFunctionExtraction:
         """메서드 선언부만 추출 테스트."""
         changed_ranges = [
             LineRange(49, 49)
-        ]  # addNumbers 선언부만 (import 문 추가로 3줄 증가)
+        ]  # addNumbers 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "public addNumbers(a: number, b: number): number {\n"
+            "        /**\n"
+            "         * 두 수를 더하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 입력값 검증\n"
+            "        function validateInputs(x: number, y: number): boolean {\n"
+            "            return typeof x === 'number' && typeof y === 'number';\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 연산 로깅\n"
+            "        const logOperation = (operation: string, result: number): void => {\n"
+            "            if (this.history.length < MAX_CALCULATION_STEPS) {\n"
+            "                this.history.push(`${operation} = ${result}`);\n"
+            "                console.log(`Logged: ${operation} = ${result}`);\n"
+            "            }\n"
+            "        };\n"
+            "        \n"
+            "        if (!validateInputs(a, b)) {\n"
+            "            throw new Error(\"입력값이 숫자가 아닙니다\");\n"
+            "        }\n"
+            "        \n"
+            "        const result: number = a + b;\n"
+            "        this.value = result;\n"
+            "        logOperation(`add: ${a} + ${b}`, result);\n"
+            "        console.log(`Addition result: ${result}`);\n"
+            "        return result;\n"
+            "    }"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "addNumbers" in all_context
+        assert all_context == expected_result
 
     def test_external_function_declaration_only(
         self,
@@ -155,9 +453,32 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(142, 142)]  # helperFunction 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "function helperFunction(data: Record<string, any>): string {\n"
+            "    /**\n"
+            "     * 도우미 함수 - 클래스 외부 함수\n"
+            "     */\n"
+            "    \n"
+            "    // 내부 함수: 딕셔너리 아이템 포맷팅\n"
+            "    function formatDictItems(items: Record<string, any>): string[] {\n"
+            "        const formatted: string[] = [];\n"
+            "        for (const [key, value] of Object.entries(items)) {\n"
+            "            formatted.push(`${key}: ${value}`);\n"
+            "        }\n"
+            "        return formatted;\n"
+            "    }\n"
+            "    \n"
+            "    const formattedItems: string[] = formatDictItems(data);\n"
+            "    return `Helper processed: ${formattedItems.join(', ')}`;\n"
+            "}"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "helperFunction" in all_context
+        assert all_context == expected_result
 
 
 class TestModuleLevelElements:
@@ -179,13 +500,21 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """기본 상수들 추출 테스트."""
-        changed_ranges = [LineRange(10, 11)]  # 상수 선언
+        changed_ranges = [LineRange(10, 12)]  # 상수 선언
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "const MAX_CALCULATION_STEPS: number = 100;\n"
+            "const DEFAULT_PRECISION: number = 2;\n"
+            "const PI_CONSTANT: number = 3.14159;"
+        )
+
+        assert len(contexts) == 6
         all_context = "\n".join(contexts)
-        assert "MAX_CALCULATION_STEPS" in all_context
-        assert "DEFAULT_PRECISION" in all_context
+        assert all_context == expected_result
 
     def test_object_constant(
         self,
@@ -193,12 +522,23 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """객체 상수 추출 테스트."""
-        changed_ranges = [LineRange(18, 21)]  # CALCULATION_MODES 객체
+        changed_ranges = [LineRange(18, 22)]  # CALCULATION_MODES 객체
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "const CALCULATION_MODES: CalculationModes = {\n"
+            '    basic: "Basic calculations",\n'
+            '    advanced: "Advanced calculations with logging",\n'
+            '    debug: "Debug mode with detailed output"\n'
+            "};"
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "CALCULATION_MODES" in all_context
+        assert all_context == expected_result
 
     def test_module_bottom_constants(
         self,
@@ -208,12 +548,19 @@ class TestModuleLevelElements:
         """모듈 하단 상수들 추출 테스트."""
         changed_ranges = [
             LineRange(187, 187)
-        ]  # MODULE_VERSION (import 문 추가로 3줄 증가)
+        ]  # MODULE_VERSION
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            'const MODULE_VERSION: string = "1.0.0";'
+        )
+
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        assert "MODULE_VERSION" in all_context
+        assert all_context == expected_result
 
 
 class TestMultiRangeExtraction:
@@ -236,15 +583,19 @@ class TestMultiRangeExtraction:
     ) -> None:
         """3개 함수에 걸친 영역 추출 테스트."""
         changed_ranges = [
-            LineRange(123, 174)
+            LineRange(123, 184)
         ]  # calculateCircleArea ~ advancedCalculatorFactory
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        assert len(contexts) == 6
         all_context = "\n".join(contexts)
-        assert "calculateCircleArea" in all_context
-        assert "helperFunction" in all_context
-        assert "advancedCalculatorFactory" in all_context
+        # 전체 결과가 너무 길어서 주요 버전만 검증
+        assert "calculateCircleArea(radius: number): number" in all_context
+        assert "function helperFunction" in all_context
+        assert "function advancedCalculatorFactory" in all_context
+        # import 문들 검증
+        assert "import * as fs from 'fs';" in all_context
+        assert "import { join, resolve } from 'path';" in all_context
 
     def test_two_blocks_cross_methods(
         self,
@@ -252,13 +603,17 @@ class TestMultiRangeExtraction:
         sample_file_path: Path,
     ) -> None:
         """2개 블록에 걸친 메서드 추출 테스트."""
-        changed_ranges = [LineRange(49, 53), LineRange(142, 157)]
+        changed_ranges = [LineRange(49, 53), LineRange(142, 146)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 2
+        assert len(contexts) == 5
         all_context = "\n".join(contexts)
-        assert "addNumbers" in all_context
-        assert "helperFunction" in all_context
+        # 전체 결과가 길어서 주요 콘텐츠만 검증
+        assert "addNumbers(a: number, b: number): number" in all_context
+        assert "function helperFunction" in all_context
+        # import 문들 검증
+        assert "import * as fs from 'fs';" in all_context
+        assert "import { join, resolve } from 'path';" in all_context
 
     def test_non_contiguous_ranges(
         self,
@@ -267,16 +622,28 @@ class TestMultiRangeExtraction:
     ) -> None:
         """비연속적인 여러 범위 추출 테스트."""
         changed_ranges = [
-            LineRange(10, 11),  # 파일 상수들
+            LineRange(10, 12),  # 파일 상수들
             LineRange(129, 131),  # validateRadius 내부 함수
             LineRange(187, 187),  # 모듈 레벨 상수들
         ]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "const MAX_CALCULATION_STEPS: number = 100;\n"
+            "const DEFAULT_PRECISION: number = 2;\n"
+            "const PI_CONSTANT: number = 3.14159;\n"
+            "function validateRadius(r: number): boolean {\n"
+            "            return r > 0;\n"
+            "        }\n"
+            'const MODULE_VERSION: string = "1.0.0";'
+        )
+
+        assert len(contexts) == 8
         all_context = "\n".join(contexts)
-        assert "MAX_CALCULATION_STEPS" in all_context
-        assert "MODULE_VERSION" in all_context
+        assert all_context == expected_result
 
 
 class TestComplexScenarios:
@@ -301,11 +668,17 @@ class TestComplexScenarios:
         changed_ranges = [LineRange(31, 140)]  # SampleCalculator 전체 클래스
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        assert len(contexts) == 4
         all_context = "\n".join(contexts)
+        # 전체 결과가 너무 길어서 주요 콘텐츠만 검증
         assert "class SampleCalculator" in all_context
-        assert "constructor" in all_context
-        assert "addNumbers" in all_context
+        assert "constructor(initialValue: number = 0)" in all_context
+        assert "addNumbers(a: number, b: number): number" in all_context
+        assert "multiplyAndFormat(numbers: number[]): FormattedResult" in all_context
+        assert "calculateCircleArea(radius: number): number" in all_context
+        # import 문들 검증
+        assert "import * as fs from 'fs';" in all_context
+        assert "import { join, resolve } from 'path';" in all_context
 
     def test_class_and_module_constants(
         self,
@@ -313,13 +686,23 @@ class TestComplexScenarios:
         sample_file_path: Path,
     ) -> None:
         """클래스와 모듈 상수 동시 추출 테스트."""
-        changed_ranges = [LineRange(10, 193)]  # 상수부터 모듈 끝까지
+        changed_ranges = [LineRange(10, 191)]  # 상수부터 모듈 끝까지
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
+        assert len(contexts) == 15
         all_context = "\n".join(contexts)
+        # 전체 결과가 매우 길어서 주요 콘텐츠만 검증
         assert "class SampleCalculator" in all_context
+        assert "function helperFunction" in all_context
+        assert "function advancedCalculatorFactory" in all_context
         assert "MODULE_VERSION" in all_context
+        assert "AUTHOR_INFO" in all_context
+        # 상수들 검증
+        assert "MAX_CALCULATION_STEPS" in all_context
+        assert "CALCULATION_MODES" in all_context
+        # import 문들 검증
+        assert "import * as fs from 'fs';" in all_context
+        assert "import { join, resolve } from 'path';" in all_context
 
 
 class TestEdgeCases:
@@ -345,7 +728,12 @@ class TestEdgeCases:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         # 범위를 벗어나더라도 에러가 발생하지 않아야 함
-        assert len(contexts) >= 0
+        # import 문들만 반환되어야 함
+        assert len(contexts) == 3
+        all_context = "\n".join(contexts)
+        assert "import * as fs from 'fs';" in all_context
+        assert "import { join, resolve } from 'path';" in all_context
+        assert "import { promisify } from 'util';" in all_context
 
     def test_reverse_line_ranges(self) -> None:
         """잘못된 범위 생성 시 예외 발생 테스트."""
@@ -358,8 +746,13 @@ class TestEdgeCases:
         sample_file_path: Path,
     ) -> None:
         """빈 라인 범위 처리 테스트."""
-        changed_ranges = [LineRange(34, 35)]  # 빈 라인 또는 주석
+        changed_ranges = [LineRange(13, 14)]  # 빈 라인 또는 주석
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         # 빈 라인 범위에서도 적절히 처리되어야 함
-        assert len(contexts) >= 0
+        # import 문들과 기본 상수 반환
+        assert len(contexts) == 4
+        all_context = "\n".join(contexts)
+        assert "import * as fs from 'fs';" in all_context
+        assert "import { join, resolve } from 'path';" in all_context
+        assert "import { promisify } from 'util';" in all_context
