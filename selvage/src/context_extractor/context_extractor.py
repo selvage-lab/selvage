@@ -123,6 +123,7 @@ class ContextExtractor:
                 "annotation_declaration",
                 "init_block",
                 "lambda_expression",
+                "property_declaration",
             }
         ),
         "swift": frozenset(
@@ -210,7 +211,6 @@ class ContextExtractor:
         "kotlin": frozenset(
             {
                 "import_header",
-                "import_list",
                 "package_header",
             }
         ),
@@ -351,6 +351,13 @@ class ContextExtractor:
         for node in unique_nodes:
             try:
                 node_text = node.text.decode("utf-8")
+                
+                # 코틀린 import_header 노드인 경우 주석 제거
+                if (self._language_name == "kotlin" and 
+                    node.type == "import_header" and 
+                    node in dependency_nodes):
+                    node_text = self._clean_kotlin_import_header(node_text)
+                
                 contexts.append(node_text)
             except UnicodeDecodeError:
                 logger.error(f"노드 텍스트 디코딩 실패: {node.start_point}")
@@ -622,3 +629,20 @@ class ContextExtractor:
                 seen_positions.add(position)
 
         return unique_nodes
+
+    def _clean_kotlin_import_header(self, text: str) -> str:
+        """코틀린 import_header에서 주석 부분 제거.
+        
+        \n\n 패턴 이후의 모든 내용을 제거하여 import 문만 남긴다.
+        
+        Args:
+            text: 정리할 텍스트
+            
+        Returns:
+            정리된 텍스트 (import 문만 포함)
+        """
+        double_newline_index = text.find('\n\n')
+        if double_newline_index != -1:
+            # 첫 번째 빈 줄까지만 포함하고 나머지는 제거
+            return text[:double_newline_index + 1].rstrip()
+        return text

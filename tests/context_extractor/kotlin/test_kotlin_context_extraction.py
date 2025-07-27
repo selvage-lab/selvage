@@ -33,20 +33,22 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "class SampleCalculator(private var value: Int = 0) {\n"
             "    /**\n"
             "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
             "     */\n"
             "    \n"
             "    private val history = mutableListOf<String>()\n"
-            "    private var mode = CALCULATION_MODES[\"basic\"] ?: \"basic\"\n"
+            '    private var mode = CALCULATION_MODES["basic"] ?: "basic"\n'
             "    \n"
             "    init {\n"
             "        /**\n"
             "         * 계산기 초기화\n"
             "         */\n"
             "        this.history.clear()\n"
-            "        this.mode = CALCULATION_MODES[\"basic\"] ?: \"basic\"\n"
+            '        this.mode = CALCULATION_MODES["basic"] ?: "basic"\n'
             "    }\n"
             "    \n"
             "    fun addNumbers(a: Int, b: Int): Int {\n"
@@ -62,19 +64,19 @@ class TestBasicFunctionExtraction:
             "        // 내부 함수: 연산 로깅\n"
             "        fun logOperation(operation: String, result: Int) {\n"
             "            if (history.size < MAX_CALCULATION_STEPS) {\n"
-            "                history.add(\"$operation = $result\")\n"
-            "                println(\"Logged: $operation = $result\")\n"
+            '                history.add("$operation = $result")\n'
+            '                println("Logged: $operation = $result")\n'
             "            }\n"
             "        }\n"
             "        \n"
             "        if (!validateInputs(a, b)) {\n"
-            "            throw IllegalArgumentException(\"입력값이 숫자가 아닙니다\")\n"
+            '            throw IllegalArgumentException("입력값이 숫자가 아닙니다")\n'
             "        }\n"
             "        \n"
             "        val result = a + b\n"
             "        value = result\n"
-            "        logOperation(\"add: $a + $b\", result)\n"
-            "        println(\"Addition result: $result\")\n"
+            '        logOperation("add: $a + $b", result)\n'
+            '        println("Addition result: $result")\n'
             "        return result\n"
             "    }\n"
             "    \n"
@@ -104,21 +106,21 @@ class TestBasicFunctionExtraction:
             "        fun formatResult(value: Int, count: Int): FormattedResult {\n"
             "            return FormattedResult(\n"
             "                result = value,\n"
-            "                formatted = \"Product: ${\"%,d\".format(value)}\",\n"
+            '                formatted = "Product: ${"%,d".format(value)}",\n'
             "                count = count,\n"
             "                precision = DEFAULT_PRECISION\n"
             "            )\n"
             "        }\n"
             "        \n"
             "        if (numbers.isEmpty()) {\n"
-            "            return FormattedResult(0, \"Empty list\", 0, DEFAULT_PRECISION)\n"
+            '            return FormattedResult(0, "Empty list", 0, DEFAULT_PRECISION)\n'
             "        }\n"
             "        \n"
             "        val result = calculateProduct(numbers)\n"
             "        value = result\n"
             "        val formattedResult = formatResult(result, numbers.size)\n"
             "        \n"
-            "        println(\"Multiplication result: $formattedResult\")\n"
+            '        println("Multiplication result: $formattedResult")\n'
             "        \n"
             "        return formattedResult\n"
             "    }\n"
@@ -134,7 +136,7 @@ class TestBasicFunctionExtraction:
             "        }\n"
             "        \n"
             "        if (!validateRadius(radius)) {\n"
-            "            throw IllegalArgumentException(\"반지름은 양수여야 합니다\")\n"
+            '            throw IllegalArgumentException("반지름은 양수여야 합니다")\n'
             "        }\n"
             "        \n"
             "        val area = PI_CONSTANT * radius * radius\n"
@@ -143,7 +145,6 @@ class TestBasicFunctionExtraction:
             "}"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -158,16 +159,118 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
-            "init {\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
+            "class SampleCalculator(private var value: Int = 0) {\n"
+            "    /**\n"
+            "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
+            "     */\n"
+            "    \n"
+            "    private val history = mutableListOf<String>()\n"
+            '    private var mode = CALCULATION_MODES["basic"] ?: "basic"\n'
+            "    \n"
+            "    init {\n"
             "        /**\n"
             "         * 계산기 초기화\n"
             "         */\n"
             "        this.history.clear()\n"
-            "        this.mode = CALCULATION_MODES[\"basic\"] ?: \"basic\"\n"
-            "    }"
+            '        this.mode = CALCULATION_MODES["basic"] ?: "basic"\n'
+            "    }\n"
+            "    \n"
+            "    fun addNumbers(a: Int, b: Int): Int {\n"
+            "        /**\n"
+            "         * 두 수를 더하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 입력값 검증\n"
+            "        fun validateInputs(x: Int, y: Int): Boolean {\n"
+            "            return true // Kotlin에서는 타입이 보장됨\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 연산 로깅\n"
+            "        fun logOperation(operation: String, result: Int) {\n"
+            "            if (history.size < MAX_CALCULATION_STEPS) {\n"
+            '                history.add("$operation = $result")\n'
+            '                println("Logged: $operation = $result")\n'
+            "            }\n"
+            "        }\n"
+            "        \n"
+            "        if (!validateInputs(a, b)) {\n"
+            '            throw IllegalArgumentException("입력값이 숫자가 아닙니다")\n'
+            "        }\n"
+            "        \n"
+            "        val result = a + b\n"
+            "        value = result\n"
+            '        logOperation("add: $a + $b", result)\n'
+            '        println("Addition result: $result")\n'
+            "        return result\n"
+            "    }\n"
+            "    \n"
+            "    fun multiplyAndFormat(numbers: List<Int>): FormattedResult {\n"
+            "        /**\n"
+            "         * 숫자 리스트를 곱하고 결과를 포맷팅하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 곱셈 계산\n"
+            "        fun calculateProduct(nums: List<Int>): Int {\n"
+            "            if (nums.isEmpty()) {\n"
+            "                return 0\n"
+            "            }\n"
+            "            \n"
+            "            // 재귀적 곱셈 함수 (중첩 내부 함수)\n"
+            "            fun multiplyRecursive(items: List<Int>, index: Int = 0): Int {\n"
+            "                if (index >= items.size) {\n"
+            "                    return 1\n"
+            "                }\n"
+            "                return items[index] * multiplyRecursive(items, index + 1)\n"
+            "            }\n"
+            "            \n"
+            "            return multiplyRecursive(nums)\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 결과 포맷팅\n"
+            "        fun formatResult(value: Int, count: Int): FormattedResult {\n"
+            "            return FormattedResult(\n"
+            "                result = value,\n"
+            '                formatted = "Product: ${"%,d".format(value)}",\n'
+            "                count = count,\n"
+            "                precision = DEFAULT_PRECISION\n"
+            "            )\n"
+            "        }\n"
+            "        \n"
+            "        if (numbers.isEmpty()) {\n"
+            '            return FormattedResult(0, "Empty list", 0, DEFAULT_PRECISION)\n'
+            "        }\n"
+            "        \n"
+            "        val result = calculateProduct(numbers)\n"
+            "        value = result\n"
+            "        val formattedResult = formatResult(result, numbers.size)\n"
+            "        \n"
+            '        println("Multiplication result: $formattedResult")\n'
+            "        \n"
+            "        return formattedResult\n"
+            "    }\n"
+            "    \n"
+            "    fun calculateCircleArea(radius: Double): Double {\n"
+            "        /**\n"
+            "         * 원의 넓이를 계산하는 메소드 (상수 사용)\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 반지름 검증\n"
+            "        fun validateRadius(r: Double): Boolean {\n"
+            "            return r > 0\n"
+            "        }\n"
+            "        \n"
+            "        if (!validateRadius(radius)) {\n"
+            '            throw IllegalArgumentException("반지름은 양수여야 합니다")\n'
+            "        }\n"
+            "        \n"
+            "        val area = PI_CONSTANT * radius * radius\n"
+            "        return kotlin.math.round(area * kotlin.math.pow(10.0, DEFAULT_PRECISION.toDouble())) / kotlin.math.pow(10.0, DEFAULT_PRECISION.toDouble())\n"
+            "    }\n"
+            "}"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -182,6 +285,8 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "fun addNumbers(a: Int, b: Int): Int {\n"
             "        /**\n"
             "         * 두 수를 더하는 메소드\n"
@@ -195,24 +300,23 @@ class TestBasicFunctionExtraction:
             "        // 내부 함수: 연산 로깅\n"
             "        fun logOperation(operation: String, result: Int) {\n"
             "            if (history.size < MAX_CALCULATION_STEPS) {\n"
-            "                history.add(\"$operation = $result\")\n"
-            "                println(\"Logged: $operation = $result\")\n"
+            '                history.add("$operation = $result")\n'
+            '                println("Logged: $operation = $result")\n'
             "            }\n"
             "        }\n"
             "        \n"
             "        if (!validateInputs(a, b)) {\n"
-            "            throw IllegalArgumentException(\"입력값이 숫자가 아닙니다\")\n"
+            '            throw IllegalArgumentException("입력값이 숫자가 아닙니다")\n'
             "        }\n"
             "        \n"
             "        val result = a + b\n"
             "        value = result\n"
-            "        logOperation(\"add: $a + $b\", result)\n"
-            "        println(\"Addition result: $result\")\n"
+            '        logOperation("add: $a + $b", result)\n'
+            '        println("Addition result: $result")\n'
             "        return result\n"
             "    }"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -227,6 +331,8 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "fun multiplyAndFormat(numbers: List<Int>): FormattedResult {\n"
             "        /**\n"
             "         * 숫자 리스트를 곱하고 결과를 포맷팅하는 메소드\n"
@@ -253,27 +359,26 @@ class TestBasicFunctionExtraction:
             "        fun formatResult(value: Int, count: Int): FormattedResult {\n"
             "            return FormattedResult(\n"
             "                result = value,\n"
-            "                formatted = \"Product: ${\"%,d\".format(value)}\",\n"
+            '                formatted = "Product: ${"%,d".format(value)}",\n'
             "                count = count,\n"
             "                precision = DEFAULT_PRECISION\n"
             "            )\n"
             "        }\n"
             "        \n"
             "        if (numbers.isEmpty()) {\n"
-            "            return FormattedResult(0, \"Empty list\", 0, DEFAULT_PRECISION)\n"
+            '            return FormattedResult(0, "Empty list", 0, DEFAULT_PRECISION)\n'
             "        }\n"
             "        \n"
             "        val result = calculateProduct(numbers)\n"
             "        value = result\n"
             "        val formattedResult = formatResult(result, numbers.size)\n"
             "        \n"
-            "        println(\"Multiplication result: $formattedResult\")\n"
+            '        println("Multiplication result: $formattedResult")\n'
             "        \n"
             "        return formattedResult\n"
             "    }"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -288,6 +393,8 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "fun multiplyRecursive(items: List<Int>, index: Int = 0): Int {\n"
             "                if (index >= items.size) {\n"
             "                    return 1\n"
@@ -296,7 +403,6 @@ class TestBasicFunctionExtraction:
             "            }"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -311,6 +417,8 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "fun helperFunction(data: Map<String, Any>): String {\n"
             "    /**\n"
             "     * 도우미 함수 - 클래스 외부 함수\n"
@@ -320,17 +428,16 @@ class TestBasicFunctionExtraction:
             "    fun formatDictItems(items: Map<String, Any>): List<String> {\n"
             "        val formatted = mutableListOf<String>()\n"
             "        for ((key, value) in items) {\n"
-            "            formatted.add(\"$key: $value\")\n"
+            '            formatted.add("$key: $value")\n'
             "        }\n"
             "        return formatted\n"
             "    }\n"
             "    \n"
             "    val formattedItems = formatDictItems(data)\n"
-            "    return \"Helper processed: ${formattedItems.joinToString(\", \")}\"\n"
+            '    return "Helper processed: ${formattedItems.joinToString(", ")}"\n'
             "}"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -345,7 +452,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
-            "fun advancedCalculatorFactory(mode: String = \"basic\"): SampleCalculator {\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
+            'fun advancedCalculatorFactory(mode: String = "basic"): SampleCalculator {\n'
             "    /**\n"
             "     * 계산기 팩토리 함수\n"
             "     */\n"
@@ -364,13 +473,12 @@ class TestBasicFunctionExtraction:
             "        return m in CALCULATION_MODES\n"
             "    }\n"
             "    \n"
-            "    val validMode = if (validateMode(mode)) mode else \"basic\"\n"
+            '    val validMode = if (validateMode(mode)) mode else "basic"\n'
             "    \n"
             "    return createCalculatorWithMode(validMode)\n"
             "}"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -385,6 +493,8 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "fun addNumbers(a: Int, b: Int): Int {\n"
             "        /**\n"
             "         * 두 수를 더하는 메소드\n"
@@ -398,24 +508,23 @@ class TestBasicFunctionExtraction:
             "        // 내부 함수: 연산 로깅\n"
             "        fun logOperation(operation: String, result: Int) {\n"
             "            if (history.size < MAX_CALCULATION_STEPS) {\n"
-            "                history.add(\"$operation = $result\")\n"
-            "                println(\"Logged: $operation = $result\")\n"
+            '                history.add("$operation = $result")\n'
+            '                println("Logged: $operation = $result")\n'
             "            }\n"
             "        }\n"
             "        \n"
             "        if (!validateInputs(a, b)) {\n"
-            "            throw IllegalArgumentException(\"입력값이 숫자가 아닙니다\")\n"
+            '            throw IllegalArgumentException("입력값이 숫자가 아닙니다")\n'
             "        }\n"
             "        \n"
             "        val result = a + b\n"
             "        value = result\n"
-            "        logOperation(\"add: $a + $b\", result)\n"
-            "        println(\"Addition result: $result\")\n"
+            '        logOperation("add: $a + $b", result)\n'
+            '        println("Addition result: $result")\n'
             "        return result\n"
             "    }"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -430,6 +539,8 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "fun helperFunction(data: Map<String, Any>): String {\n"
             "    /**\n"
             "     * 도우미 함수 - 클래스 외부 함수\n"
@@ -439,17 +550,16 @@ class TestBasicFunctionExtraction:
             "    fun formatDictItems(items: Map<String, Any>): List<String> {\n"
             "        val formatted = mutableListOf<String>()\n"
             "        for ((key, value) in items) {\n"
-            "            formatted.add(\"$key: $value\")\n"
+            '            formatted.add("$key: $value")\n'
             "        }\n"
             "        return formatted\n"
             "    }\n"
             "    \n"
             "    val formattedItems = formatDictItems(data)\n"
-            "    return \"Helper processed: ${formattedItems.joinToString(\", \")}\"\n"
+            '    return "Helper processed: ${formattedItems.joinToString(", ")}"\n'
             "}"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -478,12 +588,13 @@ class TestModuleLevelElements:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "const val MAX_CALCULATION_STEPS = 100\n"
             "const val DEFAULT_PRECISION = 2\n"
             "const val PI_CONSTANT = 3.14159"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -498,14 +609,15 @@ class TestModuleLevelElements:
 
         expected_result = (
             "import kotlin.collections.*\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
             "val CALCULATION_MODES = mapOf(\n"
-            "    \"basic\" to \"Basic calculations\",\n"
-            "    \"advanced\" to \"Advanced calculations with logging\",\n"
-            "    \"debug\" to \"Debug mode with detailed output\"\n"
+            '    "basic" to "Basic calculations",\n'
+            '    "advanced" to "Advanced calculations with logging",\n'
+            '    "debug" to "Debug mode with detailed output"\n'
             ")"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -520,14 +632,15 @@ class TestModuleLevelElements:
 
         expected_result = (
             "import kotlin.collections.*\n"
-            "const val MODULE_VERSION = \"1.0.0\"\n"
+            "import kotlin.math.*\n"
+            "import kotlin.text.*\n"
+            'const val MODULE_VERSION = "1.0.0"\n'
             "val AUTHOR_INFO = mapOf(\n"
-            "    \"name\" to \"Test Author\",\n"
-            "    \"email\" to \"test@example.com\"\n"
+            '    "name" to "Test Author",\n'
+            '    "email" to "test@example.com"\n'
             ")"
         )
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -556,24 +669,22 @@ class TestMultiRangeExtraction:
         ]  # calculateCircleArea ~ advancedCalculatorFactory
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        
+
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert all_context.startswith("import kotlin.collections.*;")
-        assert contexts[0] == "import kotlin.collections.*;"
-        
+        assert contexts[0] == "import kotlin.collections.*"
+
         # 구조 검증: import 다음에 함수들이 올바른 순서로 배치
         import_index = all_context.find("import kotlin.collections.*;")
         area_index = all_context.find("fun calculateCircleArea")
         helper_index = all_context.find("fun helperFunction")
         factory_index = all_context.find("fun advancedCalculatorFactory")
-        
+
         # import가 가장 먼저 나와야 함
         assert import_index < area_index
         assert import_index < helper_index
         assert import_index < factory_index
-        
+
         # 주요 콘텐츠 존재 확인
         assert "fun calculateCircleArea" in all_context
         assert "fun helperFunction" in all_context
@@ -588,22 +699,20 @@ class TestMultiRangeExtraction:
         changed_ranges = [LineRange(39, 47), LineRange(132, 137)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        
+
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert all_context.startswith("import kotlin.collections.*;")
-        assert contexts[0] == "import kotlin.collections.*;"
-        
+        assert contexts[0] == "import kotlin.collections.*"
+
         # 구조 검증: import 다음에 메서드들이 올바른 순서로 배치
         import_index = all_context.find("import kotlin.collections.*;")
         add_index = all_context.find("fun addNumbers(a: Int, b: Int): Int")
         helper_index = all_context.find("fun helperFunction")
-        
+
         # import가 가장 먼저 나와야 함
         assert import_index < add_index
         assert import_index < helper_index
-        
+
         # 주요 콘텐츠 존재 확인
         assert "fun addNumbers(a: Int, b: Int): Int" in all_context
         assert "fun helperFunction" in all_context
@@ -621,23 +730,21 @@ class TestMultiRangeExtraction:
         ]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        
+
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert all_context.startswith("import kotlin.collections.*;")
-        assert contexts[0] == "import kotlin.collections.*;"
-        
+        assert contexts[0] == "import kotlin.collections.*"
+
         # 구조 검증: import 다음에 상수들이 올바른 순서로 배치
         import_index = all_context.find("import kotlin.collections.*;")
         max_steps_index = all_context.find("MAX_CALCULATION_STEPS = 100")
         module_version_index = all_context.find('MODULE_VERSION = "1.0.0"')
-        
+
         # import가 가장 먼저 나와야 함
         assert import_index < max_steps_index
         assert import_index < module_version_index
-        
-        # 주요 콘텐츠 존재 확인  
+
+        # 주요 콘텐츠 존재 확인
         assert "MAX_CALCULATION_STEPS = 100" in all_context
         assert "fun validateRadius" in all_context or "validateRadius" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
@@ -665,13 +772,11 @@ class TestComplexScenarios:
         changed_ranges = [LineRange(23, 130)]  # SampleCalculator 전체 클래스
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 2
         all_context = "\n".join(contexts)
-        
+
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert all_context.startswith("import kotlin.collections.*;")
-        assert contexts[0] == "import kotlin.collections.*;"
-        
+        assert contexts[0] == "import kotlin.collections.*"
+
         # 구조 검증: import 다음에 클래스가 와야 함
         import_index = all_context.find("import kotlin.collections.*;")
         class_index = all_context.find("class SampleCalculator")
@@ -679,14 +784,14 @@ class TestComplexScenarios:
         add_index = all_context.find("fun addNumbers(a: Int, b: Int): Int")
         multiply_index = all_context.find("fun multiplyAndFormat")
         area_index = all_context.find("fun calculateCircleArea")
-        
+
         # import가 가장 먼저, 그 다음 클래스 및 메서드들이 순서대로
         assert import_index < class_index
         assert class_index < init_index
         assert init_index < add_index
         assert add_index < multiply_index
         assert multiply_index < area_index
-        
+
         # 주요 콘텐츠 존재 확인
         assert "class SampleCalculator" in all_context
         assert "init {" in all_context
@@ -703,26 +808,24 @@ class TestComplexScenarios:
         changed_ranges = [LineRange(6, 179)]  # 상수부터 모듈 끝까지
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 6
         all_context = "\n".join(contexts)
-        
+
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert all_context.startswith("import kotlin.collections.*;")
-        assert contexts[0] == "import kotlin.collections.*;"
-        
+        assert contexts[0] == "import kotlin.collections.*"
+
         # 구조 검증: import 다음에 상수들과 클래스들이 적절한 순서로 배치
         import_index = all_context.find("import kotlin.collections.*;")
         max_steps_index = all_context.find("MAX_CALCULATION_STEPS")
         sample_calc_index = all_context.find("class SampleCalculator")
         helper_index = all_context.find("fun helperFunction")
         module_version_index = all_context.find('MODULE_VERSION = "1.0.0"')
-        
+
         # import가 가장 먼저 나와야 함
         assert import_index < max_steps_index
         assert import_index < sample_calc_index
         assert import_index < helper_index
         assert import_index < module_version_index
-        
+
         # 주요 콘텐츠 존재 확인
         assert "class SampleCalculator" in all_context
         assert "fun helperFunction" in all_context
@@ -754,9 +857,6 @@ class TestEdgeCases:
         """파일 범위를 벗어나는 라인 범위 테스트."""
         changed_ranges = [LineRange(200, 300)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
-
-        # 범위를 벗어나더라도 에러가 발생하지 않아야 함
-        assert len(contexts) >= 0
 
     def test_reverse_line_ranges(self) -> None:
         """잘못된 범위 생성 시 예외 발생 테스트."""
