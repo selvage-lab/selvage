@@ -76,6 +76,9 @@ class ContextExtractor:
                 "method_declaration",
                 "interface_declaration",
                 "enum_declaration",
+                "constructor_declaration",
+                "record_declaration",
+                "annotation_type_declaration",
             }
         ),
         "c": frozenset(
@@ -140,7 +143,6 @@ class ContextExtractor:
             {
                 "import_statement",
                 "import_declaration",
-                "export_statement",
                 "call_expression",  # require() 호출
             }
         ),
@@ -148,10 +150,7 @@ class ContextExtractor:
             {
                 "import_statement",
                 "import_declaration",
-                "export_statement",
                 "import_require_clause",
-                "type_alias_declaration",
-                "interface_declaration",
                 "call_expression",  # require() 호출
             }
         ),

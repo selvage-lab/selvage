@@ -179,135 +179,14 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "import java.util.*;\n"
-            "public class SampleCalculator {\n"
-            "    /**\n"
-            "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
-            "     */\n"
-            "    \n"
-            "    private int value;\n"
-            "    private List<String> history;\n"
-            "    private String mode;\n"
-            "    \n"
-            "    public SampleCalculator() {\n"
-            "        this(0);\n"
-            "    }\n"
-            "    \n"
-            "    public SampleCalculator(int initialValue) {\n"
+            "public SampleCalculator(int initialValue) {\n"
             "        /**\n"
             "         * 계산기 초기화\n"
             "         */\n"
             "        this.value = initialValue;\n"
             "        this.history = new ArrayList<>();\n"
             "        this.mode = Constants.CALCULATION_MODES.get(\"basic\");\n"
-            "    }\n"
-            "    \n"
-            "    public int addNumbers(int a, int b) {\n"
-            "        /**\n"
-            "         * 두 수를 더하는 메소드\n"
-            "         */\n"
-            "        \n"
-            "        // 내부 함수: 입력값 검증\n"
-            "        class InputValidator {\n"
-            "            public static boolean validateInputs(int x, int y) {\n"
-            "                return true; // Java에서는 기본적으로 int 타입 검증됨\n"
-            "            }\n"
-            "        }\n"
-            "        \n"
-            "        // 내부 함수: 연산 로깅\n"
-            "        class OperationLogger {\n"
-            "            public void logOperation(String operation, int result) {\n"
-            "                if (history.size() < Constants.MAX_CALCULATION_STEPS) {\n"
-            "                    history.add(operation + \" = \" + result);\n"
-            "                    System.out.println(\"Logged: \" + operation + \" = \" + result);\n"
-            "                }\n"
-            "            }\n"
-            "        }\n"
-            "        \n"
-            "        if (!InputValidator.validateInputs(a, b)) {\n"
-            "            throw new IllegalArgumentException(\"입력값이 숫자가 아닙니다\");\n"
-            "        }\n"
-            "        \n"
-            "        int result = a + b;\n"
-            "        value = result;\n"
-            "        new OperationLogger().logOperation(\"add: \" + a + \" + \" + b, result);\n"
-            "        System.out.println(\"Addition result: \" + result);\n"
-            "        return result;\n"
-            "    }\n"
-            "    \n"
-            "    public Map<String, Object> multiplyAndFormat(List<Integer> numbers) {\n"
-            "        /**\n"
-            "         * 숫자 리스트를 곱하고 결과를 포맷팅하는 메소드\n"
-            "         */\n"
-            "        \n"
-            "        // 내부 함수: 곱셈 계산\n"
-            "        class ProductCalculator {\n"
-            "            public int calculateProduct(List<Integer> nums) {\n"
-            "                if (nums.isEmpty()) {\n"
-            "                    return 0;\n"
-            "                }\n"
-            "                \n"
-            "                // 재귀적 곱셈 함수 (중첩 내부 함수)\n"
-            "                class RecursiveMultiplier {\n"
-            "                    public int multiplyRecursive(List<Integer> items, int index) {\n"
-            "                        if (index >= items.size()) {\n"
-            "                            return 1;\n"
-            "                        }\n"
-            "                        return items.get(index) * multiplyRecursive(items, index + 1);\n"
-            "                    }\n"
-            "                }\n"
-            "                \n"
-            "                return new RecursiveMultiplier().multiplyRecursive(nums, 0);\n"
-            "            }\n"
-            "        }\n"
-            "        \n"
-            "        // 내부 함수: 결과 포맷팅\n"
-            "        class ResultFormatter {\n"
-            "            public Map<String, Object> formatResult(int value, int count) {\n"
-            "                Map<String, Object> result = new HashMap<>();\n"
-            "                result.put(\"result\", value);\n"
-            "                result.put(\"formatted\", \"Product: \" + String.format(\"%,d\", value));\n"
-            "                result.put(\"count\", count);\n"
-            "                result.put(\"precision\", Constants.DEFAULT_PRECISION);\n"
-            "                return result;\n"
-            "            }\n"
-            "        }\n"
-            "        \n"
-            "        if (numbers.isEmpty()) {\n"
-            "            Map<String, Object> emptyResult = new HashMap<>();\n"
-            "            emptyResult.put(\"result\", 0);\n"
-            "            emptyResult.put(\"formatted\", \"Empty list\");\n"
-            "            return emptyResult;\n"
-            "        }\n"
-            "        \n"
-            "        int result = new ProductCalculator().calculateProduct(numbers);\n"
-            "        value = result;\n"
-            "        Map<String, Object> formattedResult = new ResultFormatter().formatResult(result, numbers.size());\n"
-            "        \n"
-            "        System.out.println(\"Multiplication result: \" + formattedResult);\n"
-            "        \n"
-            "        return formattedResult;\n"
-            "    }\n"
-            "    \n"
-            "    public double calculateCircleArea(double radius) {\n"
-            "        /**\n"
-            "         * 원의 넓이를 계산하는 메소드 (상수 사용)\n"
-            "         */\n"
-            "        \n"
-            "        // 내부 함수: 반지름 검증\n"
-            "        class RadiusValidator {\n"
-            "            public static boolean validateRadius(double r) {\n"
-            "                return r > 0;\n"
-            "            }\n"
-            "        }\n"
-            "        \n"
-            "        if (!RadiusValidator.validateRadius(radius)) {\n"
-            "            throw new IllegalArgumentException(\"반지름은 양수여야 합니다\");\n"
-            "        }\n"
-            "        \n"
-            "        double area = Constants.PI_CONSTANT * radius * radius;\n"
-            "        return Math.round(area * Math.pow(10, Constants.DEFAULT_PRECISION)) / Math.pow(10, Constants.DEFAULT_PRECISION);\n"
-            "    }\n"
-            "}"
+            "    }"
         )
 
         assert len(contexts) == 2
@@ -740,12 +619,26 @@ class TestMultiRangeExtraction:
 
         assert len(contexts) == 5
         all_context = "\n".join(contexts)
-        # 전체 결과가 너무 길어서 주요 콘텐츠만 검증
+        
+        # 순서 검증: import 문이 맨 앞에 있어야 함
+        assert all_context.startswith("import java.util.*;")
+        assert contexts[0] == "import java.util.*;"
+        
+        # 구조 검증: import 다음에 클래스/메서드들이 올바른 순서로 배치
+        import_index = all_context.find("import java.util.*;")
+        area_index = all_context.find("public double calculateCircleArea")
+        helper_index = all_context.find("public static String helperFunction")
+        factory_index = all_context.find("public static SampleCalculator advancedCalculatorFactory")
+        
+        # import가 가장 먼저 나와야 함
+        assert import_index < area_index
+        assert import_index < helper_index
+        assert import_index < factory_index
+        
+        # 주요 콘텐츠 존재 확인
         assert "public double calculateCircleArea" in all_context
         assert "public static String helperFunction" in all_context
         assert "public static SampleCalculator advancedCalculatorFactory" in all_context
-        # import 문 검증
-        assert "import java.util.*;" in all_context
 
     def test_two_blocks_cross_methods(
         self,
@@ -758,11 +651,23 @@ class TestMultiRangeExtraction:
 
         assert len(contexts) == 3
         all_context = "\n".join(contexts)
-        # 전체 결과가 길어서 주요 콘텐츠만 검증
+        
+        # 순서 검증: import 문이 맨 앞에 있어야 함
+        assert all_context.startswith("import java.util.*;")
+        assert contexts[0] == "import java.util.*;"
+        
+        # 구조 검증: import 다음에 메서드들이 올바른 순서로 배치
+        import_index = all_context.find("import java.util.*;")
+        add_index = all_context.find("public int addNumbers(int a, int b)")
+        helper_index = all_context.find("public static String helperFunction")
+        
+        # import가 가장 먼저 나와야 함
+        assert import_index < add_index
+        assert import_index < helper_index
+        
+        # 주요 콘텐츠 존재 확인
         assert "public int addNumbers(int a, int b)" in all_context
         assert "public static String helperFunction" in all_context
-        # import 문 검증
-        assert "import java.util.*;" in all_context
 
     def test_non_contiguous_ranges(
         self,
@@ -779,12 +684,24 @@ class TestMultiRangeExtraction:
 
         assert len(contexts) == 4
         all_context = "\n".join(contexts)
-        # 전체 결과가 길어서 주요 콘텐츠만 검증
+        
+        # 순서 검증: import 문이 맨 앞에 있어야 함
+        assert all_context.startswith("import java.util.*;")
+        assert contexts[0] == "import java.util.*;"
+        
+        # 구조 검증: import 다음에 클래스들이 올바른 순서로 배치
+        import_index = all_context.find("import java.util.*;")
+        max_steps_index = all_context.find("MAX_CALCULATION_STEPS = 100")
+        module_version_index = all_context.find('MODULE_VERSION = "1.0.0"')
+        
+        # import가 가장 먼저 나와야 함
+        assert import_index < max_steps_index
+        assert import_index < module_version_index
+        
+        # 주요 콘텐츠 존재 확인  
         assert "MAX_CALCULATION_STEPS = 100" in all_context
         assert "class RadiusValidator" in all_context or "validateRadius" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
-        # import 문 검증
-        assert "import java.util.*;" in all_context
 
 
 class TestComplexScenarios:
@@ -811,14 +728,32 @@ class TestComplexScenarios:
 
         assert len(contexts) == 2
         all_context = "\n".join(contexts)
-        # 전체 결과가 너무 길어서 주요 콘텐츠만 검증
+        
+        # 순서 검증: import 문이 맨 앞에 있어야 함
+        assert all_context.startswith("import java.util.*;")
+        assert contexts[0] == "import java.util.*;"
+        
+        # 구조 검증: import 다음에 클래스가 와야 함
+        import_index = all_context.find("import java.util.*;")
+        class_index = all_context.find("public class SampleCalculator")
+        constructor_index = all_context.find("public SampleCalculator(int initialValue)")
+        add_index = all_context.find("public int addNumbers(int a, int b)")
+        multiply_index = all_context.find("public Map<String, Object> multiplyAndFormat")
+        area_index = all_context.find("public double calculateCircleArea")
+        
+        # import가 가장 먼저, 그 다음 클래스 및 메서드들이 순서대로
+        assert import_index < class_index
+        assert class_index < constructor_index
+        assert constructor_index < add_index
+        assert add_index < multiply_index
+        assert multiply_index < area_index
+        
+        # 주요 콘텐츠 존재 확인
         assert "public class SampleCalculator" in all_context
         assert "public SampleCalculator(int initialValue)" in all_context
         assert "public int addNumbers(int a, int b)" in all_context
         assert "public Map<String, Object> multiplyAndFormat" in all_context
         assert "public double calculateCircleArea" in all_context
-        # import 문 검증
-        assert "import java.util.*;" in all_context
 
     def test_class_and_module_constants(
         self,
@@ -831,17 +766,35 @@ class TestComplexScenarios:
 
         assert len(contexts) == 7
         all_context = "\n".join(contexts)
-        # 전체 결과가 매우 길어서 주요 콘텐츠만 검증
+        
+        # 순서 검증: import 문이 맨 앞에 있어야 함
+        assert all_context.startswith("import java.util.*;")
+        assert contexts[0] == "import java.util.*;"
+        
+        # 구조 검증: import 다음에 클래스들과 상수들이 적절한 순서로 배치
+        import_index = all_context.find("import java.util.*;")
+        constants_index = all_context.find("MAX_CALCULATION_STEPS")
+        calc_modes_index = all_context.find("CALCULATION_MODES")
+        sample_calc_index = all_context.find("public class SampleCalculator")
+        helper_index = all_context.find("public static String helperFunction")
+        factory_index = all_context.find("advancedCalculatorFactory")
+        module_version_index = all_context.find('MODULE_VERSION = "1.0.0"')
+        author_info_index = all_context.find("AUTHOR_INFO")
+        
+        # import가 가장 먼저 나와야 함
+        assert import_index < constants_index
+        assert import_index < sample_calc_index
+        assert import_index < helper_index
+        assert import_index < module_version_index
+        
+        # 주요 콘텐츠 존재 확인
         assert "public class SampleCalculator" in all_context
         assert "public static String helperFunction" in all_context
-        assert "public static SampleCalculator advancedCalculatorFactory" in all_context
+        assert "advancedCalculatorFactory" in all_context
         assert 'MODULE_VERSION = "1.0.0"' in all_context
         assert "AUTHOR_INFO" in all_context
-        # 상수들 검증
         assert "MAX_CALCULATION_STEPS" in all_context
         assert "CALCULATION_MODES" in all_context
-        # import 문 검증
-        assert "import java.util.*;" in all_context
 
 
 class TestEdgeCases:
