@@ -15,10 +15,7 @@ class TestBasicFunctionExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "SampleCalculator.java"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -121,7 +118,7 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """중첩 내부 함수 추출 테스트."""
-        changed_ranges = [LineRange(87, 95)]  # RecursiveMultiplier 내부 클래스
+        changed_ranges = [LineRange(88, 95)]  # RecursiveMultiplier 내부 클래스
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         assert len(contexts) >= 1
@@ -222,10 +219,7 @@ class TestModuleLevelElements:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "SampleCalculator.java"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -279,10 +273,7 @@ class TestMultiRangeExtraction:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "SampleCalculator.java"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -346,10 +337,7 @@ class TestComplexScenarios:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "SampleCalculator.java"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -392,10 +380,7 @@ class TestEdgeCases:
     @pytest.fixture
     def sample_file_path(self) -> Path:
         """테스트용 샘플 파일 경로를 반환합니다."""
-        return (
-            Path(__file__).parent
-            / "SampleCalculator.java"
-        )
+        return Path(__file__).parent / "SampleCalculator.java"
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
