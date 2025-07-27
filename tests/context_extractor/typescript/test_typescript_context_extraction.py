@@ -480,6 +480,166 @@ class TestBasicFunctionExtraction:
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
+    def test_interface_extraction(
+        self,
+        extractor: ContextExtractor,
+        sample_file_path: Path,
+    ) -> None:
+        """TypeScript interface만 추출 테스트."""
+        changed_ranges = [LineRange(24, 29)]  # FormattedResult interface
+        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "interface FormattedResult {\n"
+            "    result: number;\n"
+            "    formatted: string;\n"
+            "    count: number;\n"
+            "    precision: number;\n"
+            "}"
+        )
+
+        assert len(contexts) == 4
+        all_context = "\n".join(contexts)
+        assert all_context == expected_result
+
+    def test_interface_and_class_cross_extraction(
+        self,
+        extractor: ContextExtractor,
+        sample_file_path: Path,
+    ) -> None:
+        """interface와 class에 걸친 추출 테스트."""
+        changed_ranges = [LineRange(24, 34)]  # interface + class 시작부분
+        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+
+        expected_result = (
+            "import * as fs from 'fs';\n"
+            "import { join, resolve } from 'path';\n"
+            "import { promisify } from 'util';\n"
+            "interface FormattedResult {\n"
+            "    result: number;\n"
+            "    formatted: string;\n"
+            "    count: number;\n"
+            "    precision: number;\n"
+            "}\n"
+            "class SampleCalculator {\n"
+            "    /**\n"
+            "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
+            "     */\n"
+            "    \n"
+            "    private value: number;\n"
+            "    private history: string[];\n"
+            "    private mode: string;\n"
+            "    \n"
+            "    constructor(initialValue: number = 0) {\n"
+            "        /**\n"
+            "         * 계산기 초기화\n"
+            "         */\n"
+            "        this.value = initialValue;\n"
+            "        this.history = [];\n"
+            "        this.mode = CALCULATION_MODES.basic;\n"
+            "    }\n"
+            "    \n"
+            "    public addNumbers(a: number, b: number): number {\n"
+            "        /**\n"
+            "         * 두 수를 더하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 입력값 검증\n"
+            "        function validateInputs(x: number, y: number): boolean {\n"
+            "            return typeof x === 'number' && typeof y === 'number';\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 연산 로깅\n"
+            "        const logOperation = (operation: string, result: number): void => {\n"
+            "            if (this.history.length < MAX_CALCULATION_STEPS) {\n"
+            "                this.history.push(`${operation} = ${result}`);\n"
+            "                console.log(`Logged: ${operation} = ${result}`);\n"
+            "            }\n"
+            "        };\n"
+            "        \n"
+            "        if (!validateInputs(a, b)) {\n"
+            "            throw new Error(\"입력값이 숫자가 아닙니다\");\n"
+            "        }\n"
+            "        \n"
+            "        const result: number = a + b;\n"
+            "        this.value = result;\n"
+            "        logOperation(`add: ${a} + ${b}`, result);\n"
+            "        console.log(`Addition result: ${result}`);\n"
+            "        return result;\n"
+            "    }\n"
+            "    \n"
+            "    public multiplyAndFormat(numbers: number[]): FormattedResult {\n"
+            "        /**\n"
+            "         * 숫자 리스트를 곱하고 결과를 포맷팅하는 메소드\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 곱셈 계산\n"
+            "        function calculateProduct(nums: number[]): number {\n"
+            "            if (nums.length === 0) {\n"
+            "                return 0;\n"
+            "            }\n"
+            "            \n"
+            "            // 재귀적 곱셈 함수 (중첩 내부 함수)\n"
+            "            function multiplyRecursive(items: number[], index: number = 0): number {\n"
+            "                if (index >= items.length) {\n"
+            "                    return 1;\n"
+            "                }\n"
+            "                return items[index] * multiplyRecursive(items, index + 1);\n"
+            "            }\n"
+            "            \n"
+            "            return multiplyRecursive(nums);\n"
+            "        }\n"
+            "        \n"
+            "        // 내부 함수: 결과 포맷팅\n"
+            "        const formatResult = (value: number, count: number): FormattedResult => {\n"
+            "            return {\n"
+            "                result: value,\n"
+            "                formatted: `Product: ${value.toLocaleString()}`,\n"
+            "                count: count,\n"
+            "                precision: DEFAULT_PRECISION\n"
+            "            };\n"
+            "        };\n"
+            "        \n"
+            "        if (numbers.length === 0) {\n"
+            "            return { result: 0, formatted: \"Empty list\", count: 0, precision: DEFAULT_PRECISION };\n"
+            "        }\n"
+            "        \n"
+            "        const result: number = calculateProduct(numbers);\n"
+            "        this.value = result;\n"
+            "        const formattedResult: FormattedResult = formatResult(result, numbers.length);\n"
+            "        \n"
+            "        console.log(`Multiplication result: ${JSON.stringify(formattedResult)}`);\n"
+            "        \n"
+            "        return formattedResult;\n"
+            "    }\n"
+            "    \n"
+            "    public calculateCircleArea(radius: number): number {\n"
+            "        /**\n"
+            "         * 원의 넓이를 계산하는 메소드 (상수 사용)\n"
+            "         */\n"
+            "        \n"
+            "        // 내부 함수: 반지름 검증\n"
+            "        function validateRadius(r: number): boolean {\n"
+            "            return r > 0;\n"
+            "        }\n"
+            "        \n"
+            "        if (!validateRadius(radius)) {\n"
+            "            throw new Error(\"반지름은 양수여야 합니다\");\n"
+            "        }\n"
+            "        \n"
+            "        const area: number = PI_CONSTANT * radius * radius;\n"
+            "        return Math.round(area * Math.pow(10, DEFAULT_PRECISION)) / Math.pow(10, DEFAULT_PRECISION);\n"
+            "    }\n"
+            "}"
+        )
+
+        assert len(contexts) == 5
+        all_context = "\n".join(contexts)
+        assert all_context == expected_result
+
 
 class TestModuleLevelElements:
     """모듈 레벨 요소 추출 테스트."""
