@@ -61,9 +61,9 @@ class TestBasicFunctionExtraction:
                 "    int history_count;\n"
                 "    char mode[50];\n"
                 "} SampleCalculator;"
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
         assert contexts == expected_result, (
@@ -117,9 +117,9 @@ class TestBasicFunctionExtraction:
                 "     */\n"
                 "    \n"
                 "    // 내부 함수: 입력값 검증"
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
         assert contexts == expected_result, (
@@ -157,7 +157,7 @@ class TestBasicFunctionExtraction:
                 "---- Context Block 1 (Lines 73-89) ----\n"
                 "// Fallback context extraction: limited to nearby lines\n"
                 "    if (!validate_inputs(a, b)) {\n"
-                "        printf(\"Error: 입력값이 숫자가 아닙니다\\n\");\n"
+                '        printf("Error: 입력값이 숫자가 아닙니다\\n");\n'
                 "        return -1;\n"
                 "    }\n"
                 "    \n"
@@ -165,9 +165,9 @@ class TestBasicFunctionExtraction:
                 "    calc->value = result;\n"
                 "    \n"
                 "    char operation[50];\n"
-                "    sprintf(operation, \"add: %d + %d\", a, b);\n"
+                '    sprintf(operation, "add: %d + %d", a, b);\n'
                 "    log_operation(calc, operation, result);\n"
-                "    printf(\"Addition result: %d\\n\", result);\n"
+                '    printf("Addition result: %d\\n", result);\n'
                 "    \n"
                 "    return result;\n"
                 "}\n"
@@ -190,7 +190,7 @@ class TestBasicFunctionExtraction:
                 "                return 1;\n"
                 "            }\n"
                 "            return items[index] * multiply_recursive("
-            "items, size, index + 1);\n"
+                "items, size, index + 1);\n"
                 "        }\n"
                 "        \n"
                 "        return multiply_recursive(nums, size, 0);\n"
@@ -200,13 +200,13 @@ class TestBasicFunctionExtraction:
                 "    FormattedResult format_result(int value, int count) {\n"
                 "        FormattedResult result;\n"
                 "        result.result = value;\n"
-                "        sprintf(result.formatted, \"Product: %d\", value);\n"
+                '        sprintf(result.formatted, "Product: %d", value);\n'
                 "        result.count = count;\n"
                 "        result.precision = DEFAULT_PRECISION;\n"
                 "        return result;\n"
                 "    }\n"
                 "    \n"
-                "    FormattedResult empty_result = {0, \"Empty list\", "
+                '    FormattedResult empty_result = {0, "Empty list", '
                 "0, DEFAULT_PRECISION};\n"
                 "    \n"
                 "    if (size == 0) {\n"
@@ -214,9 +214,9 @@ class TestBasicFunctionExtraction:
                 "    }\n"
                 "    \n"
                 "    int result = calculate_product(numbers, size);"
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 3, f"Expected 3 contexts, got {len(contexts)}"
         assert contexts == expected_result, (
