@@ -23,6 +23,9 @@ class ContextExtractor:
     - 강화된 타입 안전성과 에러 핸들링
     """
 
+    # 지원 프로그래밍 언어 목록
+    SUPPORTED_LANGUAGES = ["python", "javascript", "typescript", "java", "kotlin"]
+
     # 언어별 블록 타입 매핑
     LANGUAGE_BLOCK_TYPES = {
         "python": frozenset(
@@ -61,15 +64,6 @@ class ContextExtractor:
                 "program",
             }
         ),
-        "go": frozenset(
-            {
-                "function_declaration",
-                "method_declaration",
-                "type_declaration",
-                "source_file",
-                "package_clause",
-            }
-        ),
         "java": frozenset(
             {
                 "class_declaration",
@@ -79,35 +73,6 @@ class ContextExtractor:
                 "constructor_declaration",
                 "record_declaration",
                 "annotation_type_declaration",
-            }
-        ),
-        "c": frozenset(
-            {
-                "function_definition",
-                "struct_specifier",
-                "enum_specifier",
-                "translation_unit",
-            }
-        ),
-        "cpp": frozenset(
-            {
-                "function_definition",
-                "class_specifier",
-                "struct_specifier",
-                "namespace_definition",
-                "enum_specifier",
-                "translation_unit",
-            }
-        ),
-        "csharp": frozenset(
-            {
-                "class_declaration",
-                "method_declaration",
-                "interface_declaration",
-                "struct_declaration",
-                "enum_declaration",
-                "namespace_declaration",
-                "compilation_unit",
             }
         ),
         "kotlin": frozenset(
@@ -124,17 +89,6 @@ class ContextExtractor:
                 "init_block",
                 "lambda_expression",
                 "property_declaration",
-            }
-        ),
-        "swift": frozenset(
-            {
-                "class_declaration",
-                "protocol_declaration",
-                "function_declaration",
-                "property_declaration",
-                "init_declaration",
-                "deinit_declaration",
-                "subscript_declaration",
             }
         ),
     }
@@ -163,21 +117,6 @@ class ContextExtractor:
                 "call_expression",  # require() 호출
             }
         ),
-        "rust": frozenset(
-            {
-                "use_declaration",
-                "extern_crate_declaration",
-                "mod_declaration",
-            }
-        ),
-        "go": frozenset(
-            {
-                "package_clause",
-                "import_declaration",
-                "import_spec",
-                "import_spec_list",
-            }
-        ),
         "java": frozenset(
             {
                 "import_declaration",
@@ -185,38 +124,10 @@ class ContextExtractor:
                 "static_import_declaration",
             }
         ),
-        "c": frozenset(
-            {
-                "preproc_include",
-                "preproc_def",
-                "preproc_ifdef",
-                "preproc_ifndef",
-            }
-        ),
-        "cpp": frozenset(
-            {
-                "preproc_include",
-                "namespace_definition",
-                "using_declaration",
-                "namespace_alias_definition",
-            }
-        ),
-        "csharp": frozenset(
-            {
-                "using_directive",
-                "namespace_declaration",
-                "extern_alias_directive",
-            }
-        ),
         "kotlin": frozenset(
             {
                 "import_header",
                 "package_header",
-            }
-        ),
-        "swift": frozenset(
-            {
-                "import_declaration",
             }
         ),
     }
@@ -227,15 +138,10 @@ class ContextExtractor:
         "java": "program",
         "javascript": "program",
         "typescript": "program",
-        "go": "source_file",
-        "c": "translation_unit",
-        "cpp": "translation_unit",
-        "csharp": "compilation_unit",
         "kotlin": "source_file",
-        "swift": "source_file",
     }
 
-    def __init__(self, language: str = "python") -> None:
+    def __init__(self, language: str) -> None:
         """추출기 초기화.
 
         Args:
@@ -244,10 +150,10 @@ class ContextExtractor:
         Raises:
             ValueError: 지원하지 않는 언어인 경우
         """
-        if language not in self.LANGUAGE_BLOCK_TYPES:
+        if language not in self.SUPPORTED_LANGUAGES:
             raise ValueError(
                 f"지원하지 않는 언어: '{language}'. "
-                f"지원 언어: {list(self.LANGUAGE_BLOCK_TYPES.keys())}"
+                f"지원 언어: {self.SUPPORTED_LANGUAGES}"
             )
 
         try:
@@ -264,7 +170,7 @@ class ContextExtractor:
     @classmethod
     def get_supported_languages(cls) -> list[str]:
         """지원하는 언어 목록을 반환한다."""
-        return list(cls.LANGUAGE_BLOCK_TYPES.keys())
+        return cls.SUPPORTED_LANGUAGES
 
     @classmethod
     def get_block_types_for_language(cls, language: str) -> frozenset[str]:
