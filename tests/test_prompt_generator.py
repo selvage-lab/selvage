@@ -55,7 +55,6 @@ def review_request() -> ReviewRequest:
             ]
         ),
         model="gpt-4o-mini",
-        use_full_context=True,
         repo_path=".",
     )
 
@@ -101,7 +100,6 @@ def multi_hunk_review_request() -> ReviewRequest:
             ]
         ),
         model="gpt-4o-mini",
-        use_full_context=True,
         repo_path=".",
     )
 
@@ -117,7 +115,7 @@ class TestPromptGenerator:
     def test_create_code_review_prompt(
         self, mock_system_prompt, review_request: ReviewRequest
     ):
-        """코드 리뷰 프롬프트 생성 테스트 (use_full_context=True)"""
+        """코드 리뷰 프롬프트 생성 테스트"""
         # Given
         generator = PromptGenerator()
 
@@ -156,7 +154,7 @@ class TestPromptGenerator:
     def test_review_prompt_to_messages_conversion(
         self, mock_system_prompt, review_request: ReviewRequest
     ):
-        """ReviewPromptWithFileContent에서 메시지 변환 테스트 (use_full_context=True)"""
+        """ReviewPromptWithFileContent에서 메시지 변환 테스트"""
         # Given
         generator = PromptGenerator()
 
@@ -201,7 +199,7 @@ class TestPromptGenerator:
         mock_system_prompt,
         multi_hunk_review_request: ReviewRequest,
     ):
-        """여러 hunk가 있는 경우 코드 리뷰 프롬프트 생성 테스트 (use_full_context=True)"""  # noqa: E501
+        """여러 hunk가 있는 경우 코드 리뷰 프롬프트 생성 테스트"""  # noqa: E501
         # Given
         generator = PromptGenerator()
 
@@ -289,7 +287,6 @@ def new_file_review_request() -> ReviewRequest:
             ]
         ),
         model="gpt-4o-mini",
-        use_full_context=True,
         repo_path=".",
     )
 
@@ -362,7 +359,6 @@ def rewritten_file_review_request() -> ReviewRequest:
             ]
         ),
         model="gpt-4o-mini",
-        use_full_context=True,
         repo_path=".",
     )
 

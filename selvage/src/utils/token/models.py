@@ -43,7 +43,6 @@ class ReviewRequest(BaseModel):
     diff_content: str
     processed_diff: DiffResult
     file_paths: list[str] = Field(default_factory=list)
-    use_full_context: bool = True
     model: str
     repo_path: str = "."
 

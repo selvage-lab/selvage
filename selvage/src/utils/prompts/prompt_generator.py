@@ -69,8 +69,6 @@ class PromptGenerator:
     ) -> ReviewPrompt | ReviewPromptWithFileContent:
         """코드 리뷰 요청으로부터 프롬프트를 생성합니다.
 
-        use_full_context 플래그에 따라 적절한 프롬프트 생성 메소드를 호출합니다.
-
         Args:
             review_request: 리뷰 요청 객체
 

@@ -289,7 +289,7 @@ def test_parse_git_diff_multiple_files(
 def test_parse_git_diff_without_full_context(
     mock_load_file_content, one_file_one_diff_text
 ):
-    """use_full_context 플래그와 상관없이 file_content를 로드하는지 검증하는 테스트"""
+    """file_content를 로드하는지 검증하는 테스트"""
     # 모킹 설정
     mock_load_file_content.return_value = "파일 전체 내용"
 
@@ -299,7 +299,7 @@ def test_parse_git_diff_without_full_context(
     assert result.files[0].filename == "selvage/src/diff_parser/__init__.py"
     assert len(result.files[0].hunks) == 1
 
-    # use_full_context=False여도 file_content를 로드해야 함 (파서 변경 사항)
+    # file_content를 로드해야 함 (파서 변경 사항)
     assert result.files[0].file_content == "파일 전체 내용"
 
     # line_count 검증
@@ -471,12 +471,12 @@ class TestFileDiffCalculateLineCount:
         file_diff = FileDiff(filename="test.py", file_content="\n")
         file_diff.calculate_line_count()
         assert file_diff.line_count == 1
-        
+
         # 여러 개행 문자로 끝나는 경우
         file_diff = FileDiff(filename="test.py", file_content="line1\n\n\n")
         file_diff.calculate_line_count()
         assert file_diff.line_count == 3
-        
+
         # 한 줄에 개행 문자가 있는 경우
         file_diff = FileDiff(filename="test.py", file_content="single_line\n")
         file_diff.calculate_line_count()

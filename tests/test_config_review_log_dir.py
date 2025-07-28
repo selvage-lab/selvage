@@ -311,7 +311,6 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
             diff_content="test diff",
             processed_diff=diff_result,
             file_paths=["test.py"],
-            use_full_context=True,
             model="gpt-4",
             repo_path="/test/repo",
         )
@@ -358,7 +357,6 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
             diff_content="test diff",
             processed_diff=diff_result,
             file_paths=["test.py"],
-            use_full_context=True,
             model="gpt-4",
             repo_path="/test/repo",
         )
