@@ -49,7 +49,6 @@ class CacheManager:
             cache_info = CacheKeyInfo(
                 diff_content=review_request.diff_content,
                 model=review_request.model,
-                use_full_context=review_request.use_full_context,
             )
             cache_key = CacheKeyGenerator.generate_cache_key(cache_info)
 
@@ -97,7 +96,6 @@ class CacheManager:
             cache_info = CacheKeyInfo(
                 diff_content=review_request.diff_content,
                 model=review_request.model,
-                use_full_context=review_request.use_full_context,
             )
             cache_key = CacheKeyGenerator.generate_cache_key(cache_info)
 
@@ -109,7 +107,6 @@ class CacheManager:
                 expires_at=now + timedelta(hours=self.cache_ttl_hours),
                 request_info={
                     "model": review_request.model,
-                    "use_full_context": review_request.use_full_context,
                 },
                 review_response=review_response,
                 estimated_cost=estimated_cost,

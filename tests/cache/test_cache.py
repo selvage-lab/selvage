@@ -15,7 +15,6 @@ def cache_info_fixture() -> CacheKeyInfo:
     return CacheKeyInfo(
         diff_content="test diff content",
         model="gpt-4o",
-        use_full_context=True,
     )
 
 
@@ -27,7 +26,6 @@ def review_request_fixture() -> ReviewRequest:
         diff_content="test diff content",
         processed_diff=diff_result,
         file_paths=["test.py"],
-        use_full_context=True,
         model="gpt-4o",
         repo_path="/test",
     )
@@ -37,9 +35,9 @@ def review_request_fixture() -> ReviewRequest:
 def review_response_fixture() -> ReviewResponse:
     """리뷰 응답 픽스처"""
     return ReviewResponse(
-        summary="Test review summary", 
-        issues=[], 
-        recommendations=["Test recommendation"]
+        summary="Test review summary",
+        issues=[],
+        recommendations=["Test recommendation"],
     )
 
 
@@ -55,19 +53,18 @@ def cache_manager_fixture() -> CacheManager:
 def test_cache_key_generation(cache_info_fixture: CacheKeyInfo):
     """캐시 키 생성을 테스트합니다."""
     cache_key = CacheKeyGenerator.generate_cache_key(cache_info_fixture)
-    
+
     assert cache_key is not None
     assert isinstance(cache_key, str)
     assert len(cache_key) > 0
 
 
 def test_cache_miss(
-    cache_manager_fixture: CacheManager, 
-    review_request_fixture: ReviewRequest
+    cache_manager_fixture: CacheManager, review_request_fixture: ReviewRequest
 ):
     """캐시 미스 상황을 테스트합니다."""
     cached_result = cache_manager_fixture.get_cached_review(review_request_fixture)
-    
+
     assert cached_result is None
 
 
@@ -78,15 +75,15 @@ def test_cache_save_and_hit(
 ):
     """캐시 저장 및 캐시 히트를 테스트합니다."""
     estimated_cost = EstimatedCost.get_zero_cost("gpt-4o")
-    
+
     # 캐시에 저장
     cache_manager_fixture.save_review_to_cache(
         review_request_fixture, review_response_fixture, estimated_cost
     )
-    
+
     # 캐시에서 가져오기
     cached_result = cache_manager_fixture.get_cached_review(review_request_fixture)
-    
+
     assert cached_result is not None
     cached_response, _ = cached_result
     assert cached_response.summary == "Test review summary"
@@ -98,7 +95,7 @@ def test_cache_key_consistency(cache_info_fixture: CacheKeyInfo):
     """동일한 입력에 대해 일관된 캐시 키가 생성되는지 테스트합니다."""
     cache_key_1 = CacheKeyGenerator.generate_cache_key(cache_info_fixture)
     cache_key_2 = CacheKeyGenerator.generate_cache_key(cache_info_fixture)
-    
+
     assert cache_key_1 == cache_key_2
 
 
@@ -107,15 +104,13 @@ def test_cache_key_different_for_different_inputs():
     cache_info_1 = CacheKeyInfo(
         diff_content="test diff content 1",
         model="gpt-4o",
-        use_full_context=True,
     )
     cache_info_2 = CacheKeyInfo(
         diff_content="test diff content 2",
         model="gpt-4o",
-        use_full_context=True,
     )
-    
+
     cache_key_1 = CacheKeyGenerator.generate_cache_key(cache_info_1)
     cache_key_2 = CacheKeyGenerator.generate_cache_key(cache_info_2)
-    
+
     assert cache_key_1 != cache_key_2

@@ -23,7 +23,6 @@ class CacheKeyGenerator:
         key_data = {
             "diff_content": cache_info.diff_content,
             "model": cache_info.model,
-            "use_full_context": cache_info.use_full_context,
         }
 
         # JSON 직렬화 (키 정렬 보장)
