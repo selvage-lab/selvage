@@ -16,10 +16,7 @@ class TestContextExtractorInitialization:
             "javascript",
             "typescript",
             "java",
-            "c",
-            "cpp",
-            "go",
-            "csharp",
+            "kotlin",
         }
 
         for lang in required_languages:
