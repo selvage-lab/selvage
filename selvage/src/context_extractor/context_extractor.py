@@ -351,13 +351,10 @@ class ContextExtractor:
         for node in unique_nodes:
             try:
                 node_text = node.text.decode("utf-8")
-                
+
                 # 코틀린 import_header 노드인 경우 주석 제거
-                if (self._language_name == "kotlin" and 
-                    node.type == "import_header" and 
-                    node in dependency_nodes):
-                    node_text = self._clean_kotlin_import_header(node_text)
-                
+                node_text = self._clean_kotlin_import(node, node_text, dependency_nodes)
+
                 contexts.append(node_text)
             except UnicodeDecodeError:
                 logger.error(f"노드 텍스트 디코딩 실패: {node.start_point}")
@@ -630,19 +627,40 @@ class ContextExtractor:
 
         return unique_nodes
 
-    def _clean_kotlin_import_header(self, text: str) -> str:
+    def _clean_kotlin_import(
+        self, node: Node, node_text: str, dependency_nodes: set
+    ) -> str:
+        """코틀린 import_header 노드인 경우 주석 제거 처리.
+
+        Args:
+            node: 처리할 노드
+            node_text: 노드의 텍스트
+            dependency_nodes: 의존성 노드 집합
+
+        Returns:
+            처리된 텍스트 (코틀린 import_header인 경우 주석 제거됨)
+        """
+        if (
+            self._language_name == "kotlin"
+            and node.type == "import_header"
+            and node in dependency_nodes
+        ):
+            return self._clean_import_header(node_text)
+        return node_text
+
+    def _clean_import_header(self, text: str) -> str:
         """코틀린 import_header에서 주석 부분 제거.
-        
+
         \n\n 패턴 이후의 모든 내용을 제거하여 import 문만 남긴다.
-        
+
         Args:
             text: 정리할 텍스트
-            
+
         Returns:
             정리된 텍스트 (import 문만 포함)
         """
-        double_newline_index = text.find('\n\n')
+        double_newline_index = text.find("\n\n")
         if double_newline_index != -1:
             # 첫 번째 빈 줄까지만 포함하고 나머지는 제거
-            return text[:double_newline_index + 1].rstrip()
+            return text[: double_newline_index + 1].rstrip()
         return text
