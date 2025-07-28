@@ -17,14 +17,12 @@ from selvage.src.config import (
     get_api_key,
     get_claude_provider,
     get_default_debug_mode,
-    get_default_diff_only,
     get_default_language,
     get_default_model,
     get_default_review_log_dir,
     set_api_key,
     set_claude_provider,
     set_default_debug_mode,
-    set_default_diff_only,
     set_default_language,
     set_default_model,
     set_default_review_log_dir,
@@ -161,24 +159,6 @@ def config_model(model_name: str | None = None) -> None:
         )
 
 
-def config_diff_only(value: str | None = None) -> None:
-    """diff-only 설정을 처리합니다."""
-    if value is not None:
-        diff_only = value.lower() == "true"
-        if set_default_diff_only(diff_only):
-            console.success(f"기본 diff-only 값이 {diff_only}로 설정되었습니다.")
-        else:
-            console.error("기본 diff-only 값 설정에 실패했습니다.")
-    else:
-        # 값이 지정되지 않은 경우 현재 설정을 표시
-        current_value = get_default_diff_only()
-        console.info(f"현재 기본 diff-only 값: {current_value}")
-        console.info(
-            "새로운 값을 설정하려면 'selvage config diff-only true' 또는 "
-            "'selvage config diff-only false' 명령어를 사용하세요."
-        )
-
-
 def config_debug_mode(value: str | None = None) -> None:
     """debug_mode 설정을 처리합니다."""
     if value is not None:
@@ -311,9 +291,6 @@ def config_list() -> None:
     else:
         console.info("기본 모델이 설정되지 않았습니다.")
 
-    # 기본 diff-only 설정
-    console.info(f"기본 diff-only 값: {get_default_diff_only()}")
-
     # 기본 debug-mode 설정
     debug_status = "활성화" if get_default_debug_mode() else "비활성화"
     console.info(f"디버그 모드: {debug_status}")
@@ -416,7 +393,6 @@ def review_code(
     staged: bool = False,
     target_commit: str | None = None,
     target_branch: str | None = None,
-    diff_only: bool = False,
     open_ui: bool = False,
     print_result: bool = False,
     port: int = 8501,
@@ -467,9 +443,6 @@ def review_code(
         console.warning("변경 사항이 없거나 diff를 가져올 수 없습니다.")
         return
 
-    # diff 파싱 및 메타데이터 추가
-    use_full_context = not diff_only
-
     # repo_path 결정 - 사용자 입력 또는 프로젝트 루트
     repo_path = str(Path(repo_path)) if repo_path != "." else str(find_project_root())
     diff_result = parse_git_diff(diff_content, repo_path)
@@ -479,7 +452,6 @@ def review_code(
         diff_content=diff_content,
         processed_diff=diff_result,
         file_paths=[file.filename for file in diff_result.files],
-        use_full_context=use_full_context,
         model=model,
         repo_path=repo_path,
     )
@@ -652,13 +624,6 @@ def _process_single_api_key(display_name: str, provider: ModelProvider) -> bool:
     type=bool,
 )
 @click.option(
-    "--diff-only",
-    is_flag=True,
-    default=get_default_diff_only(),
-    help="변경된 부분만 분석",
-    type=bool,
-)
-@click.option(
     "--skip-cache",
     is_flag=True,
     help="캐시를 사용하지 않고 새로운 리뷰 수행",
@@ -680,7 +645,6 @@ def review(
     model: str | None,
     open_ui: bool,
     no_print_result: bool,
-    diff_only: bool,
     skip_cache: bool,
     clear_cache: bool,
     log_dir: str | None,
@@ -717,7 +681,6 @@ def review(
         staged=staged,
         target_commit=target_commit,
         target_branch=target_branch,
-        diff_only=diff_only,
         open_ui=open_ui,
         print_result=print_result,
         skip_cache=skip_cache,
@@ -737,13 +700,6 @@ def config() -> None:
 def model(model_name: str | None) -> None:
     """모델 설정 (selvage models 명령어로 사용 가능한 모델 목록 확인 가능)"""
     config_model(model_name)
-
-
-@config.command()
-@click.argument("value", type=click.Choice(["true", "false"]), required=False)
-def diff_only(value: str | None) -> None:
-    """diff-only 옵션 설정 (true / false)"""
-    config_diff_only(value)
 
 
 @config.command()

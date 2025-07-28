@@ -11,7 +11,6 @@ from .models import (
     ReviewPrompt,
     ReviewPromptWithFileContent,
     SystemPrompt,
-    UserPrompt,
     UserPromptWithFileContent,
 )
 from .prompt_constants import get_entirely_new_content_rule
@@ -78,52 +77,7 @@ class PromptGenerator:
         Returns:
             ReviewPrompt | ReviewPromptWithFileContent: 생성된 리뷰 프롬프트 객체
         """
-        if review_request.use_full_context:
-            return self._create_full_context_code_review_prompt(review_request)
-        else:
-            return self._create_simple_code_review_prompt(review_request)
-
-    def _create_simple_code_review_prompt(
-        self, review_request: ReviewRequest
-    ) -> ReviewPrompt:
-        """기본 코드 리뷰 프롬프트를 생성합니다.
-
-        Args:
-            review_request: 리뷰 요청 객체
-
-        Returns:
-            ReviewPrompt: 생성된 리뷰 프롬프트 객체
-        """
-        system_prompt_content = self._get_code_review_system_prompt(
-            is_include_entirely_new_content=review_request.is_include_entirely_new_content()
-        )
-        system_prompt = SystemPrompt(role="system", content=system_prompt_content)
-        user_prompts = []
-
-        for file in review_request.processed_diff.files:
-            # 바이너리 파일인지 먼저 확인
-            if is_ignore_file(file.filename):
-                # 바이너리 파일은 처리하지 않고 건너뜁니다
-                continue
-
-            file_name = file.filename
-            if file_name not in review_request.file_paths:
-                review_request.file_paths.append(file_name)
-
-            for hunk_idx, hunk in enumerate(file.hunks):
-                safe_original = hunk.get_before_code()
-                safe_modified = hunk.get_after_code()
-                user_prompt = UserPrompt(
-                    hunk_idx=str(hunk_idx + 1),
-                    file_name=file_name,
-                    before_code=f"```{file.language}\n{safe_original}\n```",
-                    after_code=f"```{file.language}\n{safe_modified}\n```",
-                    after_code_start_line_number=hunk.start_line_modified,
-                    language=file.language,
-                )
-                user_prompts.append(user_prompt)
-
-        return ReviewPrompt(system_prompt=system_prompt, user_prompts=user_prompts)
+        return self._create_full_context_code_review_prompt(review_request)
 
     def _create_full_context_code_review_prompt(
         self, review_request: ReviewRequest
@@ -136,9 +90,6 @@ class PromptGenerator:
         Returns:
             ReviewPromptWithFileContent: 생성된 파일 내용 포함 리뷰 프롬프트 객체
         """
-        if not review_request.use_full_context:
-            raise ValueError("full context 플래그가 켜져있어야 합니다.")
-
         system_prompt_content = self._get_code_review_system_prompt(
             is_include_entirely_new_content=review_request.is_include_entirely_new_content()
         )

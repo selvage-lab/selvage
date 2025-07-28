@@ -103,22 +103,6 @@ class TestSelvageConfigManagement:
         output_str = output.decode("utf-8", errors="ignore")
         assert "gpt-4o" in output_str
 
-    def test_config_diff_only_setting(self, testpypi_container) -> None:
-        """diff-only 설정이 정상적으로 작동하는지 테스트."""
-        container = testpypi_container
-
-        install_selvage_from_testpypi(container)  # 다시 호출
-
-        # diff-only 설정
-        exit_code, output = container.exec("selvage config diff-only true")
-        assert exit_code == 0
-
-        # 설정 확인
-        exit_code, output = container.exec("selvage config list")
-        assert exit_code == 0
-        output_str = output.decode("utf-8", errors="ignore").lower()
-        assert "true" in output_str
-
     def test_config_language_setting(self, testpypi_container) -> None:
         """언어 설정이 정상적으로 작동하는지 테스트."""
         container = testpypi_container

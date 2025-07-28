@@ -124,14 +124,7 @@ def test_selvage_config_in_container(testpypi_container) -> None:
     exit_code, output = container.exec("selvage config model gpt-4o")
     assert exit_code == 0, "Config model set should work"
 
-    # 3. diff-only 설정 테스트
-    exit_code, output = container.exec("selvage config diff-only true")
-    assert exit_code == 0, "Config diff-only true should work"
-
-    exit_code, output = container.exec("selvage config diff-only false")
-    assert exit_code == 0, "Config diff-only false should work"
-
-    # 4. debug-mode 설정 테스트
+    # 3. debug-mode 설정 테스트
     exit_code, output = container.exec("selvage config debug-mode on")
     assert exit_code == 0, "Config debug-mode on should work"
 
@@ -157,11 +150,6 @@ def test_selvage_config_in_container(testpypi_container) -> None:
     assert "[model]" in config_content_str, "Config should contain [model] section"
     assert "default_model = gpt-4o" in config_content_str, (
         "Config should contain model setting gpt-4o"
-    )
-
-    assert "[review]" in config_content_str, "Config should contain [review] section"
-    assert "diff_only = false" in config_content_str, (
-        "Config should contain diff_only = false setting"
     )
 
     assert "[debug]" in config_content_str, "Config should contain [debug] section"

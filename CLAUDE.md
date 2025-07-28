@@ -86,7 +86,6 @@ selvage --set-gemini-key
 selvage config model claude-sonnet-4-thinking
 selvage config language ko  # Set Korean language
 selvage config debug-mode on
-selvage config diff-only true
 
 # View current configuration
 selvage config list
@@ -121,7 +120,6 @@ Selvage is an LLM-based code review tool with a modular architecture:
 
 - `prompt_generator.py`: Creates structured prompts for LLM review
 - `models/`: Prompt data models (ReviewPrompt, SystemPrompt, UserPrompt)
-- Supports both diff-only and full-file context modes
 
 **Configuration Management** (`selvage/src/config.py`)
 
@@ -180,9 +178,6 @@ selvage review --target-branch develop
 # Review changes from specific commit to HEAD
 selvage review --target-commit abc1234
 
-# Use different context modes
-selvage review --diff-only  # Only changed lines
-selvage review --full-context  # Include full file content
 ```
 
 ## Coding Conventions

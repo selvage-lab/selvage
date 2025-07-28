@@ -206,8 +206,6 @@ selvage config model <모델명>
 # 디버그 모드 설정
 selvage config debug-mode on
 
-# diff-only 옵션 설정 (변경된 부분만 분석)
-selvage config diff-only true
 ```
 
 ### 코드 리뷰하기
@@ -225,7 +223,6 @@ selvage review [OPTIONS]
 - `--model <모델명>`: 사용할 AI 모델 (예: claude-sonnet-4-thinking)
 - `--open-ui`: 리뷰 완료 후 자동으로 UI 실행
 - `--no-print`: 터미널에 리뷰 결과를 출력하지 않음 (기본적으로 터미널 출력 활성화)
-- `--diff-only`: 변경된 부분만 분석 (전체 파일 컨텍스트 제외)
 
 #### 사용 예시
 
@@ -313,9 +310,6 @@ selvage review --target-branch develop
 ### 비용 최적화
 
 ```bash
-# 변경 부분만 분석하여 토큰 절약
-selvage review --diff-only
-
 # 작은 변경사항에는 경제적인 모델 사용
 selvage review --model gemini-2.5-flash
 ```
