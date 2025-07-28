@@ -372,12 +372,6 @@ class ContextExtractor:
             # JavaScript/TypeScript의 lexical_declaration (const, let, var)인 경우
             if current.type == "lexical_declaration":
                 return current.parent and self._is_root_node(current.parent)
-            # Go의 const/var 선언인 경우
-            if current.type in ["const_declaration", "var_declaration"]:
-                return current.parent and self._is_root_node(current.parent)
-            # C의 전처리기 지시문인 경우
-            if current.type in ["preproc_def", "preproc_include"]:
-                return current.parent and self._is_root_node(current.parent)
             current = current.parent
         return False
 
