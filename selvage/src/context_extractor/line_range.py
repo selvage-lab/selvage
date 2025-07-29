@@ -23,22 +23,6 @@ class LineRange:
         if self.start_line > self.end_line:
             raise ValueError("시작 라인이 끝 라인보다 클 수 없습니다")
 
-    @classmethod
-    def from_tuple(cls, range_tuple: tuple[int, int]) -> LineRange:
-        """tuple에서 LineRange를 생성합니다."""
-        return cls(range_tuple[0], range_tuple[1])
-
-    @classmethod
-    def from_hunk(cls, new_start: int, new_count: int) -> LineRange:
-        """Git hunk 정보에서 LineRange를 생성합니다."""
-        if new_count <= 0:
-            raise ValueError("hunk count는 양수여야 합니다")
-        return cls(new_start, new_start + new_count - 1)
-
-    def to_tuple(self) -> tuple[int, int]:
-        """tuple 형태로 변환합니다 (하위 호환성)."""
-        return (self.start_line, self.end_line)
-
     def contains(self, line: int) -> bool:
         """지정된 라인이 이 범위에 포함되는지 확인합니다."""
         return self.start_line <= line <= self.end_line
