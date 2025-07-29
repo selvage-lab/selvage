@@ -9,6 +9,8 @@ from pathlib import Path
 from tree_sitter import Language, Node, Parser
 from tree_sitter_language_pack import get_language, get_parser
 
+from selvage.src.exceptions import UnsupportedLanguageError
+
 from .line_range import LineRange
 from .meaningless_change_filter import MeaninglessChangeFilter
 
@@ -163,13 +165,10 @@ class ContextExtractor:
             language: 지원 언어 (기본값: python)
 
         Raises:
-            ValueError: 지원하지 않는 언어인 경우
+            UnsupportedLanguageError: 지원하지 않는 언어인 경우
         """
         if language not in self.SUPPORTED_LANGUAGES:
-            raise ValueError(
-                f"지원하지 않는 언어: '{language}'. "
-                f"지원 언어: {self.SUPPORTED_LANGUAGES}"
-            )
+            raise UnsupportedLanguageError(language)
 
         try:
             self._language: Language = get_language(language)

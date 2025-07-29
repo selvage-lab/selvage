@@ -7,6 +7,7 @@ from selvage.src.context_extractor.context_extractor import ContextExtractor
 from selvage.src.context_extractor.fallback_context_extractor import (
     FallbackContextExtractor,
 )
+from selvage.src.exceptions import UnsupportedLanguageError
 from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import is_ignore_file
 from selvage.src.utils.smart_context_utils import SmartContextUtils
@@ -115,7 +116,12 @@ class PromptGenerator:
                             file.filename, [hunk.change_line for hunk in file.hunks]
                         )
                         file_content = "\n".join(contexts)
-                    except Exception:
+                    except Exception as e:
+                        if not isinstance(e, UnsupportedLanguageError):
+                            # UnsupportedLanguageError가 아닌 다른 예외일 때만 경고합니다.
+                            console.warning(f"컨텍스트 추출 실패, fall back 사용: {e}")
+
+                        # 모든 예외에 대해 공통적으로 fall back 로직을 실행합니다.
                         file_content = FallbackContextExtractor().extract_contexts(
                             file.filename, [hunk.change_line for hunk in file.hunks]
                         )

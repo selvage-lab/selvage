@@ -3,6 +3,11 @@
 """
 
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
+from selvage.src.exceptions.context_extraction_error import (
+    ContextExtractionError,
+    TreeSitterError,
+    UnsupportedLanguageError,
+)
 from selvage.src.exceptions.context_limit_exceeded_error import (
     ContextLimitExceededError,
 )
@@ -24,4 +29,7 @@ __all__ = [
     "DiffParsingError",
     "ContextLimitExceededError",
     "InvalidAPIKeyError",
+    "ContextExtractionError",
+    "UnsupportedLanguageError",
+    "TreeSitterError",
 ]
