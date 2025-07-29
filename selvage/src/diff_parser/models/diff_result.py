@@ -2,8 +2,8 @@ import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from .file_diff import FileDiff
 from ...context_extractor import LineRange, LineRangesResult
+from .file_diff import FileDiff
 
 
 @dataclass
@@ -40,22 +40,22 @@ class DiffResult:
     def to_line_ranges_results(self) -> list[LineRangesResult]:
         """DiffResult에서 파일별 LineRange 객체들을 생성한다."""
         results = []
-        
+
         for file_diff in self.files:
             line_ranges = []
             for hunk in file_diff.hunks:
                 # 수정된 파일 기준으로 LineRange 생성
                 if hunk.line_count_modified > 0:
                     line_range = LineRange.from_hunk(
-                        hunk.start_line_modified,
-                        hunk.line_count_modified
+                        hunk.start_line_modified, hunk.line_count_modified
                     )
                     line_ranges.append(line_range)
-            
+
             if line_ranges:  # 유효한 변경사항이 있는 경우만 추가
-                results.append(LineRangesResult(
-                    file_name=file_diff.filename,
-                    line_ranges=line_ranges
-                ))
-        
+                results.append(
+                    LineRangesResult(
+                        file_name=file_diff.filename, line_ranges=line_ranges
+                    )
+                )
+
         return results
