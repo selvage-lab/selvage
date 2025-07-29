@@ -1,6 +1,9 @@
 import re
 from dataclasses import dataclass
 
+from selvage.src.context_extractor.line_range import LineRange
+from selvage.src.diff_parser.utils.hunk_line_calculator import HunkLineCalculator
+
 
 @dataclass
 class Hunk:
@@ -18,6 +21,7 @@ class Hunk:
     line_count_original: int
     start_line_modified: int
     line_count_modified: int
+    change_line: LineRange
 
     def get_before_code(self) -> str:
         """원본 코드를 반환합니다.
@@ -56,7 +60,9 @@ class Hunk:
             line_count_modified,
         ) = Hunk._parse_header(header)
         before_code, after_code = Hunk._parse_content_to_code(content)
-
+        change_line = HunkLineCalculator.calculate_actual_change_lines(
+            content, start_line_modified
+        )
         return Hunk(
             header=header,
             content=content,
@@ -66,6 +72,7 @@ class Hunk:
             line_count_original=line_count_original,
             start_line_modified=start_line_modified,
             line_count_modified=line_count_modified,
+            change_line=change_line,
         )
 
     @staticmethod
@@ -76,7 +83,8 @@ class Hunk:
             header: git diff 형식의 hunk 헤더 문자열 (예: "@@ -3,6 +40,7 @@")
 
         Returns:
-            tuple[int, int, int, int]: (original 시작 줄, original 줄 수, modified 시작 줄, modified 줄 수)
+            tuple[int, int, int, int]: (original 시작 줄, original 줄 수,
+                                       modified 시작 줄, modified 줄 수)
         """
         match = re.match(r"@@ -(\d+),(\d+) \+(\d+),(\d+) @@", header)
         if match:
@@ -111,7 +119,6 @@ class Hunk:
 
         for line in content.splitlines():
             prefix = line[0] if line else ""
-            # diff 접두사 유지: LLM이 추가(+), 삭제(-), 문맥( ) 라인을 구분하여 분석하는 데 사용
             code_part = line if line else ""
 
             if prefix == "-":  # 제거된 라인

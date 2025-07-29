@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
+from selvage.src.context_extractor.line_range import LineRange
 from selvage.src.diff_parser.models.diff_result import DiffResult
 from selvage.src.diff_parser.models.file_diff import FileDiff
 from selvage.src.diff_parser.models.hunk import Hunk
@@ -80,6 +81,7 @@ def multi_hunk_review_request() -> ReviewRequest:
                             line_count_original=3,
                             start_line_modified=1,
                             line_count_modified=4,
+                            change_line=LineRange(start_line=1, end_line=2),
                         ),
                         Hunk(
                             header="@@ -10,3 +11,4 @@",
@@ -90,6 +92,7 @@ def multi_hunk_review_request() -> ReviewRequest:
                             line_count_original=3,
                             start_line_modified=11,
                             line_count_modified=4,
+                            change_line=LineRange(start_line=12, end_line=12),
                         ),
                     ],
                     language="python",
