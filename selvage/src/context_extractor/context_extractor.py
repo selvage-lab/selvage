@@ -10,6 +10,7 @@ from tree_sitter import Language, Node, Parser
 from tree_sitter_language_pack import get_language, get_parser
 
 from .line_range import LineRange
+from .meaningless_change_filter import MeaninglessChangeFilter
 
 logger = logging.getLogger(__name__)
 
@@ -164,6 +165,8 @@ class ContextExtractor:
             self._dependency_types = self.LANGUAGE_DEPENDENCY_TYPES.get(
                 language, frozenset()
             )
+            # 무의미한 변경 필터링 객체
+            self._filter = MeaninglessChangeFilter()
         except Exception as e:
             raise ValueError(f"언어 '{language}' 초기화 실패: {e}") from e
 
@@ -219,7 +222,16 @@ class ContextExtractor:
         except UnicodeDecodeError as e:
             raise ValueError(f"파일 인코딩 오류 ({file_path}): {e}") from e
 
-        # 2. AST 파싱
+        # 2. 1줄 무의미 변경 필터링
+        meaningful_ranges = self._filter.filter_meaningful_ranges_with_file_content(
+            code_text, changed_ranges
+        )
+
+        # 의미있는 변경이 없으면 빈 결과 반환
+        if not meaningful_ranges:
+            return []
+
+        # 3. AST 파싱
         try:
             tree = self._parser.parse(code_bytes)
             if tree.root_node.has_error:
@@ -227,9 +239,9 @@ class ContextExtractor:
         except Exception as e:
             raise ValueError(f"파싱 실패 ({file_path}): {e}") from e
 
-        # 3. 변경 범위의 각 라인에 대해 최소 블록들 찾기
+        # 4. 변경 범위의 각 라인에 대해 최소 블록들 찾기
         context_blocks: set[Node] = set()
-        for changed_range in changed_ranges:
+        for changed_range in meaningful_ranges:
             # 각 LineRange에 대해 최소 노드들 찾기
             minimal_nodes = self._find_minimal_nodes_for_range(
                 tree.root_node, changed_range
