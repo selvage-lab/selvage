@@ -3,8 +3,13 @@
 import importlib.resources
 
 from selvage.src.config import get_default_language
+from selvage.src.context_extractor.context_extractor import ContextExtractor
+from selvage.src.context_extractor.fallback_context_extractor import (
+    FallbackContextExtractor,
+)
 from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import is_ignore_file
+from selvage.src.utils.smart_context_utils import SmartContextUtils
 from selvage.src.utils.token.models import ReviewRequest
 
 from .models import (
@@ -104,7 +109,17 @@ class PromptGenerator:
 
             try:
                 # 파일 내용 읽기 시도
-                if not file.file_content:
+                if SmartContextUtils.use_smart_context(file):
+                    try:
+                        contexts = ContextExtractor(file.language).extract_contexts(
+                            file.filename, [hunk.change_line for hunk in file.hunks]
+                        )
+                        file_content = "\n".join(contexts)
+                    except Exception:
+                        file_content = FallbackContextExtractor().extract_contexts(
+                            file.filename, [hunk.change_line for hunk in file.hunks]
+                        )
+                elif not file.file_content:
                     console.warning(f"파일 내용이 없습니다. 파일 경로: {file.filename}")
                     file_content = ""
                 elif file.is_entirely_new_content():
