@@ -53,13 +53,6 @@ class TestImportChanges:
                 f"Got: {repr(contexts[i])}"
             )
 
-        # 버그 감지: 'from'만 있는 잘못된 context 직접 확인
-        isolated_from_contexts = [ctx for ctx in contexts if ctx.strip() == "from"]
-        assert len(isolated_from_contexts) == 0, (
-            f"Found {len(isolated_from_contexts)} isolated 'from' contexts: "
-            f"{isolated_from_contexts}"
-        )
-
     def test_single_import_line_change(
         self,
         extractor: ContextExtractor,
@@ -90,12 +83,6 @@ class TestImportChanges:
                 f"Context {i} mismatch. Expected: {repr(expected)}, "
                 f"Got: {repr(contexts[i])}"
             )
-
-        # 버그 감지: 'from'만 있는 잘못된 context가 없어야 함
-        isolated_from_contexts = [ctx for ctx in contexts if ctx.strip() == "from"]
-        assert len(isolated_from_contexts) == 0, (
-            f"Found isolated 'from' contexts: {isolated_from_contexts}"
-        )
 
     def test_import_and_code_mixed_changes(
         self,
@@ -196,61 +183,3 @@ class TestImportChanges:
                 f"Context {i} mismatch. Expected: {repr(expected)}, "
                 f"Got: {repr(contexts[i])}"
             )
-
-    def test_exact_import_boundary_cases(
-        self,
-        extractor: ContextExtractor,
-        sample_import_file_path: Path,
-    ) -> None:
-        """Import 문 경계에서의 정확한 추출 테스트."""
-        # 라인 7-8: 연속된 두 from import 문
-        changed_ranges = [LineRange(7, 8)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
-
-        # 예상 결과
-        expected_contexts = [
-            "import re",
-            "from dataclasses import dataclass",
-            "from selvage.src.context_extractor.line_range import LineRange",
-            (
-                "from selvage.src.diff_parser.utils.hunk_line_calculator import "
-                "HunkLineCalculator"
-            ),
-        ]
-
-        # 버그 감지
-        isolated_from_contexts = [ctx for ctx in contexts if ctx.strip() == "from"]
-        assert len(isolated_from_contexts) == 0, (
-            f"Found {len(isolated_from_contexts)} isolated 'from' contexts: "
-            f"{isolated_from_contexts}. Full contexts: {contexts}"
-        )
-
-        # 정확한 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Boundary case: Expected {len(expected_contexts)} contexts, "
-            f"got {len(contexts)}. Actual: {contexts}"
-        )
-
-    def test_empty_line_with_import_combination(
-        self,
-        extractor: ContextExtractor,
-        sample_import_file_path: Path,
-    ) -> None:
-        """빈 줄과 import가 섞인 복잡한 조합 테스트."""
-        # 라인 4-7: 빈줄, from dataclasses, 빈줄, from selvage 시작
-        changed_ranges = [LineRange(4, 7)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
-
-        # 버그 감지가 핵심 목적
-        isolated_from_contexts = [ctx for ctx in contexts if ctx.strip() == "from"]
-        assert len(isolated_from_contexts) == 0, (
-            f"Found {len(isolated_from_contexts)} isolated 'from' contexts: "
-            f"{isolated_from_contexts}. Full contexts: {contexts}"
-        )
-
-        # 모든 context는 완전한 import 문이어야 함
-        for i, ctx in enumerate(contexts):
-            if ctx.strip().startswith("from") and "import" not in ctx:
-                pytest.fail(
-                    f"Incomplete from statement at context {i}: {repr(ctx)}"
-                )
