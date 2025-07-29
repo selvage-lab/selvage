@@ -1,6 +1,7 @@
 import pytest
 
 from selvage.src.context_extractor import ContextExtractor
+from selvage.src.exceptions import UnsupportedLanguageError
 
 
 class TestContextExtractorInitialization:
@@ -30,8 +31,8 @@ class TestContextExtractorInitialization:
 
     def test_invalid_language_initialization(self):
         """지원하지 않는 언어로 초기화 시 예외 발생을 테스트한다."""
-        with pytest.raises(ValueError, match="지원하지 않는 언어"):
-            ContextExtractor("unsupported_language")
+        with pytest.raises(UnsupportedLanguageError, match="c"):
+            ContextExtractor("c")
 
     def test_block_types_for_each_language(self):
         """각 언어별로 블록 타입이 올바르게 설정되는지 테스트한다."""
