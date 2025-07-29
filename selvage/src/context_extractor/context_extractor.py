@@ -36,6 +36,8 @@ class ContextExtractor:
                 "class_definition",
                 "module",
                 "decorated_definition",
+                "import_from_statement",
+                "import_statement",
             }
         ),
         "javascript": frozenset(
@@ -49,6 +51,9 @@ class ContextExtractor:
                 "method_definition",
                 "arrow_function",
                 "program",
+                "import_statement",
+                "import_declaration",
+                "call_expression",  # require() 호출
             }
         ),
         "typescript": frozenset(
@@ -63,6 +68,10 @@ class ContextExtractor:
                 "enum_declaration",
                 "arrow_function",
                 "program",
+                "import_statement",
+                "import_declaration",
+                "import_require_clause",
+                "call_expression",  # require() 호출
             }
         ),
         "java": frozenset(
@@ -74,6 +83,9 @@ class ContextExtractor:
                 "constructor_declaration",
                 "record_declaration",
                 "annotation_type_declaration",
+                "import_declaration",
+                "package_declaration",
+                "static_import_declaration",
             }
         ),
         "kotlin": frozenset(
@@ -90,6 +102,8 @@ class ContextExtractor:
                 "init_block",
                 "lambda_expression",
                 "property_declaration",
+                "import_header",
+                "package_header",
             }
         ),
     }
