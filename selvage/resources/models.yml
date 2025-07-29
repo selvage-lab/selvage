@@ -244,3 +244,18 @@ models:
       description: "$1.00/$5.00 per 1M tokens"
     context_limit: 1000000
     openrouter_name: "qwen/qwen3-coder"
+
+  qwen3-coder-free:
+    full_name: "qwen3-coder-free"
+    aliases: ["qwen3-coder-free"]
+    description: "Qwen의 코더 모델 (무료)"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.0
+      output: 0.0
+      description: "Free tier"
+    context_limit: 1000000
+    openrouter_name: "qwen/qwen3-coder:free"
