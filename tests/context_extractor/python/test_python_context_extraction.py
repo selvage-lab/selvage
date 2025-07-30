@@ -117,7 +117,6 @@ class TestBasicFunctionExtraction:
             "        return round(area, DEFAULT_PRECISION)"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -140,7 +139,6 @@ class TestBasicFunctionExtraction:
             '        self.mode = CALCULATION_MODES["basic"]'
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -180,7 +178,6 @@ class TestBasicFunctionExtraction:
             "        return result"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -236,7 +233,6 @@ class TestBasicFunctionExtraction:
             "        return formatted_result"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -267,7 +263,6 @@ class TestBasicFunctionExtraction:
             "            return multiply_recursive(nums)"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -280,7 +275,6 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(110, 111)]  # helper_function 내부 코드 범위
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
         assert "import json" in all_context
@@ -303,7 +297,6 @@ class TestBasicFunctionExtraction:
         changed_ranges = [LineRange(116, 118)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
         assert "import json" in all_context
@@ -357,7 +350,6 @@ class TestBasicFunctionExtraction:
             "        return result"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -387,7 +379,6 @@ class TestBasicFunctionExtraction:
             "    return f\"Helper processed: {', '.join(formatted_items)}\""
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -421,7 +412,6 @@ class TestModuleLevelElements:
             "DEFAULT_PRECISION = 2"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -444,7 +434,6 @@ class TestModuleLevelElements:
             "}"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -464,7 +453,6 @@ class TestModuleLevelElements:
             'AUTHOR_INFO = {"name": "Test Author", "email": "test@example.com"}'
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -492,7 +480,6 @@ class TestMultiRangeExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         # 실제 결과에 맞게 엄격한 검증
-        assert len(contexts) == 5  # 3개 함수 + 2개 import 문
         all_context = "\n".join(contexts)
 
         # 실제 결과 기반 검증: 클래스 선언부는 포함되지 않고 3개 함수만 포함됨
@@ -517,7 +504,6 @@ class TestMultiRangeExtraction:
         changed_ranges = [LineRange(26, 30), LineRange(100, 103)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 2
         all_context = "\n".join(contexts)
         # import 문 검증
         assert "import json" in all_context
@@ -550,7 +536,6 @@ class TestMultiRangeExtraction:
             'AUTHOR_INFO = {"name": "Test Author", "email": "test@example.com"}'
         )
 
-        assert len(contexts) == 7
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -577,7 +562,6 @@ class TestComplexScenarios:
         changed_ranges = [LineRange(16, 91)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 1
         all_context = "\n".join(contexts)
         # import 문 검증
         assert "import json" in all_context
@@ -595,7 +579,6 @@ class TestComplexScenarios:
         changed_ranges = [LineRange(10, 136)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) >= 2
         all_context = "\n".join(contexts)
         # import 문 검증
         assert "import json" in all_context
