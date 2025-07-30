@@ -33,25 +33,16 @@ class TestImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 정확한 예상 결과 정의
-        expected_contexts = [
-            "import re",
-            "from dataclasses import dataclass",
-            "from selvage.src.context_extractor.line_range import LineRange",
-            "from selvage.src.diff_parser.utils.hunk_line_calculator import HunkLineCalculator",
-        ]
-
-        # contexts 배열 구조 직접 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Expected {len(expected_contexts)} contexts, got {len(contexts)}. "
-            f"Actual contexts: {contexts}"
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import re\n"
+            "from dataclasses import dataclass\n"
+            "from selvage.src.context_extractor.line_range import LineRange\n"
+            "from selvage.src.diff_parser.utils.hunk_line_calculator import HunkLineCalculator"
         )
 
-        # 각 context의 정확한 내용 검증
-        for i, expected in enumerate(expected_contexts):
-            assert contexts[i] == expected, (
-                f"Context {i} mismatch. Expected: {repr(expected)}, "
-                f"Got: {repr(contexts[i])}"
-            )
+        all_context = "\n".join(contexts)
+        assert all_context == expected_context
 
     def test_single_import_line_change(
         self,
@@ -64,25 +55,16 @@ class TestImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 예상 결과: import re와 모든 의존성 import들이 추출되어야 함
-        expected_contexts = [
-            "import re",
-            "from dataclasses import dataclass",
-            "from selvage.src.context_extractor.line_range import LineRange",
-            "from selvage.src.diff_parser.utils.hunk_line_calculator import HunkLineCalculator",
-        ]
-
-        # contexts 배열 길이 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Expected {len(expected_contexts)} contexts, got {len(contexts)}. "
-            f"Actual contexts: {contexts}"
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import re\n"
+            "from dataclasses import dataclass\n"
+            "from selvage.src.context_extractor.line_range import LineRange\n"
+            "from selvage.src.diff_parser.utils.hunk_line_calculator import HunkLineCalculator"
         )
 
-        # 각 context의 정확한 내용 검증
-        for i, expected in enumerate(expected_contexts):
-            assert contexts[i] == expected, (
-                f"Context {i} mismatch. Expected: {repr(expected)}, "
-                f"Got: {repr(contexts[i])}"
-            )
+        all_context = "\n".join(contexts)
+        assert all_context == expected_context
 
     def test_import_and_code_mixed_changes(
         self,
@@ -115,29 +97,16 @@ class TestImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 올바른 예상 결과 정의
-        expected_contexts = [
-            "import re",
-            "from dataclasses import dataclass",
-            "from selvage.src.context_extractor.line_range import LineRange",
-            "from selvage.src.diff_parser.utils.hunk_line_calculator import HunkLineCalculator",
-        ]
-
-        # 실제 결과 출력 (디버깅용)
-        print(f"\nActual contexts: {contexts}")
-        print(f"Expected contexts: {expected_contexts}")
-
-        # 정확한 길이 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Expected {len(expected_contexts)} contexts, got {len(contexts)}. "
-            f"Actual: {contexts}"
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import re\n"
+            "from dataclasses import dataclass\n"
+            "from selvage.src.context_extractor.line_range import LineRange\n"
+            "from selvage.src.diff_parser.utils.hunk_line_calculator import HunkLineCalculator"
         )
 
-        # 각 context의 정확한 내용 검증
-        for i, expected in enumerate(expected_contexts):
-            assert contexts[i] == expected, (
-                f"Context {i} mismatch. Expected: {repr(expected)}, "
-                f"Got: {repr(contexts[i])}"
-            )
+        all_context = "\n".join(contexts)
+        assert all_context == expected_context
 
     def test_multiline_import_range_bug_strict(
         self,
@@ -150,36 +119,13 @@ class TestImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 올바른 예상 결과 정의
-        expected_contexts = [
-            "import re",
-            "from dataclasses import dataclass",
-            "from selvage.src.context_extractor.line_range import LineRange",
-            (
-                "from selvage.src.diff_parser.utils.hunk_line_calculator import "
-                "HunkLineCalculator"
-            ),
-        ]
-
-        # 실제 결과 출력 (디버깅용)
-        print(f"\nMultiline range test - Actual contexts: {contexts}")
-        print(f"Expected contexts: {expected_contexts}")
-
-        # 버그 감지: 'from'만 있는 context 직접 확인
-        isolated_from_contexts = [ctx for ctx in contexts if ctx.strip() == "from"]
-        assert len(isolated_from_contexts) == 0, (
-            f"Found {len(isolated_from_contexts)} isolated 'from' contexts "
-            f"in multiline range. Full contexts array: {contexts}"
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import re\n"
+            "from dataclasses import dataclass\n"
+            "from selvage.src.context_extractor.line_range import LineRange\n"
+            "from selvage.src.diff_parser.utils.hunk_line_calculator import HunkLineCalculator"
         )
 
-        # 정확한 길이 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Expected {len(expected_contexts)} contexts, got {len(contexts)}. "
-            f"Actual: {contexts}"
-        )
-
-        # 각 context의 정확한 내용 검증
-        for i, expected in enumerate(expected_contexts):
-            assert contexts[i] == expected, (
-                f"Context {i} mismatch. Expected: {repr(expected)}, "
-                f"Got: {repr(contexts[i])}"
-            )
+        all_context = "\n".join(contexts)
+        assert all_context == expected_context

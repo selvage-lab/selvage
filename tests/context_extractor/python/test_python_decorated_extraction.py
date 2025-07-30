@@ -34,9 +34,11 @@ class TestDecoratedExtraction:
 
         # 정확한 추출 결과 검증
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "from dataclasses import dataclass, field\n"
             "from functools import wraps\n"
             "from typing import ClassVar\n"
+            "---- Context Block 1 (Lines 19-30) ----\n"
             "@dataclass\n"
             "class UserInfo:\n"
             '    """사용자 정보를 담는 데이터클래스"""\n'
@@ -66,9 +68,11 @@ class TestDecoratedExtraction:
 
         # 정확한 추출 결과 검증
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "from dataclasses import dataclass, field\n"
             "from functools import wraps\n"
             "from typing import ClassVar\n"
+            "---- Context Block 1 (Lines 42-45) ----\n"
             "    @property\n"
             "    def is_debug_enabled(self) -> bool:\n"
             '        """디버그 모드 활성화 여부"""\n'
@@ -90,9 +94,11 @@ class TestDecoratedExtraction:
 
         # 정확한 추출 결과 검증
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "from dataclasses import dataclass, field\n"
             "from functools import wraps\n"
             "from typing import ClassVar\n"
+            "---- Context Block 1 (Lines 71-75) ----\n"
             "    @log_calls\n"
             "    @property\n"
             "    def is_connected(self) -> bool:\n"
@@ -115,9 +121,11 @@ class TestDecoratedExtraction:
 
         # 정확한 추출 결과 검증
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "from dataclasses import dataclass, field\n"
             "from functools import wraps\n"
             "from typing import ClassVar\n"
+            "---- Context Block 1 (Lines 78-85) ----\n"
             "@log_calls\n"
             "def process_user_data(user_info: UserInfo) -> dict:\n"
             '    """사용자 데이터 처리 함수"""\n'
