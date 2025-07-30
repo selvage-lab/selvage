@@ -277,8 +277,13 @@ class ContextExtractor:
         # 7. 중복 제거 (같은 노드가 context와 dependency에 모두 포함된 경우)
         unique_nodes = self._remove_duplicate_nodes(sorted_nodes)
 
-        # 8. 텍스트 추출
+        # 8. 텍스트 추출 및 포맷팅
         contexts = []
+
+        # 의존성 노드들과 컨텍스트 노드들 분리
+        dependency_blocks = []
+        context_blocks = []
+
         for node in unique_nodes:
             try:
                 node_text = node.text.decode("utf-8")
@@ -293,10 +298,27 @@ class ContextExtractor:
                 ):
                     node_text = self._extract_lines_from_original(node, code_text)
 
-                contexts.append(node_text)
+                # 의존성 노드인지 컨텍스트 노드인지 구분
+                if node in dependency_nodes:
+                    dependency_blocks.append(node_text)
+                else:
+                    context_blocks.append((node_text, node))
             except UnicodeDecodeError:
                 logger.error(f"노드 텍스트 디코딩 실패: {node.start_point}")
                 continue
+
+        # 의존성 블록 포맷팅
+        if dependency_blocks:
+            formatted_dependency = self._format_dependency_block(dependency_blocks)
+            contexts.append(formatted_dependency)
+
+        # 연속 블록 병합 및 포맷팅
+        merged_blocks = self._merge_adjacent_context_blocks(context_blocks)
+        for i, (merged_context, start_line, end_line) in enumerate(merged_blocks, 1):
+            formatted_context = self._format_context_block(
+                merged_context, start_line, end_line, i
+            )
+            contexts.append(formatted_context)
 
         return contexts
 
@@ -640,3 +662,120 @@ class ContextExtractor:
         extracted_lines = original_lines[start_line : end_line + 1]
 
         return "\n".join(extracted_lines)
+
+    def _format_dependency_block(self, dependency_blocks: list[str]) -> str:
+        """의존성 블록들을 하나의 포맷팅된 블록으로 만든다.
+
+        Args:
+            dependency_blocks: 의존성 코드 블록들의 리스트
+
+        Returns:
+            포맷팅된 의존성 블록
+        """
+        if not dependency_blocks:
+            return ""
+
+        dependency_content = "\n".join(dependency_blocks)
+        return f"---- Dependencies/Imports ----\n{dependency_content}"
+
+    def _format_context_block(
+        self, context: str, start_line: int, end_line: int, block_number: int
+    ) -> str:
+        """컨텍스트 블록을 구분선과 함께 포맷팅한다.
+
+        Args:
+            context: 추출된 컨텍스트 내용
+            start_line: 시작 라인 (1-based)
+            end_line: 끝 라인 (1-based)
+            block_number: 블록 번호
+
+        Returns:
+            포맷팅된 컨텍스트 블록
+        """
+        header = (
+            f"---- Context Block {block_number} (Lines {start_line}-{end_line}) ----"
+        )
+        return f"{header}\n{context}"
+
+    def _merge_adjacent_context_blocks(
+        self, context_blocks: list[tuple[str, Node]]
+    ) -> list[tuple[str, int, int]]:
+        """연속된 1줄짜리 블록들을 병합한다.
+
+        Args:
+            context_blocks: (context_text, node) 튜플들의 리스트
+
+        Returns:
+            (merged_context, start_line, end_line) 튜플들의 리스트
+        """
+        if not context_blocks:
+            return []
+
+        # 라인 번호 기준으로 정렬
+        sorted_blocks = sorted(context_blocks, key=lambda x: x[1].start_point[0])
+        merged_blocks = []
+        current_group = [sorted_blocks[0]]
+
+        for context_text, node in sorted_blocks[1:]:
+            last_node = current_group[-1][1]
+
+            # 현재 노드와 이전 노드의 라인 번호 (1-based)
+            current_line = node.start_point[0] + 1
+            last_line = last_node.end_point[0] + 1
+
+            # 연속된 1줄짜리 노드인지 확인
+            if (
+                current_line == last_line + 1  # 연속된 라인
+                and self._is_single_line_node(last_node)
+                and self._is_single_line_node(node)
+            ):
+                current_group.append((context_text, node))
+            else:
+                # 현재 그룹을 병합하여 결과에 추가
+                merged_blocks.append(self._merge_block_group(current_group))
+                current_group = [(context_text, node)]
+
+        # 마지막 그룹 처리
+        if current_group:
+            merged_blocks.append(self._merge_block_group(current_group))
+
+        return merged_blocks
+
+    def _is_single_line_node(self, node: Node) -> bool:
+        """노드가 1줄짜리인지 확인한다.
+
+        Args:
+            node: 확인할 노드
+
+        Returns:
+            1줄 노드 여부
+        """
+        return node.start_point[0] == node.end_point[0]
+
+    def _merge_block_group(
+        self, block_group: list[tuple[str, Node]]
+    ) -> tuple[str, int, int]:
+        """블록 그룹을 하나로 병합한다.
+
+        Args:
+            block_group: 병합할 블록들의 그룹
+
+        Returns:
+            (merged_context, start_line, end_line) 튜플
+        """
+        if len(block_group) == 1:
+            context_text, node = block_group[0]
+            start_line = node.start_point[0] + 1  # 1-based
+            end_line = node.end_point[0] + 1  # 1-based
+            return (context_text, start_line, end_line)
+
+        # 여러 블록을 병합
+        merged_contexts = []
+        start_line = block_group[0][1].start_point[0] + 1  # 1-based
+        end_line = block_group[-1][1].end_point[0] + 1  # 1-based
+
+        for context_text, _ in block_group:
+            merged_contexts.append(context_text)
+
+        merged_context = "\n".join(merged_contexts)
+        return (merged_context, start_line, end_line)

@@ -244,7 +244,7 @@ class FallbackContextExtractor:
     def _format_context_block(
         self, context: str, line_range: LineRange, block_number: int
     ) -> str:
-        """컨텍스트 블럭을 구분선과 설명과 함께 포맷팅한다.
+        """컨텍스트 블럭을 구분선과 함께 포맷팅한다.
 
         Args:
             context: 추출된 컨텍스트 내용
@@ -258,6 +258,5 @@ class FallbackContextExtractor:
             f"---- Context Block {block_number} "
             f"(Lines {line_range.start_line}-{line_range.end_line}) ----"
         )
-        comment = "// Fallback context extraction: limited to nearby lines"
 
-        return f"{header}\n{comment}\n{context}"
+        return f"{header}\n{context}"

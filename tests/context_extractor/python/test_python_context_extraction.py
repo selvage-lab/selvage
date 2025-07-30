@@ -32,8 +32,10 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 17-97) ----\n"
             "class SampleCalculator:\n"
             '    """간단한 계산기 클래스 - tree-sitter 테스트용"""\n'
             "\n"
@@ -130,8 +132,10 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 20-24) ----\n"
             "def __init__(self, initial_value: int = 0):\n"
             '        """계산기 초기화"""\n'
             "        self.value = initial_value\n"
@@ -152,8 +156,10 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 26-46) ----\n"
             "def add_numbers(self, a: int, b: int) -> int:\n"
             '        """두 수를 더하는 메소드"""\n'
             "\n"
@@ -191,8 +197,10 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 48-84) ----\n"
             "def multiply_and_format(self, numbers: list[int]) -> dict[str, Any]:\n"
             '        """숫자 리스트를 곱하고 결과를 포맷팅하는 메소드"""\n'
             "\n"
@@ -246,8 +254,10 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 51-62) ----\n"
             "def calculate_product(nums: list[int]) -> int:\n"
             '            """내부 함수: 곱셈 계산"""\n'
             "            if not nums:\n"
@@ -324,8 +334,10 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 26-46) ----\n"
             "def add_numbers(self, a: int, b: int) -> int:\n"
             '        """두 수를 더하는 메소드"""\n'
             "\n"
@@ -363,8 +375,10 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 100-111) ----\n"
             "def helper_function(data: dict) -> str:\n"
             '    """도우미 함수 - 클래스 외부 함수"""\n'
             "\n"
@@ -406,8 +420,10 @@ class TestModuleLevelElements:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 7-8) ----\n"
             "MAX_CALCULATION_STEPS = 100\n"
             "DEFAULT_PRECISION = 2"
         )
@@ -425,8 +441,10 @@ class TestModuleLevelElements:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 10-14) ----\n"
             "CALCULATION_MODES = {\n"
             '    "basic": "Basic calculations",\n'
             '    "advanced": "Advanced calculations with logging",\n'
@@ -447,8 +465,10 @@ class TestModuleLevelElements:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 135-136) ----\n"
             'MODULE_VERSION = "1.0.0"\n'
             'AUTHOR_INFO = {"name": "Test Author", "email": "test@example.com"}'
         )
@@ -525,13 +545,17 @@ class TestMultiRangeExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import json\n"
             "from typing import Any\n"
+            "---- Context Block 1 (Lines 7-8) ----\n"
             "MAX_CALCULATION_STEPS = 100\n"
             "DEFAULT_PRECISION = 2\n"
+            "---- Context Block 2 (Lines 89-91) ----\n"
             "def validate_radius(r: float) -> bool:\n"
             '            """내부 함수: 반지름 검증"""\n'
             "            return r > 0\n"
+            "---- Context Block 3 (Lines 135-136) ----\n"
             'MODULE_VERSION = "1.0.0"\n'
             'AUTHOR_INFO = {"name": "Test Author", "email": "test@example.com"}'
         )
