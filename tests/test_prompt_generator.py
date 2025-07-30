@@ -46,6 +46,7 @@ def review_request() -> ReviewRequest:
                             line_count_original=3,
                             start_line_modified=1,
                             line_count_modified=4,
+                            change_line=LineRange(start_line=1, end_line=2),
                         )
                     ],
                     language="python",
@@ -280,6 +281,7 @@ def new_file_review_request() -> ReviewRequest:
                             line_count_original=0,
                             start_line_modified=1,
                             line_count_modified=3,
+                            change_line=LineRange(start_line=1, end_line=3),
                         )
                     ],
                     language="python",
@@ -352,6 +354,7 @@ def rewritten_file_review_request() -> ReviewRequest:
                             line_count_original=5,
                             start_line_modified=1,
                             line_count_modified=3,
+                            change_line=LineRange(start_line=1, end_line=3),
                         )
                     ],
                     language="python",
