@@ -286,6 +286,13 @@ class ContextExtractor:
                 # 코틀린 import_header 노드인 경우 주석 제거
                 node_text = self._clean_kotlin_import(node, node_text, dependency_nodes)
 
+                # Python decorated_definition의 원본 파일 직접 추출
+                if (
+                    self._language_name == "python"
+                    and node.type == "decorated_definition"
+                ):
+                    node_text = self._extract_lines_from_original(node, code_text)
+
                 contexts.append(node_text)
             except UnicodeDecodeError:
                 logger.error(f"노드 텍스트 디코딩 실패: {node.start_point}")
@@ -338,12 +345,29 @@ class ContextExtractor:
 
     def _find_minimal_enclosing_block(self, node: Node) -> Node | None:
         """현재 노드에서 부모 방향으로 올라가며 가장 가까운 블록을 찾는다.
+        데코레이터가 있는 경우 데코레이터를 포함한 전체 정의를 반환한다.
         module은 제외."""
         current = node
+        found_block = None
+
         while current is not None:
             if current.type in self._block_types and not self._is_root_node(current):
-                return current
+                found_block = current
+
+                # 데코레이터가 있는지 확인하기 위해 부모 노드 체크
+                if (
+                    current.parent
+                    and current.parent.type == "decorated_definition"
+                    and current.parent.children
+                    and current.parent.children[-1] == current
+                ):
+                    # 현재 블록이 decorated_definition의 마지막 자식인 경우
+                    # (즉, 실제 정의 부분인 경우) decorated_definition 반환
+                    return current.parent
+
+                return found_block
             current = current.parent
+
         # 모든 상위가 루트 노드인 경우 원래 노드 반환 (파일 레벨 상수 등)
         return node if not self._is_root_node(node) else None
 
@@ -589,3 +613,30 @@ class ContextExtractor:
             # 첫 번째 빈 줄까지만 포함하고 나머지는 제거
             return text[: double_newline_index + 1].rstrip()
         return text
+
+    def _extract_lines_from_original(self, node: Node, original_code: str) -> str:
+        """decorated_definition 노드의 라인을 원본 파일에서 직접 추출한다.
+
+        Args:
+            node: decorated_definition 노드
+            original_code: 원본 파일의 전체 코드
+
+        Returns:
+            원본 파일에서 직접 추출한 텍스트 (들여쓰기 보존)
+        """
+        # 노드의 라인 범위 추출 (0-based)
+        start_line = node.start_point[0]
+        end_line = node.end_point[0]
+
+        # 원본 파일에서 해당 라인들 직접 추출
+        original_lines = original_code.split("\n")
+
+        # 라인 범위 검증
+        if start_line >= len(original_lines) or end_line >= len(original_lines):
+            # 범위를 벗어나는 경우 기존 방식 사용
+            return node.text.decode("utf-8")
+
+        # 해당 라인 범위 추출 (end_line 포함)
+        extracted_lines = original_lines[start_line : end_line + 1]
+
+        return "\n".join(extracted_lines)
