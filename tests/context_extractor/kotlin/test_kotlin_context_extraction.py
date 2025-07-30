@@ -32,9 +32,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 23-130) ----\n"
             "class SampleCalculator(private var value: Int = 0) {\n"
             "    /**\n"
             "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
@@ -158,9 +160,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 23-130) ----\n"
             "class SampleCalculator(private var value: Int = 0) {\n"
             "    /**\n"
             "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
@@ -284,9 +288,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 39-66) ----\n"
             "fun addNumbers(a: Int, b: Int): Int {\n"
             "        /**\n"
             "         * 두 수를 더하는 메소드\n"
@@ -330,9 +336,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 68-111) ----\n"
             "fun multiplyAndFormat(numbers: List<Int>): FormattedResult {\n"
             "        /**\n"
             "         * 숫자 리스트를 곱하고 결과를 포맷팅하는 메소드\n"
@@ -392,9 +400,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 80-85) ----\n"
             "fun multiplyRecursive(items: List<Int>, index: Int = 0): Int {\n"
             "                if (index >= items.size) {\n"
             "                    return 1\n"
@@ -416,9 +426,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 132-148) ----\n"
             "fun helperFunction(data: Map<String, Any>): String {\n"
             "    /**\n"
             "     * 도우미 함수 - 클래스 외부 함수\n"
@@ -451,9 +463,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 150-172) ----\n"
             'fun advancedCalculatorFactory(mode: String = "basic"): SampleCalculator {\n'
             "    /**\n"
             "     * 계산기 팩토리 함수\n"
@@ -492,9 +506,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 39-66) ----\n"
             "fun addNumbers(a: Int, b: Int): Int {\n"
             "        /**\n"
             "         * 두 수를 더하는 메소드\n"
@@ -538,9 +554,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 132-148) ----\n"
             "fun helperFunction(data: Map<String, Any>): String {\n"
             "    /**\n"
             "     * 도우미 함수 - 클래스 외부 함수\n"
@@ -587,9 +605,11 @@ class TestModuleLevelElements:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 6-8) ----\n"
             "const val MAX_CALCULATION_STEPS = 100\n"
             "const val DEFAULT_PRECISION = 2\n"
             "const val PI_CONSTANT = 3.14159"
@@ -608,9 +628,11 @@ class TestModuleLevelElements:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 10-14) ----\n"
             "val CALCULATION_MODES = mapOf(\n"
             '    "basic" to "Basic calculations",\n'
             '    "advanced" to "Advanced calculations with logging",\n'
@@ -631,10 +653,13 @@ class TestModuleLevelElements:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
+            "---- Context Block 1 (Lines 175-175) ----\n"
             'const val MODULE_VERSION = "1.0.0"\n'
+            "---- Context Block 2 (Lines 176-179) ----\n"
             "val AUTHOR_INFO = mapOf(\n"
             '    "name" to "Test Author",\n'
             '    "email" to "test@example.com"\n'
@@ -672,7 +697,7 @@ class TestMultiRangeExtraction:
         all_context = "\n".join(contexts)
 
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert contexts[0] == "import kotlin.collections.*"
+        assert all_context.startswith("---- Dependencies/Imports ----")
 
         # 구조 검증: import 다음에 함수들이 올바른 순서로 배치
         import_index = all_context.find("import kotlin.collections.*;")
@@ -702,7 +727,7 @@ class TestMultiRangeExtraction:
         all_context = "\n".join(contexts)
 
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert contexts[0] == "import kotlin.collections.*"
+        assert all_context.startswith("---- Dependencies/Imports ----")
 
         # 구조 검증: import 다음에 메서드들이 올바른 순서로 배치
         import_index = all_context.find("import kotlin.collections.*;")
@@ -733,7 +758,7 @@ class TestMultiRangeExtraction:
         all_context = "\n".join(contexts)
 
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert contexts[0] == "import kotlin.collections.*"
+        assert all_context.startswith("---- Dependencies/Imports ----")
 
         # 구조 검증: import 다음에 상수들이 올바른 순서로 배치
         import_index = all_context.find("import kotlin.collections.*;")
@@ -775,7 +800,7 @@ class TestComplexScenarios:
         all_context = "\n".join(contexts)
 
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert contexts[0] == "import kotlin.collections.*"
+        assert all_context.startswith("---- Dependencies/Imports ----")
 
         # 구조 검증: import 다음에 클래스가 와야 함
         import_index = all_context.find("import kotlin.collections.*;")
@@ -811,7 +836,7 @@ class TestComplexScenarios:
         all_context = "\n".join(contexts)
 
         # 순서 검증: import 문이 맨 앞에 있어야 함
-        assert contexts[0] == "import kotlin.collections.*"
+        assert all_context.startswith("---- Dependencies/Imports ----")
 
         # 구조 검증: import 다음에 상수들과 클래스들이 적절한 순서로 배치
         import_index = all_context.find("import kotlin.collections.*;")
