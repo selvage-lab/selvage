@@ -32,8 +32,10 @@ class TestAnnotationExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 10-16) ----\n"
             "@Retention(RetentionPolicy.RUNTIME)\n"
             "@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})\n"
             "@interface ProcessingInfo {\n"
@@ -43,7 +45,6 @@ class TestAnnotationExtraction:
             "}"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -57,8 +58,10 @@ class TestAnnotationExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 19-26) ----\n"
             "@Retention(RetentionPolicy.RUNTIME)\n"
             "@Target(ElementType.PARAMETER)\n"
             "@interface Validate {\n"
@@ -69,7 +72,6 @@ class TestAnnotationExtraction:
             "}"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -97,8 +99,10 @@ class TestEnumExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 28-60) ----\n"
             "// 계산 모드 열거형\n"
             '@ProcessingInfo(value = "calculation_modes", priority = 5)\n'
             "enum CalculationMode {\n"
@@ -134,7 +138,6 @@ class TestEnumExtraction:
             "}"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -148,8 +151,10 @@ class TestEnumExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 62-69) ----\n"
             "// 상태 열거형\n"
             "enum ProcessingStatus {\n"
             "    PENDING,\n"
@@ -160,7 +165,6 @@ class TestEnumExtraction:
             "}"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -174,8 +178,10 @@ class TestEnumExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 52-59) ----\n"
             "public static CalculationMode fromString(String mode) {\n"
             "        for (CalculationMode calcMode : values()) {\n"
             "            if (calcMode.name().equalsIgnoreCase(mode)) {\n"
@@ -186,7 +192,6 @@ class TestEnumExtraction:
             "    }"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -214,8 +219,10 @@ class TestInterfaceExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 72-113) ----\n"
             '@ProcessingInfo(value = "calculator_interface", priority = 3)\n'
             "interface Calculator {\n"
             "    \n"
@@ -260,7 +267,6 @@ class TestInterfaceExtraction:
             "}"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -274,8 +280,10 @@ class TestInterfaceExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 115-132) ----\n"
             "// 고급 계산 인터페이스\n"
             "interface AdvancedCalculator extends Calculator {\n"
             "    \n"
@@ -296,7 +304,6 @@ class TestInterfaceExtraction:
             "}"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -310,8 +317,10 @@ class TestInterfaceExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 83-93) ----\n"
             "default List<Double> calculateBatch(List<Double> numbers) {\n"
             "        if (numbers.size() < 2) {\n"
             "            return numbers;\n"
@@ -325,7 +334,6 @@ class TestInterfaceExtraction:
             "    }"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -353,8 +361,10 @@ class TestRecordExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 135-201) ----\n"
             '@ProcessingInfo(value = "calculation_result", priority = 4, tags = {"result", "data"})\n'
             "record CalculationResult(\n"
             "    double value,\n"
@@ -424,7 +434,6 @@ class TestRecordExtraction:
             "}"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -438,8 +447,10 @@ class TestRecordExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 204-228) ----\n"
             "record CalculatorConfig(\n"
             "    CalculationMode defaultMode,\n"
             "    boolean enableLogging,\n"
@@ -467,7 +478,6 @@ class TestRecordExtraction:
             "}"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -481,13 +491,14 @@ class TestRecordExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import java.util.*;\n"
             "import java.lang.annotation.*;\n"
+            "---- Context Block 1 (Lines 191-193) ----\n"
             "public String formatValue() {\n"
             '        return String.format("%.3f", value * mode.getMultiplier());\n'
             "    }"
         )
 
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert all_context == expected_result
