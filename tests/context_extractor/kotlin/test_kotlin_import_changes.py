@@ -103,10 +103,7 @@ class TestKotlinImportChanges:
             "import kotlin.collections.*\n"
             "import kotlin.text.toIntOrNull\n"
             "import java.util.Date\n"
-            "import java.nio.file.Path\n"
-            "---- Context Block 1 (Lines 5-8) ----\n"
-            "import kotlin.collections.*\n"
-            "import kotlin.text.toIntOrNull\n\n"
+            "import java.nio.file.Path"
         )
 
         all_context = "\n".join(contexts)
@@ -128,10 +125,7 @@ class TestKotlinImportChanges:
             "import kotlin.collections.*\n"
             "import kotlin.text.toIntOrNull\n"
             "import java.util.Date\n"
-            "import java.nio.file.Path\n"
-            "---- Context Block 1 (Lines 5-8) ----\n"
-            "import kotlin.collections.*\n"
-            "import kotlin.text.toIntOrNull\n\n"
+            "import java.nio.file.Path"
         )
 
         all_context = "\n".join(contexts)
@@ -153,10 +147,7 @@ class TestKotlinImportChanges:
             "import kotlin.collections.*\n"
             "import kotlin.text.toIntOrNull\n"
             "import java.util.Date\n"
-            "import java.nio.file.Path\n"
-            "---- Context Block 1 (Lines 5-8) ----\n"
-            "import kotlin.collections.*\n"
-            "import kotlin.text.toIntOrNull\n\n"
+            "import java.nio.file.Path"
         )
 
         all_context = "\n".join(contexts)
@@ -177,10 +168,7 @@ class TestKotlinImportChanges:
             "import kotlin.collections.*\n"
             "import kotlin.text.toIntOrNull\n"
             "import java.util.Date\n"
-            "import java.nio.file.Path\n"
-            "---- Context Block 1 (Lines 5-8) ----\n"
-            "import kotlin.collections.*\n"
-            "import kotlin.text.toIntOrNull\n\n"
+            "import java.nio.file.Path"
         )
         all_context = "\n".join(contexts)
         assert all_context == expected_context
