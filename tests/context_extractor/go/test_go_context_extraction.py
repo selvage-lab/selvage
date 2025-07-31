@@ -36,17 +36,12 @@ class TestBasicFunctionExtraction:
 
         # 정확한 expected_result 정의
         expected_result = [
-            (
-                "---- Dependencies/Imports ----\n"
-                "package main\n"
-                "import ("
-            ),
+            ("---- Dependencies/Imports ----\npackage main\nimport ("),
             (
                 "---- Context Block 1 (Lines 28-38) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
-                "\tFormatted string `json:\"formatted\"`\n"
-                "\tCount     int    `json:\"count\"`\n"
-                "\tPrecision int    `json:\"precision\"`\n"
+                '\tFormatted string `json:"formatted"`\n'
+                '\tCount     int    `json:"count"`\n'
+                '\tPrecision int    `json:"precision"`\n'
                 "}\n"
                 "\n"
                 "type SampleCalculator struct {\n"
@@ -55,9 +50,9 @@ class TestBasicFunctionExtraction:
                 "\t */\n"
                 "\tvalue   int\n"
                 "\thistory []string"
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
         assert contexts == expected_result, (
@@ -78,14 +73,9 @@ class TestBasicFunctionExtraction:
 
         # 정확한 expected_result 정의
         expected_result = [
-            (
-                "---- Dependencies/Imports ----\n"
-                "package main\n"
-                "import ("
-            ),
+            ("---- Dependencies/Imports ----\npackage main\nimport ("),
             (
                 "---- Context Block 1 (Lines 42-59) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "func NewSampleCalculator(initialValue int) *SampleCalculator {\n"
                 "\t/**\n"
                 "\t * 계산기 초기화\n"
@@ -93,7 +83,7 @@ class TestBasicFunctionExtraction:
                 "\treturn &SampleCalculator{\n"
                 "\t\tvalue:   initialValue,\n"
                 "\t\thistory: make([]string, 0),\n"
-                "\t\tmode:    CalculationModes[\"basic\"],\n"
+                '\t\tmode:    CalculationModes["basic"],\n'
                 "\t}\n"
                 "}\n"
                 "\n"
@@ -104,9 +94,9 @@ class TestBasicFunctionExtraction:
                 "\t\n"
                 "\t// 내부 함수: 입력값 검증\n"
                 "\tvalidateInputs := func(x, y int) bool {"
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
         assert contexts == expected_result, (

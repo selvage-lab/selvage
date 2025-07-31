@@ -44,7 +44,6 @@ class TestBasicFunctionExtraction:
             ),
             (
                 "---- Context Block 1 (Lines 27-37) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "    public string Formatted;\n"
                 "    public int Count;\n"
                 "    public int Precision;\n"
@@ -56,9 +55,9 @@ class TestBasicFunctionExtraction:
                 "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
                 "     */\n"
                 "    "
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
         assert contexts == expected_result, (
@@ -87,7 +86,6 @@ class TestBasicFunctionExtraction:
             ),
             (
                 "---- Context Block 1 (Lines 42-59) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "    public SampleCalculator() : this(0)\n"
                 "    {\n"
                 "    }\n"
@@ -99,16 +97,16 @@ class TestBasicFunctionExtraction:
                 "         */\n"
                 "        this.value = initialValue;\n"
                 "        this.history = new List<string>();\n"
-                "        this.mode = Constants.CALCULATION_MODES[\"basic\"];\n"
+                '        this.mode = Constants.CALCULATION_MODES["basic"];\n'
                 "    }\n"
                 "    \n"
                 "    public int AddNumbers(int a, int b)\n"
                 "    {\n"
                 "        /**\n"
                 "         * 두 수를 더하는 메소드"
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
         assert contexts == expected_result, (
@@ -139,16 +137,15 @@ class TestBasicFunctionExtraction:
             # Context Block 1 (79-95)
             (
                 "---- Context Block 1 (Lines 79-95) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "        if (!ValidateInputs(a, b))\n"
                 "        {\n"
-                "            throw new ArgumentException(\"입력값이 숫자가 아닙니다\");\n"
+                '            throw new ArgumentException("입력값이 숫자가 아닙니다");\n'
                 "        }\n"
                 "        \n"
                 "        int result = a + b;\n"
                 "        value = result;\n"
-                "        LogOperation($\"add: {a} + {b}\", result);\n"
-                "        Console.WriteLine($\"Addition result: {result}\");\n"
+                '        LogOperation($"add: {a} + {b}", result);\n'
+                '        Console.WriteLine($"Addition result: {result}");\n'
                 "        \n"
                 "        return result;\n"
                 "    }\n"
@@ -161,7 +158,6 @@ class TestBasicFunctionExtraction:
             # Context Block 2 (102-134)
             (
                 "---- Context Block 2 (Lines 102-134) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "            {\n"
                 "                return 0;\n"
                 "            }\n"
@@ -185,7 +181,7 @@ class TestBasicFunctionExtraction:
                 "            return new FormattedResult\n"
                 "            {\n"
                 "                Result = value,\n"
-                "                Formatted = $\"Product: {value:N0}\",\n"
+                '                Formatted = $"Product: {value:N0}",\n'
                 "                Count = count,\n"
                 "                Precision = Constants.DEFAULT_PRECISION\n"
                 "            };\n"
@@ -195,9 +191,9 @@ class TestBasicFunctionExtraction:
                 "        {\n"
                 "            return new FormattedResult\n"
                 "            {"
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 3, f"Expected 3 contexts, got {len(contexts)}"
         assert contexts == expected_result, (

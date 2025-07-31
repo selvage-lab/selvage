@@ -49,7 +49,6 @@ class TestBasicFunctionExtraction:
             ),
             (
                 "---- Context Block 1 (Lines 30-40) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "    char formatted[100];\n"
                 "    int count;\n"
                 "    int precision;\n"
@@ -97,7 +96,6 @@ class TestBasicFunctionExtraction:
             ),
             (
                 "---- Context Block 1 (Lines 42-59) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "// 생성자 함수\n"
                 "SampleCalculator* create_sample_calculator(int initial_value) {\n"
                 "    /**\n"
@@ -155,7 +153,6 @@ class TestBasicFunctionExtraction:
             # Context Block 1 (73-89)
             (
                 "---- Context Block 1 (Lines 73-89) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "    if (!validate_inputs(a, b)) {\n"
                 '        printf("Error: 입력값이 숫자가 아닙니다\\n");\n'
                 "        return -1;\n"
@@ -178,7 +175,6 @@ class TestBasicFunctionExtraction:
             # Context Block 2 (95-127)
             (
                 "---- Context Block 2 (Lines 95-127) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "    int calculate_product(int* nums, int size) {\n"
                 "        if (size == 0) {\n"
                 "            return 0;\n"

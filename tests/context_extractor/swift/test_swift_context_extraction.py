@@ -36,13 +36,9 @@ class TestBasicFunctionExtraction:
 
         # 정확한 expected_result 정의
         expected_result = [
-            (
-                "---- Dependencies/Imports ----\n"
-                "import Foundation"
-            ),
+            ("---- Dependencies/Imports ----\nimport Foundation"),
             (
                 "---- Context Block 1 (Lines 20-30) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "    let formatted: String\n"
                 "    let count: Int\n"
                 "    let precision: Int\n"
@@ -54,9 +50,9 @@ class TestBasicFunctionExtraction:
                 "     */\n"
                 "    \n"
                 "    private var value: Int = 0"
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
         assert contexts == expected_result, (
@@ -77,13 +73,9 @@ class TestBasicFunctionExtraction:
 
         # 정확한 expected_result 정의
         expected_result = [
-            (
-                "---- Dependencies/Imports ----\n"
-                "import Foundation"
-            ),
+            ("---- Dependencies/Imports ----\nimport Foundation"),
             (
                 "---- Context Block 1 (Lines 30-47) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "    private var value: Int = 0\n"
                 "    private var history: [String] = []\n"
                 "    private var mode: String\n"
@@ -94,7 +86,7 @@ class TestBasicFunctionExtraction:
                 "         */\n"
                 "        self.value = initialValue\n"
                 "        self.history = []\n"
-                "        self.mode = CALCULATION_MODES[\"basic\"] ?? \"basic\"\n"
+                '        self.mode = CALCULATION_MODES["basic"] ?? "basic"\n'
                 "    }\n"
                 "    \n"
                 "    func addNumbers(a: Int, b: Int) throws -> Int {\n"
@@ -102,9 +94,9 @@ class TestBasicFunctionExtraction:
                 "         * 두 수를 더하는 메소드\n"
                 "         */\n"
                 "        "
-            )
+            ),
         ]
-        
+
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
         assert contexts == expected_result, (

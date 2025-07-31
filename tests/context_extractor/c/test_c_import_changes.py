@@ -46,12 +46,11 @@ class TestCImportChanges:
                 "#define MAX_BUFFER_SIZE 1024\n"
                 "#define DEFAULT_VALUE 42\n"
                 "#ifdef DEBUG\n"
-                "#define LOG(msg) printf(\"DEBUG: %s\\n\", msg)\n"
+                '#define LOG(msg) printf("DEBUG: %s\\n", msg)\n'
                 "#define LOG(msg)"
             ),
             (
                 "---- Context Block 1 (Lines 1-11) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "/**\n"
                 " * Import 변경 테스트용 샘플 파일 - multiline include 구문 포함\n"
                 " */\n"
@@ -100,12 +99,11 @@ class TestCImportChanges:
                 "#define MAX_BUFFER_SIZE 1024\n"
                 "#define DEFAULT_VALUE 42\n"
                 "#ifdef DEBUG\n"
-                "#define LOG(msg) printf(\"DEBUG: %s\\n\", msg)\n"
+                '#define LOG(msg) printf("DEBUG: %s\\n", msg)\n'
                 "#define LOG(msg)"
             ),
             (
                 "---- Context Block 1 (Lines 1-10) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 "/**\n"
                 " * Import 변경 테스트용 샘플 파일 - multiline include 구문 포함\n"
                 " */\n"
@@ -174,12 +172,11 @@ class TestCImportChanges:
                 "#define MAX_BUFFER_SIZE 1024\n"
                 "#define DEFAULT_VALUE 42\n"
                 "#ifdef DEBUG\n"
-                "#define LOG(msg) printf(\"DEBUG: %s\\n\", msg)\n"
+                '#define LOG(msg) printf("DEBUG: %s\\n", msg)\n'
                 "#define LOG(msg)"
             ),
             (
                 "---- Context Block 1 (Lines 3-13) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 " */\n"
                 "\n"
                 "#include <stdio.h>\n"
@@ -231,12 +228,11 @@ class TestCImportChanges:
                 "#define MAX_BUFFER_SIZE 1024\n"
                 "#define DEFAULT_VALUE 42\n"
                 "#ifdef DEBUG\n"
-                "#define LOG(msg) printf(\"DEBUG: %s\\n\", msg)\n"
+                '#define LOG(msg) printf("DEBUG: %s\\n", msg)\n'
                 "#define LOG(msg)"
             ),
             (
                 "---- Context Block 1 (Lines 2-13) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 " * Import 변경 테스트용 샘플 파일 - multiline include 구문 포함\n"
                 " */\n"
                 "\n"
@@ -289,12 +285,11 @@ class TestCImportChanges:
                 "#define MAX_BUFFER_SIZE 1024\n"
                 "#define DEFAULT_VALUE 42\n"
                 "#ifdef DEBUG\n"
-                "#define LOG(msg) printf(\"DEBUG: %s\\n\", msg)\n"
+                '#define LOG(msg) printf("DEBUG: %s\\n", msg)\n'
                 "#define LOG(msg)"
             ),
             (
                 "---- Context Block 1 (Lines 3-14) ----\n"
-                "// Fallback context extraction: limited to nearby lines\n"
                 " */\n"
                 "\n"
                 "#include <stdio.h>\n"
@@ -307,7 +302,7 @@ class TestCImportChanges:
                 "#define DEFAULT_VALUE 42\n"
                 "\n"
                 "#ifdef DEBUG\n"
-                "#define LOG(msg) printf(\"DEBUG: %s\\n\", msg)"
+                '#define LOG(msg) printf("DEBUG: %s\\n", msg)'
             ),
         ]
 
@@ -330,11 +325,16 @@ class TestCImportChanges:
         # 모든 context는 FallbackContextExtractor의 정상적인 형태를 가져야 함
         for i, ctx in enumerate(contexts):
             # Dependencies 블록이나 Context 블록 중 하나여야 함
-            if "---- Dependencies/Imports ----" not in ctx and "---- Context Block" not in ctx:
+            if (
+                "---- Dependencies/Imports ----" not in ctx
+                and "---- Context Block" not in ctx
+            ):
                 pytest.fail(f"Malformed context block at index {i}: {repr(ctx)}")
-            
+
             # 버그 상황: include만 따로 떨어져 나온 경우 감지
-            lines = ctx.split('\n')
+            lines = ctx.split("\n")
             for line in lines:
                 if line.strip() == "#include" or line.strip() == "#define":
-                    pytest.fail(f"Incomplete preprocessor directive at context {i}: {repr(line)}")
+                    pytest.fail(
+                        f"Incomplete preprocessor directive at context {i}: {repr(line)}"
+                    )
