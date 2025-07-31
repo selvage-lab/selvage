@@ -4,8 +4,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 
 import { readFile, writeFile } from 'fs/promises';
+import { basename, dirname } from 'path';
 import axios from 'axios';
 
 class ImportTestClass {

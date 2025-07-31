@@ -35,9 +35,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -164,9 +164,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -197,9 +197,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -248,9 +248,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -315,9 +315,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -344,9 +344,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -384,9 +384,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -432,9 +432,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -483,9 +483,9 @@ class TestBasicFunctionExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -537,9 +537,9 @@ class TestModuleLevelElements:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -563,9 +563,9 @@ class TestModuleLevelElements:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -591,9 +591,9 @@ class TestModuleLevelElements:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -635,7 +635,7 @@ class TestMultiRangeExtraction:
         assert "function helperFunction" in all_context
         assert "function advancedCalculatorFactory" in all_context
         # import 문들 검증
-        assert "require('fs')" in all_context
+        assert "const fs = require('fs');" in all_context
         assert "import { readFile, writeFile } from 'fs/promises';" in all_context
 
     def test_two_blocks_cross_methods(
@@ -652,7 +652,7 @@ class TestMultiRangeExtraction:
         assert "addNumbers(a, b)" in all_context
         assert "function helperFunction" in all_context
         # import 문들 검증
-        assert "require('fs')" in all_context
+        assert "const fs = require('fs');" in all_context
         assert "import { readFile, writeFile } from 'fs/promises';" in all_context
 
     def test_non_contiguous_ranges(
@@ -670,9 +670,9 @@ class TestMultiRangeExtraction:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -716,9 +716,9 @@ class TestComplexScenarios:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -845,9 +845,9 @@ class TestComplexScenarios:
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
-            "require('fs')\n"
-            "require('path')\n"
-            "require('util')\n"
+            "const fs = require('fs');\n"
+            "const path = require('path');\n"
+            "const util = require('util');\n"
             "import { readFile, writeFile } from 'fs/promises';\n"
             "import { basename, dirname } from 'path';\n"
             "import axios from 'axios';\n"
@@ -1050,7 +1050,7 @@ class TestEdgeCases:
         # 범위를 벗어나더라도 에러가 발생하지 않아야 함
         # import 문들만 반환되어야 함
         all_context = "\n".join(contexts)
-        assert "require('fs')" in all_context
+        assert "const fs = require('fs');" in all_context
         assert "import { readFile, writeFile } from 'fs/promises';" in all_context
 
     def test_reverse_line_ranges(self) -> None:
@@ -1070,5 +1070,5 @@ class TestEdgeCases:
         # 빈 라인 범위에서도 적절히 처리되어야 함
         # import 문들과 기본 상수 반환
         all_context = "\n".join(contexts)
-        assert "require('fs')" in all_context
+        assert "const fs = require('fs');" in all_context
         assert "import { readFile, writeFile } from 'fs/promises';" in all_context
