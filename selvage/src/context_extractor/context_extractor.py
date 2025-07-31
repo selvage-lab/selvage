@@ -145,6 +145,7 @@ class ContextExtractor:
             {
                 "import_header",
                 "package_header",
+                "import_list",
             }
         ),
     }
@@ -289,7 +290,9 @@ class ContextExtractor:
                 node_text = node.text.decode("utf-8")
 
                 # 코틀린 import_header 노드인 경우 주석 제거
-                node_text = self._clean_kotlin_import(node, node_text, dependency_nodes)
+                node_text = self._clean_kotlin_import(
+                    node, node_text, set(dependency_nodes)
+                )
 
                 # Python decorated_definition의 원본 파일 직접 추출
                 if (
@@ -299,7 +302,7 @@ class ContextExtractor:
                     node_text = self._extract_lines_from_original(node, code_text)
 
                 # 의존성 노드인지 컨텍스트 노드인지 구분
-                if node in dependency_nodes:
+                if node.type in self._dependency_types:
                     dependency_blocks.append(node_text)
                 else:
                     context_blocks.append((node_text, node))
@@ -675,7 +678,21 @@ class ContextExtractor:
         if not dependency_blocks:
             return ""
 
-        dependency_content = "\n".join(dependency_blocks)
+        # 모든 dependency 블록을 합치고 줄 단위로 분리
+        all_lines = []
+        for block in dependency_blocks:
+            all_lines.extend(block.split("\n"))
+
+        # 빈 줄과 중복 제거하면서 순서 유지
+        unique_lines = []
+        seen = set()
+        for line in all_lines:
+            stripped_line = line.strip()
+            if stripped_line and stripped_line not in seen:
+                unique_lines.append(line)
+                seen.add(stripped_line)
+
+        dependency_content = "\n".join(unique_lines)
         return f"---- Dependencies/Imports ----\n{dependency_content}"
 
     def _format_context_block(
@@ -726,8 +743,10 @@ class ContextExtractor:
             # 연속된 1줄짜리 노드인지 확인
             if (
                 current_line == last_line + 1  # 연속된 라인
-                and self._is_single_line_node(last_node)
-                and self._is_single_line_node(node)
+                and (
+                    self._is_single_line_node(last_node)
+                    or self._is_single_line_node(node)
+                )
             ):
                 current_group.append((context_text, node))
             else:
