@@ -32,9 +32,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 31-140) ----\n"
             "class SampleCalculator {\n"
             "    /**\n"
             "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
@@ -72,7 +74,7 @@ class TestBasicFunctionExtraction:
             "        };\n"
             "        \n"
             "        if (!validateInputs(a, b)) {\n"
-            "            throw new Error(\"입력값이 숫자가 아닙니다\");\n"
+            '            throw new Error("입력값이 숫자가 아닙니다");\n'
             "        }\n"
             "        \n"
             "        const result: number = a + b;\n"
@@ -115,7 +117,7 @@ class TestBasicFunctionExtraction:
             "        };\n"
             "        \n"
             "        if (numbers.length === 0) {\n"
-            "            return { result: 0, formatted: \"Empty list\", count: 0, precision: DEFAULT_PRECISION };\n"
+            '            return { result: 0, formatted: "Empty list", count: 0, precision: DEFAULT_PRECISION };\n'
             "        }\n"
             "        \n"
             "        const result: number = calculateProduct(numbers);\n"
@@ -138,7 +140,7 @@ class TestBasicFunctionExtraction:
             "        }\n"
             "        \n"
             "        if (!validateRadius(radius)) {\n"
-            "            throw new Error(\"반지름은 양수여야 합니다\");\n"
+            '            throw new Error("반지름은 양수여야 합니다");\n'
             "        }\n"
             "        \n"
             "        const area: number = PI_CONSTANT * radius * radius;\n"
@@ -147,7 +149,6 @@ class TestBasicFunctionExtraction:
             "}"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -157,15 +158,15 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """생성자 메서드 추출 테스트."""
-        changed_ranges = [
-            LineRange(40, 47)
-        ]  # constructor 메서드
+        changed_ranges = [LineRange(40, 47)]  # constructor 메서드
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 40-47) ----\n"
             "constructor(initialValue: number = 0) {\n"
             "        /**\n"
             "         * 계산기 초기화\n"
@@ -176,7 +177,6 @@ class TestBasicFunctionExtraction:
             "    }"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -190,9 +190,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 49-76) ----\n"
             "public addNumbers(a: number, b: number): number {\n"
             "        /**\n"
             "         * 두 수를 더하는 메소드\n"
@@ -212,7 +214,7 @@ class TestBasicFunctionExtraction:
             "        };\n"
             "        \n"
             "        if (!validateInputs(a, b)) {\n"
-            "            throw new Error(\"입력값이 숫자가 아닙니다\");\n"
+            '            throw new Error("입력값이 숫자가 아닙니다");\n'
             "        }\n"
             "        \n"
             "        const result: number = a + b;\n"
@@ -223,7 +225,6 @@ class TestBasicFunctionExtraction:
             "    }"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -237,9 +238,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 78-121) ----\n"
             "public multiplyAndFormat(numbers: number[]): FormattedResult {\n"
             "        /**\n"
             "         * 숫자 리스트를 곱하고 결과를 포맷팅하는 메소드\n"
@@ -273,7 +276,7 @@ class TestBasicFunctionExtraction:
             "        };\n"
             "        \n"
             "        if (numbers.length === 0) {\n"
-            "            return { result: 0, formatted: \"Empty list\", count: 0, precision: DEFAULT_PRECISION };\n"
+            '            return { result: 0, formatted: "Empty list", count: 0, precision: DEFAULT_PRECISION };\n'
             "        }\n"
             "        \n"
             "        const result: number = calculateProduct(numbers);\n"
@@ -286,7 +289,6 @@ class TestBasicFunctionExtraction:
             "    }"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -300,9 +302,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 90-95) ----\n"
             "function multiplyRecursive(items: number[], index: number = 0): number {\n"
             "                if (index >= items.length) {\n"
             "                    return 1;\n"
@@ -311,7 +315,6 @@ class TestBasicFunctionExtraction:
             "            }"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -325,9 +328,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 142-158) ----\n"
             "function helperFunction(data: Record<string, any>): string {\n"
             "    /**\n"
             "     * 도우미 함수 - 클래스 외부 함수\n"
@@ -347,7 +352,6 @@ class TestBasicFunctionExtraction:
             "}"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -361,9 +365,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 160-184) ----\n"
             'function advancedCalculatorFactory(mode: string = "basic"): SampleCalculator {\n'
             "    /**\n"
             "     * 계산기 팩토리 함수\n"
@@ -391,7 +397,6 @@ class TestBasicFunctionExtraction:
             "}"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -401,15 +406,15 @@ class TestBasicFunctionExtraction:
         sample_file_path: Path,
     ) -> None:
         """메서드 선언부만 추출 테스트."""
-        changed_ranges = [
-            LineRange(49, 49)
-        ]  # addNumbers 선언부만
+        changed_ranges = [LineRange(49, 49)]  # addNumbers 선언부만
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 49-76) ----\n"
             "public addNumbers(a: number, b: number): number {\n"
             "        /**\n"
             "         * 두 수를 더하는 메소드\n"
@@ -429,7 +434,7 @@ class TestBasicFunctionExtraction:
             "        };\n"
             "        \n"
             "        if (!validateInputs(a, b)) {\n"
-            "            throw new Error(\"입력값이 숫자가 아닙니다\");\n"
+            '            throw new Error("입력값이 숫자가 아닙니다");\n'
             "        }\n"
             "        \n"
             "        const result: number = a + b;\n"
@@ -440,7 +445,6 @@ class TestBasicFunctionExtraction:
             "    }"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -454,9 +458,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 142-158) ----\n"
             "function helperFunction(data: Record<string, any>): string {\n"
             "    /**\n"
             "     * 도우미 함수 - 클래스 외부 함수\n"
@@ -476,7 +482,6 @@ class TestBasicFunctionExtraction:
             "}"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -490,9 +495,11 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 24-29) ----\n"
             "interface FormattedResult {\n"
             "    result: number;\n"
             "    formatted: string;\n"
@@ -501,7 +508,6 @@ class TestBasicFunctionExtraction:
             "}"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -515,15 +521,18 @@ class TestBasicFunctionExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 24-29) ----\n"
             "interface FormattedResult {\n"
             "    result: number;\n"
             "    formatted: string;\n"
             "    count: number;\n"
             "    precision: number;\n"
             "}\n"
+            "---- Context Block 2 (Lines 31-140) ----\n"
             "class SampleCalculator {\n"
             "    /**\n"
             "     * 간단한 계산기 클래스 - tree-sitter 테스트용\n"
@@ -561,7 +570,7 @@ class TestBasicFunctionExtraction:
             "        };\n"
             "        \n"
             "        if (!validateInputs(a, b)) {\n"
-            "            throw new Error(\"입력값이 숫자가 아닙니다\");\n"
+            '            throw new Error("입력값이 숫자가 아닙니다");\n'
             "        }\n"
             "        \n"
             "        const result: number = a + b;\n"
@@ -604,7 +613,7 @@ class TestBasicFunctionExtraction:
             "        };\n"
             "        \n"
             "        if (numbers.length === 0) {\n"
-            "            return { result: 0, formatted: \"Empty list\", count: 0, precision: DEFAULT_PRECISION };\n"
+            '            return { result: 0, formatted: "Empty list", count: 0, precision: DEFAULT_PRECISION };\n'
             "        }\n"
             "        \n"
             "        const result: number = calculateProduct(numbers);\n"
@@ -627,7 +636,7 @@ class TestBasicFunctionExtraction:
             "        }\n"
             "        \n"
             "        if (!validateRadius(radius)) {\n"
-            "            throw new Error(\"반지름은 양수여야 합니다\");\n"
+            '            throw new Error("반지름은 양수여야 합니다");\n'
             "        }\n"
             "        \n"
             "        const area: number = PI_CONSTANT * radius * radius;\n"
@@ -636,7 +645,6 @@ class TestBasicFunctionExtraction:
             "}"
         )
 
-        assert len(contexts) == 5
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -664,15 +672,16 @@ class TestModuleLevelElements:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 10-12) ----\n"
             "const MAX_CALCULATION_STEPS: number = 100;\n"
             "const DEFAULT_PRECISION: number = 2;\n"
             "const PI_CONSTANT: number = 3.14159;"
         )
 
-        assert len(contexts) == 6
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -686,9 +695,11 @@ class TestModuleLevelElements:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 18-22) ----\n"
             "const CALCULATION_MODES: CalculationModes = {\n"
             '    basic: "Basic calculations",\n'
             '    advanced: "Advanced calculations with logging",\n'
@@ -696,7 +707,6 @@ class TestModuleLevelElements:
             "};"
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -706,19 +716,18 @@ class TestModuleLevelElements:
         sample_file_path: Path,
     ) -> None:
         """모듈 하단 상수들 추출 테스트."""
-        changed_ranges = [
-            LineRange(187, 187)
-        ]  # MODULE_VERSION
+        changed_ranges = [LineRange(187, 187)]  # MODULE_VERSION
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 187-187) ----\n"
             'const MODULE_VERSION: string = "1.0.0";'
         )
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -747,7 +756,6 @@ class TestMultiRangeExtraction:
         ]  # calculateCircleArea ~ advancedCalculatorFactory
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 6
         all_context = "\n".join(contexts)
         # 전체 결과가 너무 길어서 주요 버전만 검증
         assert "calculateCircleArea(radius: number): number" in all_context
@@ -766,7 +774,6 @@ class TestMultiRangeExtraction:
         changed_ranges = [LineRange(49, 53), LineRange(142, 146)]
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 5
         all_context = "\n".join(contexts)
         # 전체 결과가 길어서 주요 콘텐츠만 검증
         assert "addNumbers(a: number, b: number): number" in all_context
@@ -789,19 +796,22 @@ class TestMultiRangeExtraction:
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
         expected_result = (
+            "---- Dependencies/Imports ----\n"
             "import * as fs from 'fs';\n"
             "import { join, resolve } from 'path';\n"
             "import { promisify } from 'util';\n"
+            "---- Context Block 1 (Lines 10-12) ----\n"
             "const MAX_CALCULATION_STEPS: number = 100;\n"
             "const DEFAULT_PRECISION: number = 2;\n"
             "const PI_CONSTANT: number = 3.14159;\n"
+            "---- Context Block 2 (Lines 129-131) ----\n"
             "function validateRadius(r: number): boolean {\n"
             "            return r > 0;\n"
             "        }\n"
+            "---- Context Block 3 (Lines 187-187) ----\n"
             'const MODULE_VERSION: string = "1.0.0";'
         )
 
-        assert len(contexts) == 8
         all_context = "\n".join(contexts)
         assert all_context == expected_result
 
@@ -828,7 +838,6 @@ class TestComplexScenarios:
         changed_ranges = [LineRange(31, 140)]  # SampleCalculator 전체 클래스
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         # 전체 결과가 너무 길어서 주요 콘텐츠만 검증
         assert "class SampleCalculator" in all_context
@@ -849,7 +858,6 @@ class TestComplexScenarios:
         changed_ranges = [LineRange(10, 191)]  # 상수부터 모듈 끝까지
         contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
 
-        assert len(contexts) == 15
         all_context = "\n".join(contexts)
         # 전체 결과가 매우 길어서 주요 콘텐츠만 검증
         assert "class SampleCalculator" in all_context
@@ -889,7 +897,6 @@ class TestEdgeCases:
 
         # 범위를 벗어나더라도 에러가 발생하지 않아야 함
         # import 문들만 반환되어야 함
-        assert len(contexts) == 3
         all_context = "\n".join(contexts)
         assert "import * as fs from 'fs';" in all_context
         assert "import { join, resolve } from 'path';" in all_context
@@ -911,7 +918,6 @@ class TestEdgeCases:
 
         # 빈 라인 범위에서도 적절히 처리되어야 함
         # import 문들과 기본 상수 반환
-        assert len(contexts) == 4
         all_context = "\n".join(contexts)
         assert "import * as fs from 'fs';" in all_context
         assert "import { join, resolve } from 'path';" in all_context

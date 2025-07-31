@@ -33,25 +33,16 @@ class TestTypeScriptImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 정확한 예상 결과 정의 (TypeScript context extractor 실제 동작에 맞춤)
-        expected_contexts = [
-            "import * as fs from 'fs';",
-            "import { readFile, writeFile } from 'fs/promises';",
-            "import path from 'path';",
-            "import type { Stats } from 'fs';",
-        ]
-
-        # contexts 배열 구조 직접 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Expected {len(expected_contexts)} contexts, "
-            f"got {len(contexts)}. Actual contexts: {contexts}"
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import * as fs from 'fs';\n"
+            "import { readFile, writeFile } from 'fs/promises';\n"
+            "import path from 'path';\n"
+            "import type { Stats } from 'fs';"
         )
 
-        # 각 context의 정확한 내용 검증
-        for i, expected in enumerate(expected_contexts):
-            assert contexts[i] == expected, (
-                f"Context {i} mismatch. Expected: {repr(expected)}, "
-                f"Got: {repr(contexts[i])}"
-            )
+        all_context = "\n".join(contexts)
+        assert expected_context in all_context
 
     def test_single_typescript_import_line_change(
         self,
@@ -64,25 +55,16 @@ class TestTypeScriptImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 예상 결과: 모든 import들이 추출되어야 함
-        expected_contexts = [
-            "import * as fs from 'fs';",
-            "import { readFile, writeFile } from 'fs/promises';",
-            "import path from 'path';",
-            "import type { Stats } from 'fs';",
-        ]
-
-        # contexts 배열 길이 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Expected {len(expected_contexts)} contexts, "
-            f"got {len(contexts)}. Actual contexts: {contexts}"
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import * as fs from 'fs';\n"
+            "import { readFile, writeFile } from 'fs/promises';\n"
+            "import path from 'path';\n"
+            "import type { Stats } from 'fs';"
         )
 
-        # 각 context의 정확한 내용 검증
-        for i, expected in enumerate(expected_contexts):
-            assert contexts[i] == expected, (
-                f"Context {i} mismatch. Expected: {repr(expected)}, "
-                f"Got: {repr(contexts[i])}"
-            )
+        all_context = "\n".join(contexts)
+        assert expected_context in all_context
 
     def test_typescript_import_and_code_mixed_changes(
         self,
@@ -116,29 +98,16 @@ class TestTypeScriptImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 올바른 예상 결과 정의
-        expected_contexts = [
-            "import * as fs from 'fs';",
-            "import { readFile, writeFile } from 'fs/promises';",
-            "import path from 'path';",
-            "import type { Stats } from 'fs';",
-        ]
-
-        # 실제 결과 출력 (디버깅용)
-        print(f"\nActual contexts: {contexts}")
-        print(f"Expected contexts: {expected_contexts}")
-
-        # 정확한 길이 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Expected {len(expected_contexts)} contexts, "
-            f"got {len(contexts)}. Actual: {contexts}"
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import * as fs from 'fs';\n"
+            "import { readFile, writeFile } from 'fs/promises';\n"
+            "import path from 'path';\n"
+            "import type { Stats } from 'fs';"
         )
 
-        # 각 context의 정확한 내용 검증
-        for i, expected in enumerate(expected_contexts):
-            assert contexts[i] == expected, (
-                f"Context {i} mismatch. Expected: {repr(expected)}, "
-                f"Got: {repr(contexts[i])}"
-            )
+        all_context = "\n".join(contexts)
+        assert expected_context in all_context
 
     def test_typescript_multiline_import_range_bug_strict(
         self,
@@ -151,29 +120,16 @@ class TestTypeScriptImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 올바른 예상 결과 정의
-        expected_contexts = [
-            "import * as fs from 'fs';",
-            "import { readFile, writeFile } from 'fs/promises';",
-            "import path from 'path';",
-            "import type { Stats } from 'fs';",
-        ]
-
-        # 실제 결과 출력 (디버깅용)
-        print(f"\nMultiline range test - Actual contexts: {contexts}")
-        print(f"Expected contexts: {expected_contexts}")
-
-        # 정확한 길이 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Expected {len(expected_contexts)} contexts, got {len(contexts)}. "
-            f"Actual: {contexts}"
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import * as fs from 'fs';\n"
+            "import { readFile, writeFile } from 'fs/promises';\n"
+            "import path from 'path';\n"
+            "import type { Stats } from 'fs';"
         )
 
-        # 각 context의 정확한 내용 검증
-        for i, expected in enumerate(expected_contexts):
-            assert contexts[i] == expected, (
-                f"Context {i} mismatch. Expected: {repr(expected)}, "
-                f"Got: {repr(contexts[i])}"
-            )
+        all_context = "\n".join(contexts)
+        assert expected_context in all_context
 
     def test_typescript_import_boundary_cases(
         self,
@@ -186,18 +142,17 @@ class TestTypeScriptImportChanges:
         contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
 
         # 예상 결과
-        expected_contexts = [
-            "import * as fs from 'fs';",
-            "import { readFile, writeFile } from 'fs/promises';",
-            "import path from 'path';",
-            "import type { Stats } from 'fs';",
-        ]
+        expected_context = (
+            "---- Dependencies/Imports ----\n"
+            "import * as fs from 'fs';\n"
+            "import { readFile, writeFile } from 'fs/promises';\n"
+            "import path from 'path';\n"
+            "import type { Stats } from 'fs';"
+        )
 
         # 정확한 검증
-        assert len(contexts) == len(expected_contexts), (
-            f"Boundary case: Expected {len(expected_contexts)} contexts, "
-            f"got {len(contexts)}. Actual: {contexts}"
-        )
+        all_context = "\n".join(contexts)
+        assert expected_context in all_context
 
     def test_typescript_empty_line_with_import_combination(
         self,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Generator, Sequence
 from pathlib import Path
 
@@ -124,6 +125,8 @@ class ContextExtractor:
                 "import_statement",
                 "import_declaration",
                 "call_expression",  # require() 호출
+                "lexical_declaration",  # const, let, var 선언 (require 포함 여부를 동적으로 체크)
+                "variable_declaration",  # var 선언
             }
         ),
         "typescript": frozenset(
@@ -132,6 +135,8 @@ class ContextExtractor:
                 "import_declaration",
                 "import_require_clause",
                 "call_expression",  # require() 호출
+                "lexical_declaration",  # const, let, var 선언 (require 포함 여부를 동적으로 체크)
+                "variable_declaration",  # var 선언
             }
         ),
         "java": frozenset(
@@ -271,11 +276,16 @@ class ContextExtractor:
         # 5. 포함 관계 중복 블록 제거
         filtered_blocks = self._filter_nested_blocks(context_blocks)
 
-        # 6. 모든 노드들을 합치고 위치 순으로 정렬
+        # 6. dependency 노드와 겹치는 context 블록 제거
+        filtered_blocks = self._remove_context_dependency_overlap(
+            filtered_blocks, dependency_nodes
+        )
+
+        # 7. 모든 노드들을 합치고 위치 순으로 정렬
         all_nodes = list(filtered_blocks) + dependency_nodes
         sorted_nodes = sorted(all_nodes, key=lambda n: n.start_point)
 
-        # 7. 중복 제거 (같은 노드가 context와 dependency에 모두 포함된 경우)
+        # 8. 중복 제거 (같은 노드가 context와 dependency에 모두 포함된 경우)
         unique_nodes = self._remove_duplicate_nodes(sorted_nodes)
 
         # 8. 텍스트 추출 및 포맷팅
@@ -302,7 +312,7 @@ class ContextExtractor:
                     node_text = self._extract_lines_from_original(node, code_text)
 
                 # 의존성 노드인지 컨텍스트 노드인지 구분
-                if node.type in self._dependency_types:
+                if self._is_dependency_node(node):
                     dependency_blocks.append(node_text)
                 else:
                     context_blocks.append((node_text, node))
@@ -549,9 +559,13 @@ class ContextExtractor:
             의존성 노드 여부
         """
         if node.type in self._dependency_types:
-            # JavaScript/TypeScript의 경우 require() 호출인지 추가 확인
+            # JS/TS의 경우 추가 확인
             if node.type == "call_expression":
-                return self._is_require_call(node)
+                # call_expression은 단독으로는 dependency로 취급하지 않음
+                return False
+            elif node.type in ("lexical_declaration", "variable_declaration"):
+                # lexical_declaration은 require() 호출이 포함된 경우만 dependency
+                return self._contains_require_call(node)
             return True
         return False
 
@@ -575,6 +589,49 @@ class ContextExtractor:
             except UnicodeDecodeError:
                 return False
         return False
+
+    def _contains_require_call(self, node: Node) -> bool:
+        """lexical_declaration이나 variable_declaration에 require() 호출 포함 여부 확인.
+
+        Args:
+            node: lexical_declaration 또는 variable_declaration 노드
+
+        Returns:
+            require 호출 포함 여부
+        """
+        # 정규표현식을 사용한 간단하고 정확한 require() 검출
+        try:
+            node_text = node.text.decode("utf-8")
+            return bool(re.search(r"=\s*require\s*\(", node_text))
+        except UnicodeDecodeError:
+            return False
+
+    def _remove_context_dependency_overlap(
+        self, context_blocks: set[Node], dependency_nodes: list[Node]
+    ) -> set[Node]:
+        """dependency 노드와 겹치는 context 블록을 제거한다.
+
+        Args:
+            context_blocks: 컨텍스트 블록들의 집합
+            dependency_nodes: 의존성 노드들의 리스트
+
+        Returns:
+            겹치지 않는 컨텍스트 블록들의 집합
+        """
+        if not dependency_nodes:
+            return context_blocks
+
+        filtered_blocks = set()
+        dependency_positions = {
+            (node.start_point, node.end_point) for node in dependency_nodes
+        }
+
+        for context_block in context_blocks:
+            context_position = (context_block.start_point, context_block.end_point)
+            if context_position not in dependency_positions:
+                filtered_blocks.add(context_block)
+
+        return filtered_blocks
 
     def _remove_duplicate_nodes(self, nodes: list[Node]) -> list[Node]:
         """중복된 노드들을 제거한다.
