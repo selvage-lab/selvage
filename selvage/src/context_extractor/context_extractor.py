@@ -285,17 +285,12 @@ class ContextExtractor:
         all_nodes = list(filtered_blocks) + dependency_nodes
         sorted_nodes = sorted(all_nodes, key=lambda n: n.start_point)
 
-        # 8. 중복 제거 (같은 노드가 context와 dependency에 모두 포함된 경우)
-        unique_nodes = self._remove_duplicate_nodes(sorted_nodes)
-
         # 8. 텍스트 추출 및 포맷팅
-        contexts = []
-
         # 의존성 노드들과 컨텍스트 노드들 분리
+        contexts = []
         dependency_blocks = []
         context_blocks = []
-
-        for node in unique_nodes:
+        for node in sorted_nodes:
             try:
                 node_text = node.text.decode("utf-8")
 
@@ -632,31 +627,6 @@ class ContextExtractor:
                 filtered_blocks.add(context_block)
 
         return filtered_blocks
-
-    def _remove_duplicate_nodes(self, nodes: list[Node]) -> list[Node]:
-        """중복된 노드들을 제거한다.
-
-        같은 위치의 노드들은 중복으로 간주하여 제거한다.
-
-        Args:
-            nodes: 노드들의 리스트
-
-        Returns:
-            중복이 제거된 노드들의 리스트
-        """
-        if not nodes:
-            return []
-
-        unique_nodes = []
-        seen_positions = set()
-
-        for node in nodes:
-            position = (node.start_point, node.end_point)
-            if position not in seen_positions:
-                unique_nodes.append(node)
-                seen_positions.add(position)
-
-        return unique_nodes
 
     def _clean_kotlin_import(
         self, node: Node, node_text: str, dependency_nodes: set
