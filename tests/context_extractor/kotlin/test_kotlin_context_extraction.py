@@ -657,9 +657,8 @@ class TestModuleLevelElements:
             "import kotlin.collections.*\n"
             "import kotlin.math.*\n"
             "import kotlin.text.*\n"
-            "---- Context Block 1 (Lines 175-175) ----\n"
+            "---- Context Block 1 (Lines 175-179) ----\n"
             'const val MODULE_VERSION = "1.0.0"\n'
-            "---- Context Block 2 (Lines 176-179) ----\n"
             "val AUTHOR_INFO = mapOf(\n"
             '    "name" to "Test Author",\n'
             '    "email" to "test@example.com"\n'
