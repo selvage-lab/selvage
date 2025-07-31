@@ -616,7 +616,7 @@ class ContextExtractor:
         """
         if (
             self._language_name == "kotlin"
-            and node.type == "import_header"
+            and node.type in self._dependency_types
             and node in dependency_nodes
         ):
             return self._clean_import_header(node_text)
