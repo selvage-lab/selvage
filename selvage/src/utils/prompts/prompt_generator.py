@@ -14,6 +14,7 @@ from selvage.src.utils.smart_context_utils import SmartContextUtils
 from selvage.src.utils.token.models import ReviewRequest
 
 from .models import (
+    FileContextInfo,
     ReviewPrompt,
     ReviewPromptWithFileContent,
     SystemPrompt,
@@ -109,37 +110,41 @@ class PromptGenerator:
                 continue
 
             try:
-                # 파일 내용 읽기 시도
+                # 파일 컨텍스트 생성
                 if SmartContextUtils.use_smart_context(file):
                     try:
                         contexts = ContextExtractor(file.language).extract_contexts(
                             file.filename, [hunk.change_line for hunk in file.hunks]
                         )
-                        file_content = "\n".join(contexts)
+                        file_context = FileContextInfo.create_smart_context(contexts)
                     except Exception as e:
                         if not isinstance(e, UnsupportedLanguageError):
                             # UnsupportedLanguageError가 아닌 다른 예외일 때만 경고합니다.
                             console.warning(f"컨텍스트 추출 실패, fall back 사용: {e}")
 
                         # 모든 예외에 대해 공통적으로 fall back 로직을 실행합니다.
-                        file_content = FallbackContextExtractor().extract_contexts(
+                        contexts = FallbackContextExtractor().extract_contexts(
                             file.filename, [hunk.change_line for hunk in file.hunks]
                         )
+                        file_context = FileContextInfo.create_fallback_context(contexts)
                 elif not file.file_content:
                     console.warning(f"파일 내용이 없습니다. 파일 경로: {file.filename}")
-                    file_content = ""
+                    file_context = FileContextInfo.create_full_context("")
                 elif file.is_entirely_new_content():
-                    file_content = (
+                    content = (
                         "This file is newly added or completely rewritten. "
                         "The complete content is shown in the after_code field below."
                     )
+                    file_context = FileContextInfo.create_full_context(content)
                 else:
-                    file_content = file.file_content
+                    file_context = FileContextInfo.create_full_context(
+                        file.file_content
+                    )
 
                 # user_prompt 생성
                 user_prompt = UserPromptWithFileContent(
                     file_name=file.filename,
-                    file_content=file_content,
+                    file_context=file_context,
                     hunks=file.hunks,
                     language=file.language,
                 )
