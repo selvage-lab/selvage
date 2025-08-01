@@ -564,27 +564,6 @@ class ContextExtractor:
             return True
         return False
 
-    def _is_require_call(self, node: Node) -> bool:
-        """call_expression이 require() 호출인지 확인한다.
-
-        Args:
-            node: call_expression 노드
-
-        Returns:
-            require 호출 여부
-        """
-        if node.type != "call_expression":
-            return False
-
-        # 첫 번째 자식이 identifier이고 그 텍스트가 'require'인지 확인
-        if node.children and node.children[0].type == "identifier":
-            try:
-                function_name = node.children[0].text.decode("utf-8")
-                return function_name == "require"
-            except UnicodeDecodeError:
-                return False
-        return False
-
     def _contains_require_call(self, node: Node) -> bool:
         """lexical_declaration이나 variable_declaration에 require() 호출 포함 여부 확인.
 
