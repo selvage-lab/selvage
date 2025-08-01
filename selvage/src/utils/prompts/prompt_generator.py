@@ -119,7 +119,7 @@ class PromptGenerator:
                         file_context = FileContextInfo.create_smart_context(contexts)
                     except Exception as e:
                         if not isinstance(e, UnsupportedLanguageError):
-                            # UnsupportedLanguageError가 아닌 다른 예외일 때만 경고합니다.
+                            # UnsupportedLanguageError가 아닌 다른 예외일 때만 경고
                             console.warning(f"컨텍스트 추출 실패, fall back 사용: {e}")
 
                         # 모든 예외에 대해 공통적으로 fall back 로직을 실행합니다.
@@ -132,8 +132,12 @@ class PromptGenerator:
                     file_context = FileContextInfo.create_full_context("")
                 elif file.is_entirely_new_content():
                     content = (
-                        "This file is newly added or completely rewritten. "
-                        "The complete content is shown in the after_code field below."
+                        "NEWLY ADDED OR COMPLETELY REWRITTEN FILE: This file is either "
+                        "newly created or completely rewritten. The file_context "
+                        "contains only this informational message. The complete file "
+                        "content is available in the after_code field of "
+                        "formatted_hunks. before_code will be empty and should be "
+                        "ignored."
                     )
                     file_context = FileContextInfo.create_full_context(content)
                 else:
