@@ -72,7 +72,7 @@ selvage review
 selvage review --staged
 
 # Review with specific model
-selvage review --model claude-sonnet-4-thinking
+selvage review --model claude-sonnet-4
 
 # Launch UI to view results
 selvage view
@@ -81,9 +81,10 @@ selvage view
 selvage --set-openai-key
 selvage --set-claude-key
 selvage --set-gemini-key
+selvage --set-openrouter-key
 
 # Configure default model and language
-selvage config model claude-sonnet-4-thinking
+selvage config model claude-sonnet-4
 selvage config language ko  # Set Korean language
 selvage config debug-mode on
 
@@ -119,7 +120,11 @@ Selvage is an LLM-based code review tool with a modular architecture:
 **Prompt System** (`selvage/src/utils/prompts/`)
 
 - `prompt_generator.py`: Creates structured prompts for LLM review
-- `models/`: Prompt data models (ReviewPrompt, SystemPrompt, UserPrompt)
+- `models/`: Prompt data models (ReviewPromptWithFileContent, SystemPrompt, UserPromptWithFileContent)
+- **Context Extraction System**: Intelligent file context extraction with three types:
+  - `SMART_CONTEXT`: AST-based tree-sitter analysis for related code blocks
+  - `FALLBACK_CONTEXT`: Text-based pattern matching when AST analysis fails
+  - `FULL_CONTEXT`: Complete file content for new/rewritten files
 
 **Configuration Management** (`selvage/src/config.py`)
 
@@ -222,4 +227,5 @@ For comprehensive development information, refer to these detailed guides in `.c
 - The tool maintains review logs in structured JSON format for audit trails
 - API keys are validated and securely stored with appropriate file permissions
 - Uses Instructor library for structured LLM responses with Pydantic models
-- Prompt versions are managed in `selvage/resources/prompt/` with version-specific directories
+- Prompt versions are managed in `selvage/resources/prompt/` with version-specific directories (current: v3)
+- **Unified Prompt Generation**: Single-path prompt creation using `ReviewPromptWithFileContent` with intelligent context extraction
