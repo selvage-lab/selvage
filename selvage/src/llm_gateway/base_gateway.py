@@ -24,7 +24,7 @@ from selvage.src.models.review_result import ReviewResult
 from selvage.src.utils.base_console import console
 from selvage.src.utils.json_extractor import JSONExtractor
 from selvage.src.utils.llm_client_factory import LLMClientFactory
-from selvage.src.utils.prompts.models import ReviewPrompt, ReviewPromptWithFileContent
+from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 from selvage.src.utils.token import CostEstimator
 from selvage.src.utils.token.models import (
     EstimatedCost,
@@ -159,7 +159,7 @@ class BaseGateway(abc.ABC):
         return EstimatedCost.get_zero_cost(model_name)
 
     def validate_review_request(
-        self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent
+        self, review_prompt: ReviewPromptWithFileContent
     ) -> None:
         """리뷰 요청 전 유효성 검사를 수행합니다.
           input_token_count와 context_limit 을 비교하여 컨텍스트 제한을 초과한 경우 예외를 발생시킵니다.
@@ -184,7 +184,7 @@ class BaseGateway(abc.ABC):
             )
 
     def review_code(
-        self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent
+        self, review_prompt: ReviewPromptWithFileContent
     ) -> ReviewResult:
         """코드를 리뷰합니다.
 

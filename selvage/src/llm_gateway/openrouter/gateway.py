@@ -20,7 +20,7 @@ from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
 from selvage.src.utils.base_console import console
 from selvage.src.utils.json_extractor import JSONExtractor
-from selvage.src.utils.prompts.models import ReviewPrompt, ReviewPromptWithFileContent
+from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 from selvage.src.utils.token.models import (
     EstimatedCost,
     ReviewResponse,
@@ -186,7 +186,7 @@ class OpenRouterGateway(BaseGateway):
         return OpenRouterHTTPClient(self.api_key)
 
     def review_code(
-        self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent
+        self, review_prompt: ReviewPromptWithFileContent
     ) -> ReviewResult:
         """OpenRouter API를 사용하여 코드를 리뷰합니다.
 

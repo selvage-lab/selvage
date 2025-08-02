@@ -40,7 +40,6 @@ from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import find_project_root
 from selvage.src.utils.git_utils import GitDiffMode, GitDiffUtility
 from selvage.src.utils.logging import LOG_LEVEL_INFO, setup_logging
-from selvage.src.utils.prompts.models.review_prompt import ReviewPrompt
 from selvage.src.utils.prompts.models.review_prompt_with_file_content import (
     ReviewPromptWithFileContent,
 )
@@ -309,7 +308,7 @@ def generate_log_id(model: str) -> str:
 
 
 def save_review_log(
-    prompt: ReviewPrompt | ReviewPromptWithFileContent | None,
+    prompt: ReviewPromptWithFileContent | None,
     review_request: ReviewRequest,
     review_response: ReviewResponse | None,
     status: ReviewStatus,

@@ -155,12 +155,7 @@ class TestPromptGenerator:
         
         # mock 설정으로 인해 smart context가 생성될 것
         assert user_prompt.file_context.context_type == ContextType.SMART_CONTEXT
-        expected_description = (
-            "AST-extracted context blocks - Contains structured sections "
-            "(Dependencies/Imports, Context Blocks with line numbers). Focus on "
-            "relationships between changes and extracted relevant code parts. "
-            "This is a strategically filtered subset, not the complete file."
-        )
+        expected_description = "AST-based context extraction"
         assert user_prompt.file_context.description == expected_description
         assert user_prompt.file_context.context == "smart context from file.py"
 
@@ -229,12 +224,7 @@ class TestPromptGenerator:
         
         # mock 설정으로 인해 smart_context가 생성됨
         assert file_context["context_type"] == "smart_context"
-        expected_desc = (
-            "AST-extracted context blocks - Contains structured sections "
-            "(Dependencies/Imports, Context Blocks with line numbers). Focus on "
-            "relationships between changes and extracted relevant code parts. "
-            "This is a strategically filtered subset, not the complete file."
-        )
+        expected_desc = "AST-based context extraction"
         assert file_context["description"] == expected_desc
         assert file_context["context"] == "smart context for json test"
 
@@ -287,10 +277,7 @@ class TestPromptGenerator:
         
         # mock 설정으로 인해 FULL_CONTEXT가 생성될 것
         assert user_prompt.file_context.context_type == ContextType.FULL_CONTEXT
-        expected_description = (
-            "Complete file content - Use for comprehensive analysis of entire "
-            "file structure and all dependencies"
-        )
+        expected_description = "Complete file content"
         assert user_prompt.file_context.description == expected_description
         assert user_prompt.file_context.context == "file content"
 
@@ -472,10 +459,7 @@ class TestPromptGeneratorNewFileAndRewrite:
         
         # 새 파일에 대한 FULL_CONTEXT 특별 메시지 검증
         assert user_prompt.file_context.context_type == ContextType.FULL_CONTEXT
-        expected_description = (
-            "Complete file content - Use for comprehensive analysis of entire "
-            "file structure and all dependencies"
-        )
+        expected_description = "Complete file content"
         assert user_prompt.file_context.description == expected_description
         
         # 특별 메시지 내용 검증
@@ -705,12 +689,7 @@ class TestPromptGeneratorContextTypes:
         assert user_prompt.file_context.context_type == ContextType.SMART_CONTEXT
         
         # 정확한 description 검증
-        expected_description = (
-            "AST-extracted context blocks - Contains structured sections "
-            "(Dependencies/Imports, Context Blocks with line numbers). Focus on "
-            "relationships between changes and extracted relevant code parts. "
-            "This is a strategically filtered subset, not the complete file."
-        )
+        expected_description = "AST-based context extraction"
         assert user_prompt.file_context.description == expected_description
         
         # context 내용 검증
@@ -751,11 +730,7 @@ class TestPromptGeneratorContextTypes:
         assert user_prompt.file_context.context_type == ContextType.FALLBACK_CONTEXT
         
         # 정확한 description 검증
-        expected_description = (
-            "Text-based extracted context blocks - Partial file information "
-            "extracted when AST analysis failed. May miss some context or "
-            "relationships. Use with caution for comprehensive analysis."
-        )
+        expected_description = "Text-based context extraction (AST fallback)"
         assert user_prompt.file_context.description == expected_description
         
         # context 내용 검증
@@ -789,10 +764,7 @@ class TestPromptGeneratorContextTypes:
         assert user_prompt.file_context.context_type == ContextType.FULL_CONTEXT
         
         # 정확한 description 검증
-        expected_description = (
-            "Complete file content - Use for comprehensive analysis of entire "
-            "file structure and all dependencies"
-        )
+        expected_description = "Complete file content"
         assert user_prompt.file_context.description == expected_description
         
         # 특별 메시지 검증
@@ -825,10 +797,7 @@ class TestPromptGeneratorContextTypes:
         assert user_prompt.file_context.context_type == ContextType.FULL_CONTEXT
         
         # 정확한 description 검증
-        expected_description = (
-            "Complete file content - Use for comprehensive analysis of entire "
-            "file structure and all dependencies"
-        )
+        expected_description = "Complete file content"
         assert user_prompt.file_context.description == expected_description
         
         # 파일 내용 검증 (픽스쳐의 file_content와 일치해야 함)

@@ -15,7 +15,6 @@ from selvage.src.utils.token.models import ReviewRequest
 
 from .models import (
     FileContextInfo,
-    ReviewPrompt,
     ReviewPromptWithFileContent,
     SystemPrompt,
     UserPromptWithFileContent,
@@ -72,19 +71,6 @@ class PromptGenerator:
             raise FileNotFoundError(error_message) from e
 
     def create_code_review_prompt(
-        self, review_request: ReviewRequest
-    ) -> ReviewPrompt | ReviewPromptWithFileContent:
-        """코드 리뷰 요청으로부터 프롬프트를 생성합니다.
-
-        Args:
-            review_request: 리뷰 요청 객체
-
-        Returns:
-            ReviewPrompt | ReviewPromptWithFileContent: 생성된 리뷰 프롬프트 객체
-        """
-        return self._create_full_context_code_review_prompt(review_request)
-
-    def _create_full_context_code_review_prompt(
         self, review_request: ReviewRequest
     ) -> ReviewPromptWithFileContent:
         """코드 리뷰 요청으로부터 파일 내용을 포함한 프롬프트를 생성합니다.
