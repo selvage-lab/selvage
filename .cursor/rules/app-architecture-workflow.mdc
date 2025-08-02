@@ -270,18 +270,16 @@ review_request = ReviewRequest(
 
 #### 프롬프트 생성 과정 상세
 
-`PromptGenerator`는 `_get_code_review_system_prompt` 메서드를 통해 `selvage.resources.prompt.v2/code_review_system_prompt_v2.txt` 파일에서 시스템 프롬프트를 로드하여 사용합니다.
+`PromptGenerator`는 `_get_code_review_system_prompt` 메서드를 통해 `selvage.resources.prompt.v3/code_review_system_prompt_v3.txt` 파일에서 시스템 프롬프트를 로드하여 사용합니다.
 
-프롬프트 생성은 두 가지 경로로 진행됩니다:
+프롬프트 생성은 `create_code_review_prompt` 메서드를 통해 단일 경로로 진행됩니다:
 
-1. **간소화된 프롬프트 (\_create_simple_code_review_prompt)**:
-
-   - 변경된 코드 블록(hunks)만 포함
-   - 각 hunk마다 개별 UserPrompt 객체 생성
-
-2. **전체 컨텍스트 프롬프트 (\_create_full_context_code_review_prompt)**:
-   - 전체 파일 내용과 함께 변경 사항 포함
-   - 파일별로 UserPromptWithFileContent 객체 생성
+**지능형 컨텍스트 추출 프롬프트**:
+   - 파일별로 `UserPromptWithFileContent` 객체 생성
+   - 각 파일에 대해 지능형 컨텍스트 추출 시스템 적용:
+     - **SMART_CONTEXT**: AST 기반 트리시터 분석으로 관련 코드 블록만 추출
+     - **FALLBACK_CONTEXT**: AST 분석 실패 시 텍스트 기반 패턴 매칭으로 추출
+     - **FULL_CONTEXT**: 새 파일이나 전체 재작성 파일의 경우 전체 내용 포함
 
 #### 프롬프트 구조 예시
 
@@ -294,14 +292,18 @@ SystemPrompt(
 )
 ```
 
-**파일 내용 포함 사용자 프롬프트 (UserPromptWithFileContent)**:
+**파일 컨텍스트 포함 사용자 프롬프트 (UserPromptWithFileContent)**:
 
-`UserPromptWithFileContent` (`selvage/src/utils/prompts/models/user_prompt_with_file_content.py`): 전체 파일 내용과 함께 변경 사항을 포함하는 사용자 프롬프트 데이터 클래스입니다.
+`UserPromptWithFileContent` (`selvage/src/utils/prompts/models/user_prompt_with_file_content.py`): 지능형 파일 컨텍스트와 함께 변경 사항을 포함하는 사용자 프롬프트 데이터 클래스입니다.
 
 **주요 구조 및 동작:**
 
 - `@dataclass`로 정의된 데이터 클래스
-- 필드: `file_name` (str), `file_content` (str), `formatted_hunks` (list[FormattedHunk])
+- 필드: `file_name` (str), `file_context` (FileContextInfo), `formatted_hunks` (list[FormattedHunk])
+- `file_context`는 3가지 컨텍스트 타입을 지원:
+  - **SMART_CONTEXT**: AST 기반으로 추출된 관련 코드 블록들 (의존성, 함수/클래스 정의 등)
+  - **FALLBACK_CONTEXT**: AST 분석 실패 시 텍스트 기반 패턴 매칭으로 추출된 컨텍스트
+  - **FULL_CONTEXT**: 새 파일이나 전면 재작성 파일의 경우 전체 파일 내용
 - `__init__` 메서드에서 원본 `Hunk` 리스트를 받아 내부적으로 `FormattedHunk` 객체들로 변환
 - `to_message()` 메서드를 통해 LLM API 메시지 형식(JSON)으로 변환
 
@@ -310,10 +312,16 @@ SystemPrompt(
 **사용 예시:**
 
 ```python
+# FileContextInfo 생성 (컨텍스트 타입에 따라)
+file_context = FileContextInfo.create_smart_context([
+    "import os\nfrom typing import Dict",  # 의존성 블록
+    "def new_function():\n    return 'new'"  # 관련 함수 정의
+])
+
 # 객체 생성 (생성 시에는 Hunk 리스트를 전달)
 user_prompt = UserPromptWithFileContent(
     file_name="main.py",
-    file_content="# 전체 파일 내용\n\ndef new_function():\n    return 'new'\n\n# 파일의 나머지 내용...",
+    file_context=file_context,  # FileContextInfo 객체
     hunks=[hunk1, hunk2],  # 원본 Hunk 객체들
     language="python"
 )
@@ -323,33 +331,67 @@ user_prompt = UserPromptWithFileContent(
 
 # LLM API 메시지 형식으로 변환
 message = user_prompt.to_message()
-# {"role": "user", "content": "{\"file_name\": \"main.py\", \"file_content\": \"...\", \"formatted_hunks\": [...]}"}
+# {"role": "user", "content": "{\"file_name\": \"main.py\", \"file_context\": {\"context_type\": \"smart_context\", \"context\": \"...\", \"description\": \"AST-based context extraction\"}, \"formatted_hunks\": [...]}"}
 ```
 
 #### 구현 예시
 
 ````python
-def _create_simple_code_review_prompt(self, review_request: ReviewRequest) -> ReviewPrompt:
-    system_prompt = SystemPrompt(role="system", content=self._get_code_review_system_prompt())
-    user_prompts = []
+def create_code_review_prompt(self, review_request: ReviewRequest) -> ReviewPromptWithFileContent:
+    """지능형 컨텍스트 추출을 사용한 프롬프트 생성"""
+    system_prompt_content = self._get_code_review_system_prompt(
+        is_include_entirely_new_content=review_request.is_include_entirely_new_content()
+    )
+    system_prompt = SystemPrompt(role="system", content=system_prompt_content)
+    user_prompts: list[UserPromptWithFileContent] = []
 
     for file in review_request.processed_diff.files:
-        # 각 파일의 각 hunk마다 UserPrompt 생성
-        for hunk_idx, hunk in enumerate(file.hunks):
-            user_prompt = UserPrompt(
-                hunk_idx=str(hunk_idx + 1),
+        # 바이너리 파일 건너뛰기
+        if is_ignore_file(file.filename):
+            continue
+
+        try:
+            # 파일 컨텍스트 생성 - 지능형 추출 시스템
+            if SmartContextUtils.use_smart_context(file):
+                try:
+                    # AST 기반 스마트 컨텍스트 추출 시도
+                    contexts = ContextExtractor(file.language).extract_contexts(
+                        file.filename, [hunk.change_line for hunk in file.hunks]
+                    )
+                    file_context = FileContextInfo.create_smart_context(contexts)
+                except Exception:
+                    # 실패 시 fallback 컨텍스트 사용
+                    contexts = FallbackContextExtractor().extract_contexts(
+                        file.filename, [hunk.change_line for hunk in file.hunks]
+                    )
+                    file_context = FileContextInfo.create_fallback_context(contexts)
+            elif file.is_entirely_new_content():
+                # 새 파일 또는 전체 재작성 파일의 경우
+                special_message = "NEWLY ADDED OR COMPLETELY REWRITTEN FILE: ..."
+                file_context = FileContextInfo.create_full_context(special_message)
+            else:
+                # 일반 파일의 경우 전체 내용 사용
+                file_context = FileContextInfo.create_full_context(file.file_content)
+
+            # UserPromptWithFileContent 생성
+            user_prompt = UserPromptWithFileContent(
                 file_name=file.filename,
-                before_code=f"```{file.language}\n{hunk.get_safe_before_code()}\n```",
-                after_code=f"```{file.language}\n{hunk.get_safe_after_code()}\n```",
-                after_code_start_line_number=hunk.start_line_modified,
+                file_context=file_context,
+                hunks=file.hunks,
                 language=file.language,
             )
             user_prompts.append(user_prompt)
 
-    return ReviewPrompt(system_prompt=system_prompt, user_prompts=user_prompts)
+        except FileNotFoundError:
+            continue
+
+    return ReviewPromptWithFileContent(
+        system_prompt=system_prompt,
+        user_prompts=user_prompts,
+    )
 ````
 
-최종 결과인 `ReviewPrompt` 또는 `ReviewPromptWithFileContent` 객체는 LLM 게이트웨이로 전달되어 API 요청을 생성하는 데 사용됩니다.
+최종 결과인 `ReviewPromptWithFileContent` 객체는 LLM 게이트웨이로 전달되어 API 요청을 생성하는 데 사용됩니다.
 
 ### 4. LLM 게이트웨이 시스템
 
@@ -367,7 +409,7 @@ def _create_simple_code_review_prompt(self, review_request: ReviewRequest) -> Re
 
    ```python
    class BaseGateway(ABC):
-       def review_code(self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent) -> ReviewResponse:
+       def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResponse:
            """코드 리뷰 실행 - 완전히 구현됨"""
            # 1. 컨텍스트 제한 확인
            self.validate_review_request(review_prompt)
@@ -537,10 +579,12 @@ def get_model_pricing(model_name: str) -> PricingDict:
 
 ### 6. LLM 클라이언트 팩토리와 Instructor 라이브러리
 
-[LLMClientFactory](mdc:selvage/src/utils/llm_factory.py) 클래스는 LLM 제공자에 맞는 클라이언트를 생성합니다:
+[LLMClientFactory](mdc:selvage/src/utils/llm_client_factory.py) 클래스는 LLM 제공자에 맞는 클라이언트를 생성합니다:
 
 ```python
-def create_client(provider: str, api_key: str) -> instructor.Instructor | genai.Client:
+def create_client(
+    provider: ModelProvider, api_key: str, model_info: ModelInfoDict
+) -> instructor.Instructor | genai.Client | Anthropic:
     """프로바이더에 맞는, 구조화된 응답을 지원하는 클라이언트를 생성합니다."""
 ```
 
@@ -589,7 +633,7 @@ class StructuredReviewResponse(BaseModel):
     recommendations: list[str]
 
 # Instructor와 함께 OpenAI 클라이언트 사용
-client = LLMClientFactory().create_client("openai", api_key)
+client = LLMClientFactory.create_client(ModelProvider.OPENAI, api_key, model_info)
 
 # 구조화된 응답 얻기
 response = client.chat.completions.create(
@@ -611,7 +655,7 @@ print(f"요약: {response.summary}")
 BaseGateway의 `review_code` 메서드는 내부적으로 다음과 같이 Instructor를 활용합니다:
 
 ```python
-def review_code(self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent) -> ReviewResponse:
+def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResponse:
     """코드를 리뷰합니다 - BaseGateway에서 완전히 구현됨"""
 
     # 1. 컨텍스트 제한 확인
@@ -656,7 +700,7 @@ Selvage는 두 단계의 비용 관리 시스템을 사용합니다:
 
 ```python
 def validate_review_request(
-    self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent
+    self, review_prompt: ReviewPromptWithFileContent
 ) -> None:
     """리뷰 요청 전 유효성 검사를 수행합니다.
     input_token_count와 context_limit을 비교하여 컨텍스트 제한을 초과한 경우 예외를 발생시킵니다.
@@ -832,7 +876,7 @@ EstimatedCost(
 
 ```python
 def save_review_log(
-    prompt: ReviewPrompt | ReviewPromptWithFileContent | None,
+    prompt: ReviewPromptWithFileContent | None,
     review_request: ReviewRequest,
     review_response: ReviewResponse | None,
     status: ReviewStatus,
@@ -852,7 +896,7 @@ review_log = {
     "review_response": response_data,                  # 응답 정보
     "status": status.value,                            # 리뷰 상태
     "error": str(error) if error else None,            # 오류 정보
-    "prompt_version": "v2",                            # 프롬프트 버전
+    "prompt_version": "v3",                            # 프롬프트 버전
 }
 ```
 

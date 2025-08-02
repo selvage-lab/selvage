@@ -52,7 +52,7 @@ Selvage는 AI를 활용하여 코드 리뷰를 자동화하는 도구입니다. 
 - [selvage/src/utils/file_utils.py](mdc:selvage/src/utils/file_utils.py): 파일 처리 유틸리티 함수
 - [selvage/src/utils/git_utils.py](mdc:selvage/src/utils/git_utils.py): Git 관련 작업 유틸리티
 - [selvage/src/utils/prompt_utils.py](mdc:selvage/src/utils/prompt_utils.py): 프롬프트 처리 유틸리티
-- [selvage/src/utils/llm_factory.py](mdc:selvage/src/utils/llm_factory.py): LLM 팩토리 유틸리티
+- [selvage/src/utils/llm_client_factory.py](mdc:selvage/src/utils/llm_client_factory.py): LLM 클라이언트 팩토리 유틸리티
 
 ### 토큰 관련 유틸리티
 - [selvage/src/utils/token/token_utils.py](mdc:selvage/src/utils/token/token_utils.py): 토큰 처리 유틸리티
@@ -62,7 +62,7 @@ Selvage는 AI를 활용하여 코드 리뷰를 자동화하는 도구입니다. 
 - [selvage/src/utils/prompts/prompt_generator.py](mdc:selvage/src/utils/prompts/prompt_generator.py): 프롬프트 생성 로직
 - [selvage/src/utils/prompts/models/system_prompt.py](mdc:selvage/src/utils/prompts/models/system_prompt.py): 시스템 프롬프트 모델
 - [selvage/src/utils/prompts/models/user_prompt.py](mdc:selvage/src/utils/prompts/models/user_prompt.py): 사용자 프롬프트 모델
-- [selvage/src/utils/prompts/models/review_prompt.py](mdc:selvage/src/utils/prompts/models/review_prompt.py): 리뷰 프롬프트 모델
+- [selvage/src/utils/prompts/models/review_prompt_with_file_content.py](mdc:selvage/src/utils/prompts/models/review_prompt_with_file_content.py): 파일 컨텍스트가 포함된 리뷰 프롬프트 모델
 
 ### 로깅 관련 유틸리티
 - [selvage/src/utils/logging/config.py](mdc:selvage/src/utils/logging/config.py): 로깅 설정 및 구성
