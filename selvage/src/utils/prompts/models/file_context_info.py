@@ -33,10 +33,7 @@ class FileContextInfo:
         return cls(
             context_type=ContextType.FULL_CONTEXT,
             context=file_content,
-            description=(
-                "Complete file content - Use for comprehensive analysis of entire "
-                "file structure and all dependencies"
-            ),
+            description="Complete file content",
         )
 
     @classmethod
@@ -52,12 +49,7 @@ class FileContextInfo:
         return cls(
             context_type=ContextType.SMART_CONTEXT,
             context=get_combined_content(context_blocks),
-            description=(
-                "AST-extracted context blocks - Contains structured sections "
-                "(Dependencies/Imports, Context Blocks with line numbers). Focus on "
-                "relationships between changes and extracted relevant code parts. "
-                "This is a strategically filtered subset, not the complete file."
-            ),
+            description="AST-based context extraction",
         )
 
     @classmethod
@@ -73,11 +65,7 @@ class FileContextInfo:
         return cls(
             context_type=ContextType.FALLBACK_CONTEXT,
             context=get_combined_content(context_blocks),
-            description=(
-                "Text-based extracted context blocks - Partial file information "
-                "extracted when AST analysis failed. May miss some context or "
-                "relationships. Use with caution for comprehensive analysis."
-            ),
+            description="Text-based context extraction (AST fallback)",
         )
 
     def to_dict(self) -> dict[str, str]:
