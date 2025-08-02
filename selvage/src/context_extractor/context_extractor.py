@@ -660,7 +660,7 @@ class ContextExtractor:
         end_line = node.end_point[0]
 
         # 원본 파일에서 해당 라인들 직접 추출
-        original_lines = original_code.split("\n")
+        original_lines = original_code.splitlines()
 
         # 라인 범위 검증
         if start_line >= len(original_lines) or end_line >= len(original_lines):
