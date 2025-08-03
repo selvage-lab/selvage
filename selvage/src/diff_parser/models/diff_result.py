@@ -31,3 +31,7 @@ class DiffResult:
             if file.language:
                 stats[file.language] = stats.get(file.language, 0) + 1
         return stats
+
+    def is_include_entirely_new_content(self) -> bool:
+        """전체 새로운 내용을 포함하는 파일이 있는지 확인합니다."""
+        return any(file.is_entirely_new_content() for file in self.files)

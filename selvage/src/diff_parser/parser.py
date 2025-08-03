@@ -3,23 +3,20 @@ import re
 from selvage.src.exceptions.diff_parsing_error import DiffParsingError
 from selvage.src.utils import load_file_content
 
+from .constants import DELETED_FILE_PLACEHOLDER
 from .models import DiffResult, FileDiff, Hunk
 
 _PATTERN_DIFF_SPLIT = re.compile(r"(?=^diff --git)", flags=re.MULTILINE)
 _PATTERN_HUNK_SPLIT = re.compile(r"(?=^@@ )", flags=re.MULTILINE)
 _PATTERN_FILE_HEADER = re.compile(r"^diff --git a/(\S+) b/(\S+)", flags=re.MULTILINE)
-_DELETED_FILE_PLACEHOLDER = "삭제된 파일"
 _DELETED_FILE_PATTERN = re.compile(r"^--- a/.*\n^\+\+\+ /dev/null$", flags=re.MULTILINE)
 
 
-def _parse_single_file_diff(
-    raw_diff: str, use_full_context: bool, repo_path: str
-) -> FileDiff | None:
+def _parse_single_file_diff(raw_diff: str, repo_path: str) -> FileDiff | None:
     """단일 파일 diff 텍스트를 파싱하여 FileDiff 객체를 반환합니다.
 
     Args:
         raw_diff (str): 단일 파일에 대한 git diff 텍스트.
-        use_full_context (bool): 전체 파일 컨텍스트를 사용할지 여부.
         repo_path (str): Git 저장소 경로.
 
     Returns:
@@ -38,10 +35,10 @@ def _parse_single_file_diff(
         Hunk.from_hunk_text(h) for h in hunks_text if h.lstrip().startswith("@@")
     ]
 
-    file_content: str | None
+    file_content: str
     if _is_deleted_file(raw_diff):
-        file_content = _DELETED_FILE_PLACEHOLDER
-    elif use_full_context:
+        file_content = DELETED_FILE_PLACEHOLDER
+    else:
         try:
             file_content = load_file_content(filename, repo_path)
         except (FileNotFoundError, PermissionError) as e:
@@ -52,25 +49,21 @@ def _parse_single_file_diff(
             file_content = (
                 f"[파일 처리 중 예기치 않은 오류: {filename} ({e.__class__.__name__})]"
             )
-    else:
-        file_content = None
 
     parsed_diff = FileDiff(
         filename=filename, file_content=file_content, hunks=hunk_list
     )
     parsed_diff.detect_language()
     parsed_diff.calculate_changes()
+    parsed_diff.calculate_line_count()
     return parsed_diff
 
 
-def parse_git_diff(
-    diff_text: str, use_full_context: bool, repo_path: str
-) -> DiffResult:
+def parse_git_diff(diff_text: str, repo_path: str) -> DiffResult:
     """Git diff 텍스트를 파싱하여 구조화된 DiffResult 객체를 반환합니다.
 
     Args:
         diff_text (str): git diff 명령어의 출력 텍스트
-        use_full_context (bool): 전체 파일 컨텍스트를 사용할지 여부
         repo_path (str): Git 저장소 경로
 
     Returns:
@@ -86,7 +79,7 @@ def parse_git_diff(
     result = DiffResult()
 
     for raw_diff in file_diffs:
-        file_diff = _parse_single_file_diff(raw_diff, use_full_context, repo_path)
+        file_diff = _parse_single_file_diff(raw_diff, repo_path)
         if file_diff:
             result.files.append(file_diff)
 

@@ -3,6 +3,7 @@ from enum import Enum
 from pathlib import Path
 
 from selvage.src.utils.base_console import console
+from selvage.src.utils.constants import GIT_DIFF_UNIFIED_CONTEXT_LINES
 
 
 class GitDiffMode(str, Enum):
@@ -75,7 +76,13 @@ class GitDiffUtility:
         Returns:
             str: git diff 명령의 출력
         """
-        cmd = ["git", "-C", self.repo_path, "diff", "--unified=5"]
+        cmd = [
+            "git",
+            "-C",
+            self.repo_path,
+            "diff",
+            f"--unified={GIT_DIFF_UNIFIED_CONTEXT_LINES}",
+        ]
 
         if self.mode == GitDiffMode.STAGED:
             cmd.append("--cached")

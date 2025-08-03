@@ -3,7 +3,7 @@
 import pytest
 from testcontainers.core.generic import DockerContainer
 
-from e2e.helpers import install_selvage_from_testpypi
+from e2e.helpers import verify_selvage_installation
 from selvage.src.config import get_api_key
 from selvage.src.models.model_provider import ModelProvider
 
@@ -32,7 +32,7 @@ class TestSelvageCLIBasic:
         """selvage --help 명령어가 정상 작동하는지 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # help 명령어 테스트
         exit_code, output = container.exec("selvage --help")
@@ -46,7 +46,7 @@ class TestSelvageCLIBasic:
         """selvage --version 명령어로 버전 정보 확인 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # version 명령어 테스트
         exit_code, output = container.exec("selvage --version")
@@ -60,7 +60,7 @@ class TestSelvageCLIBasic:
         """selvage config list 명령어가 정상 작동하는지 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # config list 명령어 테스트
         exit_code, output = container.exec("selvage config list")
@@ -73,7 +73,7 @@ class TestSelvageCLIBasic:
         """selvage models 명령어가 정상 작동하는지 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # models 명령어 테스트
         exit_code, output = container.exec("selvage models")
@@ -91,7 +91,7 @@ class TestSelvageConfigManagement:
         """모델 설정이 정상적으로 저장되고 읽어지는지 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # 유효한 모델명으로 설정
         exit_code, output = container.exec("selvage config model gpt-4o")
@@ -103,27 +103,11 @@ class TestSelvageConfigManagement:
         output_str = output.decode("utf-8", errors="ignore")
         assert "gpt-4o" in output_str
 
-    def test_config_diff_only_setting(self, testpypi_container) -> None:
-        """diff-only 설정이 정상적으로 작동하는지 테스트."""
-        container = testpypi_container
-
-        install_selvage_from_testpypi(container)  # 다시 호출
-
-        # diff-only 설정
-        exit_code, output = container.exec("selvage config diff-only true")
-        assert exit_code == 0
-
-        # 설정 확인
-        exit_code, output = container.exec("selvage config list")
-        assert exit_code == 0
-        output_str = output.decode("utf-8", errors="ignore").lower()
-        assert "true" in output_str
-
     def test_config_language_setting(self, testpypi_container) -> None:
         """언어 설정이 정상적으로 작동하는지 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # 언어 설정
         exit_code, output = container.exec("selvage config language English")
@@ -141,7 +125,7 @@ class TestSelvageConfigManagement:
         """현재 언어 설정 표시가 정상적으로 작동하는지 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # 현재 언어 설정 확인
         exit_code, output = container.exec("selvage config language")
@@ -157,7 +141,7 @@ class TestSelvageFileSystem:
         """설정 디렉토리가 자동으로 생성되는지 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # 설정 디렉토리 경로 확인
         exit_code, config_dir_output = container.exec(
@@ -179,7 +163,7 @@ class TestSelvageFileSystem:
         """로그 디렉토리가 자동으로 생성되는지 테스트."""
         container = testpypi_container
 
-        install_selvage_from_testpypi(container)  # 다시 호출
+        verify_selvage_installation(container)  # 다시 호출
 
         # 설정 디렉토리 경로 확인
         exit_code, config_dir_output = container.exec(

@@ -13,6 +13,7 @@ alwaysApply: false
 - **OpenAI**: GPT-4 시리즈, o4-mini 시리즈
 - **Anthropic**: Claude Sonnet 4 시리즈 (recommend)
 - **Google**: Gemini 2.5 Pro/Flash 시리즈 (recommend)
+- **OpenRouter**: 다양한 LLM 모델에 대한 통합 게이트웨이
 
 ## 게이트웨이 아키텍처
 
@@ -24,13 +25,15 @@ Selvage는 각 LLM 제공업체의 API와 통신하기 위한 게이트웨이 �
 BaseGateway (추상 클래스)
 ├── OpenAIGateway
 ├── ClaudeGateway
-└── GoogleGateway
+├── GoogleGateway
+└── OpenRouterGateway
 ```
 
 - [BaseGateway](mdc:selvage/src/llm_gateway/base_gateway.py): 모든 게이트웨이의 기본 기능을 정의한 추상 클래스
 - [OpenAIGateway](mdc:selvage/src/llm_gateway/openai_gateway.py): OpenAI API와 통신하기 위한 게이트웨이
 - [ClaudeGateway](mdc:selvage/src/llm_gateway/claude_gateway.py): Anthropic Claude API와 통신하기 위한 게이트웨이
 - [GoogleGateway](mdc:selvage/src/llm_gateway/google_gateway.py): Google AI Studio API와 통신하기 위한 게이트웨이
+- [OpenRouterGateway](mdc:selvage/src/llm_gateway/openrouter/gateway.py): OpenRouter API를 통한 다양한 LLM 모델 접근을 위한 게이트웨이
 
 ### 팩토리 패턴
 
@@ -42,6 +45,7 @@ factory = GatewayFactory()
 gateway = factory.create("gpt-4o")  # OpenAIGateway 인스턴스 반환
 gateway = factory.create("claude-3.7-sonnet")  # ClaudeGateway 인스턴스 반환
 gateway = factory.create("gemini-2.5-pro")  # GoogleGateway 인스턴스 반환
+gateway = factory.create("openrouter/claude-sonnet-4")  # OpenRouterGateway 인스턴스 반환
 ```
 
 ## 모델 정보 관리
@@ -67,8 +71,9 @@ AVAILABLE_MODELS: dict[str, ModelInfoDict] = {
 - `full_name`: 모델의 정식 이름
 - `aliases`: 모델의 별칭 목록
 - `description`: 모델 설명
-- `provider`: 모델 제공자 ("openai", "claude", "google" 중 하나)
+- `provider`: 모델 제공자 ("openai", "claude", "google", "openrouter" 중 하나)
 - `params`: 모델별 파라미터 (temperature, reasoning_effort 등)
+- `openrouter_name`: OpenRouter에서 사용하는 모델명 (OpenRouter 게이트웨이 사용 시)
 
 ## 게이트웨이 핵심 기능
 
@@ -80,6 +85,25 @@ AVAILABLE_MODELS: dict[str, ModelInfoDict] = {
 4. **API 요청**: 각 제공자의 API에 맞는 요청 생성 및 전송
 5. **응답 처리**: API 응답을 파싱하고 구조화된 형식으로 변환
 6. **에러 처리**: API 오류, 타임아웃 등의 예외 처리
+
+### OpenRouter 게이트웨이 특징
+
+OpenRouter 게이트웨이는 다른 게이트웨이들과 몇 가지 중요한 차이점이 있습니다:
+
+1. **통합 API 접근**: 하나의 API 키로 여러 LLM 제공자의 모델들에 접근 가능
+2. **모델명 변환**: Selvage 내부 모델명을 OpenRouter 형식으로 자동 변환
+   - `models.yml`의 `openrouter_name` 필드 활용
+   - 예: `claude-sonnet-4` → `anthropic/claude-sonnet-4`
+3. **확장 사고 모드 지원**: Claude 모델의 thinking 모드를 OpenRouter의 reasoning API로 변환
+4. **JSON Schema 응답**: OpenAI 호환 API를 통한 구조화된 응답 획득
+5. **사용자 정의 HTTP 클라이언트**: OpenRouter의 확장 파라미터 지원을 위한 전용 클라이언트 사용
+
+#### OpenRouter 게이트웨이 사용 시 주의사항
+
+- **API 키 설정**: `OPENROUTER_API_KEY` 환경변수 필요
+- **모델 지원 범위**: OpenRouter에서 지원하는 모델만 사용 가능
+- **Thinking 모드 제한**: Claude 모델의 thinking 모드만 지원
+- **비용 계산**: OpenRouter는 현재 usage 정보를 제공하지 않아 비용 추정이 제한적
 
 ## 코드 리뷰 프로세스
 
@@ -108,6 +132,8 @@ request = ReviewRequest(
 # 팩토리를 통한 게이트웨이 생성
 factory = GatewayFactory()
 gateway = factory.create("gpt-4o")  # OpenAI 모델 사용
+# 또는
+# gateway = factory.create("openrouter/claude-sonnet-4")  # OpenRouter를 통한 Claude 모델 사용
 
 # 코드 리뷰 실행
 review_result = gateway.review_code(request)

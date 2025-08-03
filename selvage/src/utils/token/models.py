@@ -43,9 +43,12 @@ class ReviewRequest(BaseModel):
     diff_content: str
     processed_diff: DiffResult
     file_paths: list[str] = Field(default_factory=list)
-    use_full_context: bool = True
     model: str
     repo_path: str = "."
+
+    def is_include_entirely_new_content(self) -> bool:
+        """전체 새로운 내용을 포함하는 파일이 있는지 확인합니다."""
+        return self.processed_diff.is_include_entirely_new_content()
 
 
 class ReviewIssue(BaseModel):

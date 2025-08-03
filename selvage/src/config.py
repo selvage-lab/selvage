@@ -235,29 +235,6 @@ def set_default_model(model_name: str) -> bool:
         return False
 
 
-def get_default_diff_only() -> bool:
-    """diff-only 기본 설정값을 반환합니다."""
-    try:
-        config = load_config()
-        return config["review"].getboolean("diff_only", fallback=False)
-    except KeyError:
-        return False
-
-
-def set_default_diff_only(diff_only: bool) -> bool:
-    """diff-only 기본 설정값을 설정합니다."""
-    try:
-        config = load_config()
-        if "review" not in config:
-            config["review"] = {}
-        config["review"]["diff_only"] = str(diff_only).lower()
-        save_config(config)
-        return True
-    except Exception as e:
-        console.error(f"diff-only 설정 중 오류 발생: {str(e)}", exception=e)
-        return False
-
-
 def get_default_debug_mode() -> bool:
     """debug_mode 기본 설정값을 반환합니다."""
     try:

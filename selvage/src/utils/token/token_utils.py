@@ -8,7 +8,6 @@ from selvage.src.exceptions.token_count_error import TokenCountError
 from selvage.src.model_config import get_model_context_limit
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.base_console import console
-from selvage.src.utils.prompts.models.review_prompt import ReviewPrompt
 from selvage.src.utils.prompts.models.review_prompt_with_file_content import (
     ReviewPromptWithFileContent,
 )
@@ -25,7 +24,7 @@ class TokenUtils:
 
     @staticmethod
     def count_tokens(
-        review_prompt: ReviewPrompt | ReviewPromptWithFileContent, model: str = "gpt-4o"
+        review_prompt: ReviewPromptWithFileContent, model: str = "gpt-4o"
     ) -> int:
         """텍스트의 토큰 수를 계산합니다.
 
@@ -110,7 +109,7 @@ class TokenUtils:
 
     @staticmethod
     def _count_tokens_claude(
-        review_prompt: ReviewPrompt | ReviewPromptWithFileContent, model: str
+        review_prompt: ReviewPromptWithFileContent, model: str
     ) -> int:
         """Claude 모델의 토큰 수를 계산합니다.
         OpenRouter 사용 시에도 정확한 계산을 위해 Anthropic API를 사용합니다.
@@ -138,7 +137,7 @@ class TokenUtils:
 
     @staticmethod
     def _count_tokens_claude_anthropic(
-        review_prompt: ReviewPrompt | ReviewPromptWithFileContent, model: str
+        review_prompt: ReviewPromptWithFileContent, model: str
     ) -> int:
         """Anthropic API를 직접 사용하여 Claude 토큰 수를 계산합니다.
 
@@ -216,7 +215,7 @@ class TokenUtils:
 
     @staticmethod
     def _count_tokens_claude_with_anthropic_for_openrouter(
-        review_prompt: ReviewPrompt | ReviewPromptWithFileContent, model: str
+        review_prompt: ReviewPromptWithFileContent, model: str
     ) -> int:
         """OpenRouter 사용 시에도 정확한 토큰 계산을 위해 Anthropic API를 사용합니다.
 

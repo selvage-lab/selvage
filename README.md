@@ -53,7 +53,7 @@ Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드
 - **🤖 다양한 AI 모델 지원**: OpenAI GPT-4o, Anthropic Claude Sonnet-4, Google Gemini 등 최신 LLM 모델 활용
 - **🔍 Git 워크플로우와 통합**: staged, unstaged, 특정 커밋/브랜치 간 변경사항 분석 지원
 - **🐛 포괄적 코드 검토**: 버그 및 논리 오류 탐지, 코드 품질 및 가독성 향상 제안
-- **🎯 컨텍스트 분석**: 변경점이 포함된 전체 파일 내용을 참고하는 분석 기능 제공
+- **🎯 최적화된 컨텍스트 분석**: Tree-sitter 기반 AST 분석을 통해 변경 라인이 속하는 가장 작은 코드 블록과 dependency statement를 자동 추출하여 상황에 따라 최적화된 컨텍스트 제공
 - **📖 오픈소스**: MIT 라이선스로 자유롭게 사용 및 수정 가능
 
 ## 🚀 빠른 시작
@@ -192,6 +192,11 @@ selvage review --no-print
 - **gemini-2.5-pro**: ⭐ **추천** - 대용량 컨텍스트 및 고급 추론 (1M+ 토큰)
 - **gemini-2.5-flash**: ⭐ **추천** - 응답 속도와 비용 효율성 최적화 (1M+ 토큰)
 
+#### OpenRouter를 통한 모델
+
+- **qwen3-coder** (Qwen): 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
+- **kimi-k2** (Moonshot AI): 1T 파라미터 MoE 대용량 추론 모델 (128K 토큰)
+
 ## ⌨️ CLI 사용법
 
 ### Selvage 설정하기
@@ -206,8 +211,6 @@ selvage config model <모델명>
 # 디버그 모드 설정
 selvage config debug-mode on
 
-# diff-only 옵션 설정 (변경된 부분만 분석)
-selvage config diff-only true
 ```
 
 ### 코드 리뷰하기
@@ -225,7 +228,6 @@ selvage review [OPTIONS]
 - `--model <모델명>`: 사용할 AI 모델 (예: claude-sonnet-4-thinking)
 - `--open-ui`: 리뷰 완료 후 자동으로 UI 실행
 - `--no-print`: 터미널에 리뷰 결과를 출력하지 않음 (기본적으로 터미널 출력 활성화)
-- `--diff-only`: 변경된 부분만 분석 (전체 파일 컨텍스트 제외)
 
 #### 사용 예시
 
@@ -313,9 +315,6 @@ selvage review --target-branch develop
 ### 비용 최적화
 
 ```bash
-# 변경 부분만 분석하여 토큰 절약
-selvage review --diff-only
-
 # 작은 변경사항에는 경제적인 모델 사용
 selvage review --model gemini-2.5-flash
 ```

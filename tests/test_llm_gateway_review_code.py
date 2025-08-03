@@ -10,13 +10,20 @@ import instructor
 import pytest
 from google import genai
 
+from selvage.src.context_extractor.line_range import LineRange
+from selvage.src.diff_parser.models import Hunk
 from selvage.src.exceptions.context_limit_exceeded_error import (
     ContextLimitExceededError,
 )
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.model_config import ModelInfoDict, ModelParamsDict, ModelProvider
 from selvage.src.models.review_result import ReviewResult
-from selvage.src.utils.prompts.models import ReviewPrompt, SystemPrompt, UserPrompt
+from selvage.src.utils.prompts.models import (
+    FileContextInfo,
+    ReviewPromptWithFileContent,
+    SystemPrompt,
+    UserPromptWithFileContent,
+)
 from selvage.src.utils.token.models import (
     IssueSeverityEnum,
     ReviewResponse,
@@ -66,17 +73,34 @@ def google_model_info_fixture() -> ModelInfoDict:
 
 
 @pytest.fixture
-def review_prompt_fixture() -> ReviewPrompt:
+def review_prompt_fixture() -> ReviewPromptWithFileContent:
     system_prompt = SystemPrompt(role="system", content="코드를 분석하고 리뷰하세요.")
-    user_prompt = UserPrompt(
-        hunk_idx="1",
-        file_name="example.py",
+
+    # Hunk 객체 생성
+    hunk = Hunk(
+        header="@@ -1,1 +1,1 @@",
+        content=" def example(): pass\n-def example(): pass\n+def example(): return 'Hello'",
         before_code="def example(): pass",
         after_code="def example(): return 'Hello'",
-        after_code_start_line_number=1,
+        start_line_original=1,
+        line_count_original=1,
+        start_line_modified=1,
+        line_count_modified=1,
+        change_line=LineRange(start_line=1, end_line=1),
+    )
+
+    # FileContextInfo 생성
+    file_context = FileContextInfo.create_full_context("def example(): pass")
+
+    user_prompt = UserPromptWithFileContent(
+        file_name="example.py",
+        file_context=file_context,
+        hunks=[hunk],
         language="python",
     )
-    return ReviewPrompt(system_prompt=system_prompt, user_prompts=[user_prompt])
+    return ReviewPromptWithFileContent(
+        system_prompt=system_prompt, user_prompts=[user_prompt]
+    )
 
 
 class MockBaseGateway(BaseGateway):
@@ -118,15 +142,30 @@ def test_validate_review_request_context_limit_exceeded(
     test_model_info: Any = model_info_fixture.copy()
     gateway = MockBaseGateway(test_model_info)
     system_prompt = SystemPrompt(role="system", content="코드를 분석하고 리뷰하세요.")
-    user_prompt = UserPrompt(
-        hunk_idx="1",
+    # 큰 Hunk 객체 생성
+    large_content = "매우 큰 코드 블록입니다..." * 500
+    hunk = Hunk(
+        header="@@ -1,1 +1,1 @@",
+        content=f" {large_content}\n-{large_content}\n+{large_content}",
+        before_code=large_content,
+        after_code=large_content,
+        start_line_original=1,
+        line_count_original=1,
+        start_line_modified=1,
+        line_count_modified=1,
+        change_line=LineRange(start_line=1, end_line=1),
+    )
+
+    # FileContextInfo 생성
+    file_context = FileContextInfo.create_full_context(large_content)
+
+    user_prompt = UserPromptWithFileContent(
         file_name="example.py",
-        before_code="매우 큰 코드 블록입니다..." * 500,
-        after_code="매우 큰 코드 블록입니다..." * 500,
-        after_code_start_line_number=1,
+        file_context=file_context,
+        hunks=[hunk],
         language="python",
     )
-    review_prompt = ReviewPrompt(
+    review_prompt = ReviewPromptWithFileContent(
         system_prompt=system_prompt, user_prompts=[user_prompt]
     )
 
@@ -143,7 +182,7 @@ def test_review_code_success_with_instructor(
     mock_create_client,
     mock_validate_request,
     model_info_fixture: ModelInfoDict,
-    review_prompt_fixture: ReviewPrompt,
+    review_prompt_fixture: ReviewPromptWithFileContent,
 ):
     """Instructor 클라이언트를 사용한 성공적인 리뷰 코드 호출을 테스트합니다."""
     mock_instructor = MagicMock(spec=instructor.Instructor)
@@ -224,7 +263,7 @@ def test_review_code_success_with_genai(
     mock_create_client,
     mock_validate_request,
     google_model_info_fixture: ModelInfoDict,
-    review_prompt_fixture: ReviewPrompt,
+    review_prompt_fixture: ReviewPromptWithFileContent,
 ):
     """genai 클라이언트를 사용한 성공적인 리뷰 코드 호출을 테스트합니다."""
     mock_genai_client = MagicMock(spec=genai.Client)
@@ -310,7 +349,7 @@ def test_review_code_empty_response(
     mock_create_client,
     mock_validate_request,
     model_info_fixture: ModelInfoDict,
-    review_prompt_fixture: ReviewPrompt,
+    review_prompt_fixture: ReviewPromptWithFileContent,
 ):
     """빈 응답 처리를 테스트합니다."""
     mock_instructor = MagicMock(spec=instructor.Instructor)
@@ -333,7 +372,7 @@ def test_review_code_error_handling(
     mock_create_client,
     mock_validate_request,
     model_info_fixture: ModelInfoDict,
-    review_prompt_fixture: ReviewPrompt,
+    review_prompt_fixture: ReviewPromptWithFileContent,
 ):
     """예외 처리를 테스트합니다."""
     mock_create_client.side_effect = Exception("API 호출 중 오류 발생")
@@ -352,7 +391,7 @@ def test_review_code_parsing_error(
     mock_create_client,
     mock_validate_request,
     google_model_info_fixture: ModelInfoDict,
-    review_prompt_fixture: ReviewPrompt,
+    review_prompt_fixture: ReviewPromptWithFileContent,
 ):
     """Google API 응답 파싱 오류 처리를 테스트합니다."""
     mock_genai_client = MagicMock(spec=genai.Client)

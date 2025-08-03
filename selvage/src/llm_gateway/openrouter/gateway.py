@@ -20,7 +20,7 @@ from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
 from selvage.src.utils.base_console import console
 from selvage.src.utils.json_extractor import JSONExtractor
-from selvage.src.utils.prompts.models import ReviewPrompt, ReviewPromptWithFileContent
+from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 from selvage.src.utils.token.models import (
     EstimatedCost,
     ReviewResponse,
@@ -128,6 +128,9 @@ class OpenRouterGateway(BaseGateway):
                     "schema": StructuredReviewResponse.model_json_schema(),
                 },
             },
+            "usage": {
+                "include": True,
+            },
         }
 
         # 모델별 파라미터 설정
@@ -185,9 +188,7 @@ class OpenRouterGateway(BaseGateway):
         """
         return OpenRouterHTTPClient(self.api_key)
 
-    def review_code(
-        self, review_prompt: ReviewPrompt | ReviewPromptWithFileContent
-    ) -> ReviewResult:
+    def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
         """OpenRouter API를 사용하여 코드를 리뷰합니다.
 
         Args:
@@ -247,9 +248,20 @@ class OpenRouterGateway(BaseGateway):
                     console.error(f"원본 응답: {response_text}")
                     raise ValueError(error_msg)
 
-                # 비용 계산 - OpenRouter는 현재 usage 정보를 제공하지 않을 수 있으므로
-                # 0 비용 반환
-                estimated_cost = EstimatedCost.get_zero_cost(self.get_model_name())
+                # 비용 계산 - OpenRouter usage에서 cost 정보 추출
+                usage = raw_api_response.usage
+                if usage and usage.cost > 0:
+                    estimated_cost = EstimatedCost(
+                        model=self.get_model_name(),
+                        input_tokens=usage.prompt_tokens,
+                        input_cost_usd=0.0,  # OpenRouter는 세분화된 비용 미제공
+                        output_tokens=usage.completion_tokens,
+                        output_cost_usd=0.0,  # OpenRouter는 세분화된 비용 미제공
+                        total_cost_usd=usage.cost,
+                    )
+                else:
+                    # usage 정보가 없거나 cost가 0인 경우 0 비용 반환
+                    estimated_cost = EstimatedCost.get_zero_cost(self.get_model_name())
 
                 # ReviewResponse 생성
                 review_response = ReviewResponse.from_structured_response(
