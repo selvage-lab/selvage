@@ -13,9 +13,10 @@ class TestAnnotatedExtraction:
     """Annotation이 포함된 클래스/메서드 추출 테스트."""
 
     @pytest.fixture
-    def annotated_file_path(self) -> Path:
-        """Annotation이 포함된 테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "SampleAnnotatedClass.kt"
+    def annotated_file_content(self) -> str:
+        """Annotation이 포함된 테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "SampleAnnotatedClass.kt"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -25,12 +26,12 @@ class TestAnnotatedExtraction:
     def test_entity_annotation_extraction(
         self,
         extractor: ContextExtractor,
-        annotated_file_path: Path,
+        annotated_file_content: str,
     ) -> None:
         """@Entity가 붙은 data class 추출 시 annotation 포함 테스트."""
         # UserInfo data class의 name 필드 라인
         changed_ranges = [LineRange(21, 21)]  # val name: String 라인
-        contexts = extractor.extract_contexts(annotated_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(annotated_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
 
@@ -43,12 +44,12 @@ class TestAnnotatedExtraction:
     def test_method_with_deprecated_annotation(
         self,
         extractor: ContextExtractor,
-        annotated_file_path: Path,
+        annotated_file_content: str,
     ) -> None:
         """@Deprecated annotation이 붙은 메서드 추출 테스트."""
         # getDisplayName 메서드 내부 변경
         changed_ranges = [LineRange(38, 39)]  # return 문 라인
-        contexts = extractor.extract_contexts(annotated_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(annotated_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
 
@@ -61,12 +62,12 @@ class TestAnnotatedExtraction:
     def test_multiple_annotations(
         self,
         extractor: ContextExtractor,
-        annotated_file_path: Path,
+        annotated_file_content: str,
     ) -> None:
         """여러 annotation이 붙은 메서드 추출 테스트."""
         # isConnected 메서드 내부 변경 (다중 annotation)
         changed_ranges = [LineRange(195, 195)]  # return true 라인
-        contexts = extractor.extract_contexts(annotated_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(annotated_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
 
@@ -79,12 +80,12 @@ class TestAnnotatedExtraction:
     def test_jvm_annotated_method_extraction(
         self,
         extractor: ContextExtractor,
-        annotated_file_path: Path,
+        annotated_file_content: str,
     ) -> None:
         """@JvmOverloads annotation이 붙은 메서드 추출 테스트."""
         # processUserData 메서드 선언부
         changed_ranges = [LineRange(205, 205)]  # 메서드 선언부
-        contexts = extractor.extract_contexts(annotated_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(annotated_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
 

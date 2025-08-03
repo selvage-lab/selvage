@@ -13,9 +13,10 @@ class TestAnnotationExtraction:
     """어노테이션 타입 추출 기능 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "ModernJavaFeatures.java"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "ModernJavaFeatures.java"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -25,11 +26,11 @@ class TestAnnotationExtraction:
     def test_processing_info_annotation(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """ProcessingInfo 어노테이션 타입 추출 테스트."""
         changed_ranges = [LineRange(11, 16)]  # ProcessingInfo annotation
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -51,11 +52,11 @@ class TestAnnotationExtraction:
     def test_validate_annotation(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """Validate 어노테이션 타입 추출 테스트."""
         changed_ranges = [LineRange(19, 25)]  # Validate annotation
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -80,9 +81,10 @@ class TestEnumExtraction:
     """열거형 추출 기능 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "ModernJavaFeatures.java"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "ModernJavaFeatures.java"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -92,11 +94,11 @@ class TestEnumExtraction:
     def test_calculation_mode_enum(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """CalculationMode 열거형 추출 테스트."""
         changed_ranges = [LineRange(28, 35)]  # CalculationMode enum constants
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -144,11 +146,11 @@ class TestEnumExtraction:
     def test_processing_status_enum(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """ProcessingStatus 열거형 추출 테스트."""
         changed_ranges = [LineRange(62, 69)]  # ProcessingStatus enum
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -171,11 +173,11 @@ class TestEnumExtraction:
     def test_enum_method(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """열거형 메서드 추출 테스트."""
         changed_ranges = [LineRange(52, 58)]  # fromString method in enum
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -200,9 +202,10 @@ class TestInterfaceExtraction:
     """인터페이스 추출 기능 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "ModernJavaFeatures.java"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "ModernJavaFeatures.java"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -212,11 +215,11 @@ class TestInterfaceExtraction:
     def test_calculator_interface(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """Calculator 인터페이스 추출 테스트."""
         changed_ranges = [LineRange(72, 110)]  # Calculator interface
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -273,11 +276,11 @@ class TestInterfaceExtraction:
     def test_advanced_calculator_interface(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """AdvancedCalculator 인터페이스 추출 테스트."""
         changed_ranges = [LineRange(115, 132)]  # AdvancedCalculator interface
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -310,11 +313,11 @@ class TestInterfaceExtraction:
     def test_interface_default_method(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """인터페이스 default 메서드 추출 테스트."""
         changed_ranges = [LineRange(83, 92)]  # calculateBatch default method
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -342,9 +345,10 @@ class TestRecordExtraction:
     """Record 클래스 추출 기능 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "ModernJavaFeatures.java"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "ModernJavaFeatures.java"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -354,11 +358,11 @@ class TestRecordExtraction:
     def test_calculation_result_record(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """CalculationResult Record 추출 테스트."""
         changed_ranges = [LineRange(135, 194)]  # CalculationResult record declaration
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -440,11 +444,11 @@ class TestRecordExtraction:
     def test_calculator_config_record(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """CalculatorConfig Record 추출 테스트."""
         changed_ranges = [LineRange(204, 222)]  # CalculatorConfig record
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -484,11 +488,11 @@ class TestRecordExtraction:
     def test_record_method(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """Record 메서드 추출 테스트."""
         changed_ranges = [LineRange(191, 193)]  # formatValue method in record
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"

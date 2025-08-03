@@ -13,9 +13,10 @@ class TestBasicFunctionExtraction:
     """기본 함수/클래스 추출 기능 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "SampleCalculator.ts"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "SampleCalculator.ts"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -25,11 +26,11 @@ class TestBasicFunctionExtraction:
     def test_class_declaration(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """클래스 선언부 추출 테스트."""
         changed_ranges = [LineRange(31, 31)]  # SampleCalculator 클래스 선언부
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -155,11 +156,11 @@ class TestBasicFunctionExtraction:
     def test_constructor_method(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """생성자 메서드 추출 테스트."""
         changed_ranges = [LineRange(40, 47)]  # constructor 메서드
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -183,11 +184,11 @@ class TestBasicFunctionExtraction:
     def test_class_method(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """클래스 메서드 추출 테스트."""
         changed_ranges = [LineRange(49, 76)]  # addNumbers 메서드
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -231,11 +232,11 @@ class TestBasicFunctionExtraction:
     def test_complex_method(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """복잡한 메서드 추출 테스트."""
         changed_ranges = [LineRange(78, 121)]  # multiplyAndFormat 메서드
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -295,11 +296,11 @@ class TestBasicFunctionExtraction:
     def test_nested_inner_function(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """중첩 내부 함수 추출 테스트."""
         changed_ranges = [LineRange(90, 95)]  # multiplyRecursive 내부 함수
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -321,11 +322,11 @@ class TestBasicFunctionExtraction:
     def test_external_function(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """클래스 외부 함수 추출 테스트."""
         changed_ranges = [LineRange(142, 158)]  # helperFunction
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -358,11 +359,11 @@ class TestBasicFunctionExtraction:
     def test_factory_function(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """팩토리 함수 추출 테스트."""
         changed_ranges = [LineRange(160, 184)]  # advancedCalculatorFactory
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -403,11 +404,11 @@ class TestBasicFunctionExtraction:
     def test_method_declaration_only(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """메서드 선언부만 추출 테스트."""
         changed_ranges = [LineRange(49, 49)]  # addNumbers 선언부만
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -451,11 +452,11 @@ class TestBasicFunctionExtraction:
     def test_external_function_declaration_only(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """외부 함수 선언부만 추출 테스트."""
         changed_ranges = [LineRange(142, 142)]  # helperFunction 선언부만
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -488,11 +489,11 @@ class TestBasicFunctionExtraction:
     def test_interface_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """TypeScript interface만 추출 테스트."""
         changed_ranges = [LineRange(24, 29)]  # FormattedResult interface
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -514,11 +515,11 @@ class TestBasicFunctionExtraction:
     def test_interface_and_class_cross_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """interface와 class에 걸친 추출 테스트."""
         changed_ranges = [LineRange(24, 34)]  # interface + class 시작부분
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -653,9 +654,10 @@ class TestModuleLevelElements:
     """모듈 레벨 요소 추출 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "SampleCalculator.ts"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "SampleCalculator.ts"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -665,11 +667,11 @@ class TestModuleLevelElements:
     def test_basic_constants(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """기본 상수들 추출 테스트."""
         changed_ranges = [LineRange(10, 12)]  # 상수 선언
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -688,11 +690,11 @@ class TestModuleLevelElements:
     def test_object_constant(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """객체 상수 추출 테스트."""
         changed_ranges = [LineRange(18, 22)]  # CALCULATION_MODES 객체
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -713,11 +715,11 @@ class TestModuleLevelElements:
     def test_module_bottom_constants(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """모듈 하단 상수들 추출 테스트."""
         changed_ranges = [LineRange(187, 187)]  # MODULE_VERSION
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -736,9 +738,10 @@ class TestMultiRangeExtraction:
     """여러 범위에 걸친 추출 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "SampleCalculator.ts"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "SampleCalculator.ts"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -748,13 +751,13 @@ class TestMultiRangeExtraction:
     def test_three_cross_functions(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """3개 함수에 걸친 영역 추출 테스트."""
         changed_ranges = [
             LineRange(123, 184)
         ]  # calculateCircleArea ~ advancedCalculatorFactory
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         # 전체 결과가 너무 길어서 주요 버전만 검증
@@ -768,11 +771,11 @@ class TestMultiRangeExtraction:
     def test_two_blocks_cross_methods(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """2개 블록에 걸친 메서드 추출 테스트."""
         changed_ranges = [LineRange(49, 53), LineRange(142, 146)]
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         # 전체 결과가 길어서 주요 콘텐츠만 검증
@@ -785,7 +788,7 @@ class TestMultiRangeExtraction:
     def test_non_contiguous_ranges(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """비연속적인 여러 범위 추출 테스트."""
         changed_ranges = [
@@ -793,7 +796,7 @@ class TestMultiRangeExtraction:
             LineRange(129, 131),  # validateRadius 내부 함수
             LineRange(187, 187),  # 모듈 레벨 상수들
         ]
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         expected_result = (
             "---- Dependencies/Imports ----\n"
@@ -820,9 +823,10 @@ class TestComplexScenarios:
     """복잡한 시나리오 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "SampleCalculator.ts"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "SampleCalculator.ts"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -832,11 +836,11 @@ class TestComplexScenarios:
     def test_entire_class_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """전체 클래스 추출 테스트."""
         changed_ranges = [LineRange(31, 140)]  # SampleCalculator 전체 클래스
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         # 전체 결과가 너무 길어서 주요 콘텐츠만 검증
@@ -852,11 +856,11 @@ class TestComplexScenarios:
     def test_class_and_module_constants(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """클래스와 모듈 상수 동시 추출 테스트."""
         changed_ranges = [LineRange(10, 191)]  # 상수부터 모듈 끝까지
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         # 전체 결과가 매우 길어서 주요 콘텐츠만 검증
@@ -877,9 +881,10 @@ class TestEdgeCases:
     """엣지 케이스 및 에러 처리 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "SampleCalculator.ts"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "SampleCalculator.ts"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -889,11 +894,11 @@ class TestEdgeCases:
     def test_invalid_line_ranges(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """파일 범위를 벗어나는 라인 범위 테스트."""
         changed_ranges = [LineRange(200, 300)]
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         # 범위를 벗어나더라도 에러가 발생하지 않아야 함
         # import 문들만 반환되어야 함
@@ -910,11 +915,11 @@ class TestEdgeCases:
     def test_empty_line_ranges(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """빈 라인 범위 처리 테스트."""
         changed_ranges = [LineRange(13, 14)]  # 빈 라인 또는 주석
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         # 빈 라인 범위에서도 적절히 처리되어야 함
         # import 문들과 기본 상수 반환

@@ -13,9 +13,10 @@ class TestAdvancedKotlinBlocks:
     """고급 Kotlin 블록 타입 추출 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 고급 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "AdvancedKotlinSample.kt"
+    def sample_file_content(self) -> str:
+        """테스트용 고급 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "AdvancedKotlinSample.kt"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -25,11 +26,11 @@ class TestAdvancedKotlinBlocks:
     def test_type_alias_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """타입 별칭 추출 테스트."""
         changed_ranges = [LineRange(5, 6)]  # typealias 선언들
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
 
@@ -40,11 +41,11 @@ class TestAdvancedKotlinBlocks:
     def test_annotation_declaration_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """어노테이션 선언 추출 테스트."""
         changed_ranges = [LineRange(8, 12)]  # @Cacheable 어노테이션
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -55,11 +56,11 @@ class TestAdvancedKotlinBlocks:
     def test_interface_declaration_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """인터페이스 선언 추출 테스트."""
         changed_ranges = [LineRange(17, 25)]  # Calculator 인터페이스
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -71,11 +72,11 @@ class TestAdvancedKotlinBlocks:
     def test_enum_entry_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """열거형 항목 추출 테스트."""
         changed_ranges = [LineRange(34, 36)]  # ADD enum entry
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -85,11 +86,11 @@ class TestAdvancedKotlinBlocks:
     def test_object_declaration_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """싱글톤 객체 선언 추출 테스트."""
         changed_ranges = [LineRange(54, 64)]  # MathUtils object
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -101,11 +102,11 @@ class TestAdvancedKotlinBlocks:
     def test_secondary_constructor_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """보조 생성자 추출 테스트."""
         changed_ranges = [LineRange(96, 98)]  # 첫 번째 보조 생성자
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -117,11 +118,11 @@ class TestAdvancedKotlinBlocks:
     def test_companion_object_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """동반 객체 추출 테스트."""
         changed_ranges = [LineRange(105, 117)]  # companion object
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -133,11 +134,11 @@ class TestAdvancedKotlinBlocks:
     def test_lambda_expression_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """람다 표현식 추출 테스트."""
         changed_ranges = [LineRange(154, 154)]  # 람다 표현식들
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -146,11 +147,11 @@ class TestAdvancedKotlinBlocks:
     def test_complex_lambda_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """복잡한 람다 표현식 추출 테스트."""
         changed_ranges = [LineRange(170, 174)]  # 복잡한 람다 표현식
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -164,13 +165,13 @@ class TestAdvancedKotlinBlocks:
     def test_data_class_companion_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """데이터 클래스의 동반 객체 추출 테스트."""
         changed_ranges = [
             LineRange(139, 148)
         ]  # Result 데이터 클래스의 companion object
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
@@ -182,11 +183,11 @@ class TestAdvancedKotlinBlocks:
     def test_abstract_class_companion_extraction(
         self,
         extractor: ContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """추상 클래스의 동반 객체 추출 테스트."""
         changed_ranges = [LineRange(189, 199)]  # BaseProcessor의 companion object
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
         assert all_context.startswith("---- Dependencies/Imports ----")
