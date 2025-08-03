@@ -13,9 +13,10 @@ class TestDecoratedExtraction:
     """데코레이터가 포함된 클래스/함수 추출 테스트."""
 
     @pytest.fixture
-    def decorated_file_path(self) -> Path:
-        """데코레이터가 포함된 테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "sample_decorated_class.py"
+    def decorated_file_content(self) -> str:
+        """데코레이터가 포함된 테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "sample_decorated_class.py"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> ContextExtractor:
@@ -25,12 +26,12 @@ class TestDecoratedExtraction:
     def test_dataclass_extraction(
         self,
         extractor: ContextExtractor,
-        decorated_file_path: Path,
+        decorated_file_content: str,
     ) -> None:
         """@dataclass가 붙은 클래스 추출 시 데코레이터 포함 테스트."""
         # UserInfo 클래스의 본문 내부를 변경한 경우
         changed_ranges = [LineRange(23, 24)]  # name: str 라인
-        contexts = extractor.extract_contexts(decorated_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(decorated_file_content, changed_ranges)
 
         # 정확한 추출 결과 검증
         expected_result = (
@@ -59,12 +60,12 @@ class TestDecoratedExtraction:
     def test_method_with_property_decorator(
         self,
         extractor: ContextExtractor,
-        decorated_file_path: Path,
+        decorated_file_content: str,
     ) -> None:
         """@property 데코레이터가 붙은 메서드 추출 테스트."""
         # is_debug_enabled 메서드 내부 변경
         changed_ranges = [LineRange(44, 45)]  # return self.debug_mode 라인
-        contexts = extractor.extract_contexts(decorated_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(decorated_file_content, changed_ranges)
 
         # 정확한 추출 결과 검증
         expected_result = (
@@ -85,12 +86,12 @@ class TestDecoratedExtraction:
     def test_multiple_decorators(
         self,
         extractor: ContextExtractor,
-        decorated_file_path: Path,
+        decorated_file_content: str,
     ) -> None:
         """여러 데코레이터가 붙은 메서드 추출 테스트."""
         # is_connected 메서드 내부 변경 (log_calls + property 데코레이터)
         changed_ranges = [LineRange(73, 74)]  # return True 라인
-        contexts = extractor.extract_contexts(decorated_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(decorated_file_content, changed_ranges)
 
         # 정확한 추출 결과 검증
         expected_result = (
@@ -112,12 +113,12 @@ class TestDecoratedExtraction:
     def test_decorated_function_extraction(
         self,
         extractor: ContextExtractor,
-        decorated_file_path: Path,
+        decorated_file_content: str,
     ) -> None:
         """@log_calls 데코레이터가 붙은 함수 추출 테스트."""
         # process_user_data 함수 내부 변경
         changed_ranges = [LineRange(77, 79)]  # 함수 본문
-        contexts = extractor.extract_contexts(decorated_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(decorated_file_content, changed_ranges)
 
         # 정확한 추출 결과 검증
         expected_result = (

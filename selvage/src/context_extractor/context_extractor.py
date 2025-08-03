@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Generator, Sequence
-from pathlib import Path
 
 from tree_sitter import Language, Node, Parser
 from tree_sitter_language_pack import get_language, get_parser
@@ -212,38 +211,32 @@ class ContextExtractor:
         return root_type and node.type == root_type
 
     def extract_contexts(
-        self, file_path: str | Path, changed_ranges: Sequence[LineRange]
+        self, file_content: str, changed_ranges: Sequence[LineRange]
     ) -> list[str]:
         """변경된 라인 범위들을 기반으로 컨텍스트 블록들을 추출한다.
 
         Args:
-            file_path: 분석할 파일 경로
+            file_content: 분석할 파일의 내용
             changed_ranges: 변경된 라인 범위들 (LineRange 객체들)
 
         Returns:
             추출된 컨텍스트 코드 블록들의 리스트
 
         Raises:
-            FileNotFoundError: 파일이 존재하지 않는 경우
-            ValueError: 파일 인코딩 오류 또는 파싱 오류
+            ValueError: 파일 내용이 없거나 파싱 오류
         """
         if not changed_ranges:
             return []
 
-        # 1. 파일 읽기 (한 번만)
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {file_path}")
-
+        # 1. file_content 인코딩 처리
         try:
-            code_text = file_path.read_text(encoding="utf-8")
-            code_bytes = code_text.encode("utf-8")
-        except UnicodeDecodeError as e:
-            raise ValueError(f"파일 인코딩 오류 ({file_path}): {e}") from e
+            code_bytes = file_content.encode("utf-8")
+        except UnicodeEncodeError as e:
+            raise ValueError(f"파일 인코딩 오류: {e}") from e
 
         # 2. 1줄 무의미 변경 필터링
         meaningful_ranges = self._filter.filter_meaningful_ranges_with_file_content(
-            code_text, changed_ranges
+            file_content, changed_ranges
         )
 
         # 의미있는 변경이 없으면 빈 결과 반환
@@ -254,9 +247,9 @@ class ContextExtractor:
         try:
             tree = self._parser.parse(code_bytes)
             if tree.root_node.has_error:
-                logger.warning(f"파싱 경고: {file_path}에서 구문 오류 감지됨")
+                logger.warning("파싱 경고: 구문 오류 감지됨")
         except Exception as e:
-            raise ValueError(f"파싱 실패 ({file_path}): {e}") from e
+            raise ValueError(f"파싱 실패: {e}") from e
 
         # 4. 변경 범위의 각 라인에 대해 최소 블록들 찾기
         context_blocks: set[Node] = set()
@@ -304,7 +297,7 @@ class ContextExtractor:
                     self._language_name == "python"
                     and node.type == "decorated_definition"
                 ):
-                    node_text = self._extract_lines_from_original(node, code_text)
+                    node_text = self._extract_lines_from_original(node, file_content)
 
                 # 의존성 노드인지 컨텍스트 노드인지 구분
                 if self._is_dependency_node(node):

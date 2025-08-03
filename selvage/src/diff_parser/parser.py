@@ -35,7 +35,7 @@ def _parse_single_file_diff(raw_diff: str, repo_path: str) -> FileDiff | None:
         Hunk.from_hunk_text(h) for h in hunks_text if h.lstrip().startswith("@@")
     ]
 
-    file_content: str | None
+    file_content: str
     if _is_deleted_file(raw_diff):
         file_content = DELETED_FILE_PLACEHOLDER
     else:

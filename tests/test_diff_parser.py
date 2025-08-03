@@ -400,15 +400,6 @@ class TestFileDiffCalculateLineCount:
         # 공백도 유효한 라인이므로 3라인으로 계산
         assert file_diff.line_count == 3
 
-    def test_calculate_line_count_none_content(self):
-        """file_content가 None인 경우 테스트"""
-        file_diff = FileDiff(
-            filename="test.py",
-            file_content=None,
-        )
-        file_diff.calculate_line_count()
-        assert file_diff.line_count == 0
-
     def test_calculate_line_count_deleted_file(self):
         """삭제된 파일인 경우 테스트"""
         file_diff = FileDiff(

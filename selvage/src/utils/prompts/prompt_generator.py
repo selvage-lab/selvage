@@ -100,7 +100,7 @@ class PromptGenerator:
                 if SmartContextUtils.use_smart_context(file):
                     try:
                         contexts = ContextExtractor(file.language).extract_contexts(
-                            file.filename, [hunk.change_line for hunk in file.hunks]
+                            file.file_content, [hunk.change_line for hunk in file.hunks]
                         )
                         file_context = FileContextInfo.create_smart_context(contexts)
                     except Exception as e:
@@ -110,7 +110,7 @@ class PromptGenerator:
 
                         # 모든 예외에 대해 공통적으로 fall back 로직을 실행합니다.
                         contexts = FallbackContextExtractor().extract_contexts(
-                            file.filename, [hunk.change_line for hunk in file.hunks]
+                            file.file_content, [hunk.change_line for hunk in file.hunks]
                         )
                         file_context = FileContextInfo.create_fallback_context(contexts)
                 elif not file.file_content:

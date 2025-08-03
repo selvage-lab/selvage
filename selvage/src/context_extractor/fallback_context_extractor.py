@@ -68,34 +68,32 @@ class FallbackContextExtractor:
         self._filter = MeaninglessChangeFilter()
 
     def extract_contexts(
-        self, file_path: str | Path, changed_ranges: Sequence[LineRange]
+        self, file_content: str | None, changed_ranges: Sequence[LineRange]
     ) -> list[str]:
         """변경된 라인 범위들을 기반으로 컨텍스트 블록들을 추출한다.
 
         Args:
-            file_path: 분석할 파일 경로
+            file_content: 분석할 파일의 내용
             changed_ranges: 변경된 라인 범위들 (LineRange 객체들)
 
         Returns:
             추출된 컨텍스트 코드 블록들의 리스트
 
         Raises:
-            FileNotFoundError: 파일이 존재하지 않는 경우
-            ValueError: 파일 인코딩 오류
+            ValueError: 파일 내용이 없거나 처리 오류
         """
         if not changed_ranges:
             return []
 
-        # 1. 파일 읽기
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {file_path}")
+        # 1. 파일 내용 검증
+        if not file_content:
+            raise ValueError("파일 내용이 비어있습니다")
 
         try:
-            code_text = file_path.read_text(encoding="utf-8")
+            code_text = file_content
             lines = code_text.splitlines()
-        except UnicodeDecodeError as e:
-            raise ValueError(f"파일 인코딩 오류 ({file_path}): {e}") from e
+        except Exception as e:
+            raise ValueError(f"파일 내용 처리 오류: {e}") from e
 
         # 2. 1줄 무의미 변경 필터링
         meaningful_ranges = self._filter.filter_meaningful_ranges_with_lines(

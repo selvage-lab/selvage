@@ -11,7 +11,7 @@ class FileDiff:
     """Git diff의 파일 변경사항을 나타내는 클래스"""
 
     filename: str
-    file_content: str | None = None
+    file_content: str
     hunks: list[Hunk] = field(default_factory=list)
     language: str = ""
     additions: int = 0
@@ -36,9 +36,7 @@ class FileDiff:
 
     def calculate_line_count(self) -> None:
         """파일의 총 라인 수를 계산합니다."""
-        if self.file_content is None:
-            self.line_count = 0
-        elif self.file_content == DELETED_FILE_PLACEHOLDER:
+        if self.file_content == DELETED_FILE_PLACEHOLDER:
             self.line_count = 0
         elif self.file_content.startswith(
             "[파일 읽기 오류:"
