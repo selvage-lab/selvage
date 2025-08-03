@@ -16,9 +16,10 @@ class TestCImportChanges:
     """C Import 문 변경 시 추출 테스트."""
 
     @pytest.fixture
-    def sample_import_file_path(self) -> Path:
-        """Import 테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "SampleImportChanges.c"
+    def sample_import_file_content(self) -> str:
+        """Import 테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "SampleImportChanges.c"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> FallbackContextExtractor:
@@ -28,12 +29,12 @@ class TestCImportChanges:
     def test_multiline_c_import_changes(
         self,
         extractor: FallbackContextExtractor,
-        sample_import_file_path: Path,
+        sample_import_file_content: str,
     ) -> None:
         """Multiline C include 구문 변경 시 올바른 추출 테스트."""
         # include 문이 있는 라인들을 변경 범위로 설정 (라인 5-6: system includes)
         changed_ranges = [LineRange(5, 6)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
 
         # 정확한 예상 결과 정의 (FallbackContextExtractor 실제 동작에 맞춤)
         expected_contexts = [
@@ -81,12 +82,12 @@ class TestCImportChanges:
     def test_single_c_import_line_change(
         self,
         extractor: FallbackContextExtractor,
-        sample_import_file_path: Path,
+        sample_import_file_content: str,
     ) -> None:
         """단일 C include 라인 변경 시 추출 테스트."""
         # 단일 include 라인만 변경 (라인 5: "#include <stdio.h>")
         changed_ranges = [LineRange(5, 5)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
 
         # 예상 결과: 모든 dependencies와 확장된 범위가 추출되어야 함 (실제 결과에 맞춤)
         expected_contexts = [
@@ -132,12 +133,12 @@ class TestCImportChanges:
     def test_c_import_and_code_mixed_changes(
         self,
         extractor: FallbackContextExtractor,
-        sample_import_file_path: Path,
+        sample_import_file_content: str,
     ) -> None:
         """C Include와 일반 코드가 섞여있을 때의 변경 테스트."""
         # include 문과 struct 정의 부분 모두 포함
         changed_ranges = [LineRange(5, 25)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
 
         all_context = "\n".join(contexts)
 
@@ -154,12 +155,12 @@ class TestCImportChanges:
     def test_c_io_import_line_only_strict(
         self,
         extractor: FallbackContextExtractor,
-        sample_import_file_path: Path,
+        sample_import_file_content: str,
     ) -> None:
         """C string.h include 라인만 변경될 때 정확한 추출 테스트 - 버그 재현용."""
         # string.h include 라인만 변경 (라인 8: "#include <string.h>")
         changed_ranges = [LineRange(8, 8)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
 
         # 올바른 예상 결과 정의 (실제 결과에 맞춤)
         expected_contexts = [
@@ -210,12 +211,12 @@ class TestCImportChanges:
     def test_c_multiline_import_range_bug_strict(
         self,
         extractor: FallbackContextExtractor,
-        sample_import_file_path: Path,
+        sample_import_file_content: str,
     ) -> None:
         """빈 줄과 C include 문이 섞인 범위에서 발생하는 버그 테스트 - 정확한 검증."""
         # 라인 7 (빈 줄)과 라인 8 (include string.h 시작) 포함
         changed_ranges = [LineRange(7, 8)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
 
         # 올바른 예상 결과 정의 (실제 결과에 맞춤)
         expected_contexts = [
@@ -267,12 +268,12 @@ class TestCImportChanges:
     def test_c_import_boundary_cases(
         self,
         extractor: FallbackContextExtractor,
-        sample_import_file_path: Path,
+        sample_import_file_content: str,
     ) -> None:
         """C Include 문 경계에서의 정확한 추출 테스트."""
         # 라인 8-9: 연속된 두 include 문
         changed_ranges = [LineRange(8, 9)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
 
         # 예상 결과
         expected_contexts = [
@@ -315,12 +316,12 @@ class TestCImportChanges:
     def test_c_empty_line_with_import_combination(
         self,
         extractor: FallbackContextExtractor,
-        sample_import_file_path: Path,
+        sample_import_file_content: str,
     ) -> None:
         """빈 줄과 C include가 섞인 복잡한 조합 테스트."""
         # 라인 6-8: stdlib include, 빈줄, string include
         changed_ranges = [LineRange(6, 8)]
-        contexts = extractor.extract_contexts(sample_import_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
 
         # 모든 context는 FallbackContextExtractor의 정상적인 형태를 가져야 함
         for i, ctx in enumerate(contexts):

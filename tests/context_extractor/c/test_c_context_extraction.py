@@ -16,9 +16,10 @@ class TestBasicFunctionExtraction:
     """기본 함수/클래스 추출 기능 테스트."""
 
     @pytest.fixture
-    def sample_file_path(self) -> Path:
-        """테스트용 샘플 파일 경로를 반환합니다."""
-        return Path(__file__).parent / "SampleCalculator.c"
+    def sample_file_content(self) -> str:
+        """테스트용 샘플 파일 내용을 반환합니다."""
+        file_path = Path(__file__).parent / "SampleCalculator.c"
+        return file_path.read_text(encoding="utf-8")
 
     @pytest.fixture
     def extractor(self) -> FallbackContextExtractor:
@@ -28,11 +29,11 @@ class TestBasicFunctionExtraction:
     def test_extract_single_line_context(
         self,
         extractor: FallbackContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """단일 라인 추출 테스트."""
         changed_ranges = [LineRange(35, 35)]  # SampleCalculator 구조체 선언부
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         # 정확한 expected_result 정의
         expected_result = [
@@ -72,14 +73,14 @@ class TestBasicFunctionExtraction:
     def test_extract_multiple_line_context(
         self,
         extractor: FallbackContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """여러 라인 추출 테스트."""
         changed_ranges = [
             LineRange(47, 54),
             LineRange(50, 52),
         ]  # SampleCalculator 구조체 선언부 (병합됨: 42-59)
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         # 정확한 expected_result 정의
         expected_result = [
@@ -127,14 +128,14 @@ class TestBasicFunctionExtraction:
     def test_extract_multiple_line_context_complex(
         self,
         extractor: FallbackContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """여러 라인 추출 테스트."""
         changed_ranges = [
             LineRange(78, 84),  # 73-89 범위로 확장
             LineRange(100, 122),  # 95-127 범위로 확장
         ]
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
 
         # 정확한 expected_result 정의
         expected_result = [
@@ -222,25 +223,25 @@ class TestBasicFunctionExtraction:
     def test_extract_empty_context(
         self,
         extractor: FallbackContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """빈 컨텍스트 추출 테스트."""
         changed_ranges = [
             LineRange(88, 88),
             LineRange(110, 110),
         ]  # SampleCalculator 구조체 선언부
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
         assert len(contexts) == 0
 
     def test_extract_context_with_comment(
         self,
         extractor: FallbackContextExtractor,
-        sample_file_path: Path,
+        sample_file_content: str,
     ) -> None:
         """주석이 포함된 컨텍스트 추출 테스트."""
         changed_ranges = [
             LineRange(94, 94),
             LineRange(100, 100),
         ]  # SampleCalculator 구조체 선언부
-        contexts = extractor.extract_contexts(sample_file_path, changed_ranges)
+        contexts = extractor.extract_contexts(sample_file_content, changed_ranges)
         assert len(contexts) == 0

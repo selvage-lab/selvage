@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
-from pathlib import Path
 
 from .line_range import LineRange
 from .meaningless_change_filter import MeaninglessChangeFilter
@@ -68,7 +67,7 @@ class FallbackContextExtractor:
         self._filter = MeaninglessChangeFilter()
 
     def extract_contexts(
-        self, file_content: str | None, changed_ranges: Sequence[LineRange]
+        self, file_content: str, changed_ranges: Sequence[LineRange]
     ) -> list[str]:
         """변경된 라인 범위들을 기반으로 컨텍스트 블록들을 추출한다.
 
