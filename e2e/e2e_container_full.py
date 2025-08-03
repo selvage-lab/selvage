@@ -5,7 +5,7 @@ import json
 import pytest
 from testcontainers.core.generic import DockerContainer
 
-from e2e.helpers import install_selvage_from_testpypi
+from e2e.helpers import verify_selvage_installation
 from selvage.src.config import get_api_key
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.json_extractor import JSONExtractor
@@ -53,7 +53,7 @@ def test_selvage_installation_in_container(testpypi_container) -> None:
     assert exit_code == 0, "Python should be available"
     print(f"Python 버전: {output.decode().strip()}")
 
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     # 기본 명령어 테스트
     exit_code, output = container.exec("selvage --help")
@@ -72,7 +72,7 @@ def test_selvage_config_in_container(testpypi_container) -> None:
 
     assert container_attrs["State"]["Running"], "Container should be running"
 
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     # 1. CONFIG_FILE 경로가 예상된 Linux 경로와 일치하는지 검증
     python_code_to_get_path = (
@@ -177,7 +177,7 @@ def test_selvage_review_workflow_in_container(
 
     assert container_attrs["State"]["Running"], "Container should be running"
 
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     # 모델을 gemini-2.5-flash로 설정
     exit_code, output = container.exec("selvage config model gemini-2.5-flash")

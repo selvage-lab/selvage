@@ -1,11 +1,8 @@
 """E2E 테스트용 헬퍼 함수들."""
 
 
-def install_selvage_from_testpypi(container) -> None:
-    """TestPyPI에서 selvage 설치하는 헬퍼 함수."""
-    install_command = "pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple --no-deps selvage"
-    exit_code, output = container.exec(install_command)
-    assert exit_code == 0, (
-        f"TestPyPI에서 selvage 설치가 성공해야 합니다. 출력: {output.decode()}"
-    )
-    print("TestPyPI에서 selvage 설치 완료")
+def verify_selvage_installation(container) -> None:
+    """TestPyPI 컨테이너는 이미 selvage가 설치되어 있음을 확인하는 헬퍼 함수."""
+    exit_code, output = container.exec("selvage --version")
+    assert exit_code == 0, f"selvage가 설치되어 있지 않습니다. 출력: {output.decode()}"
+    print("TestPyPI selvage 설치 확인 완료")

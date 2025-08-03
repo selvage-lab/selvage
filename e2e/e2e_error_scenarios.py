@@ -3,7 +3,7 @@
 import pytest
 from testcontainers.core.generic import DockerContainer
 
-from e2e.helpers import install_selvage_from_testpypi
+from e2e.helpers import verify_selvage_installation
 
 
 @pytest.fixture(scope="function")
@@ -25,7 +25,7 @@ def test_invalid_api_key_handling(error_test_container) -> None:
     container = error_test_container
 
     # TestPyPI에서 selvage 설치
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     # 테스트 저장소 생성 및 git init
     exit_code, output = container.exec(
@@ -69,7 +69,7 @@ def test_not_config_default_model_handling(error_test_container) -> None:
     container = error_test_container
 
     # TestPyPI에서 selvage 설치
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     # 빈 저장소 생성 및 git init
     exit_code, output = container.exec(
@@ -106,7 +106,7 @@ def test_empty_repository_handling(error_test_container) -> None:
     container = error_test_container
 
     # TestPyPI에서 selvage 설치
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     # 빈 저장소 생성 및 git init
     exit_code, output = container.exec(
@@ -144,7 +144,7 @@ def test_non_git_directory_handling(error_test_container) -> None:
     container = error_test_container
 
     # TestPyPI에서 selvage 설치
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     # Git 저장소가 아닌 일반 디렉토리 생성
     exit_code, output = container.exec("mkdir -p /tmp/non_git_dir")
@@ -174,7 +174,7 @@ def test_invalid_model_configuration(error_test_container, invalid_model: str) -
     container = error_test_container
 
     # TestPyPI에서 selvage 설치
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     # 잘못된 모델 설정 시도 - 설정 단계에서 실패해야 함
     exit_code, output = container.exec(f"selvage config model {invalid_model}")

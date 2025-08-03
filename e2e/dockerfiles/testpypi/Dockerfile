@@ -1,5 +1,5 @@
 # TestPyPI 테스트용 사전 구성된 도커 이미지
-# 의존성은 미리 설치하고, selvage는 TestPyPI에서 설치하여 테스트
+# TestPyPI에서 selvage를 직접 설치하여 실제 배포 환경과 동일하게 테스트
 
 FROM python:3.11-slim
 
@@ -11,18 +11,12 @@ RUN apt-get update && apt-get install -y \
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# pyproject.toml 복사 (의존성 정보만 필요)
-COPY pyproject.toml /app/
-
 # pip 업그레이드
 RUN pip install --upgrade pip
 
-# pyproject.toml에서 의존성만 설치 (selvage 자체는 제외)
-# 임시로 toml 패키지 설치하여 의존성 추출
-RUN pip install toml && \
-  python -c "import toml; data = toml.load('pyproject.toml'); print('\n'.join(data['project']['dependencies']))" > /tmp/deps.txt && \
-  pip install -r /tmp/deps.txt && \
-  rm /tmp/deps.txt
+# TestPyPI에서 selvage 설치 (의존성 포함)
+RUN pip install --index-url https://test.pypi.org/simple/ \
+    --extra-index-url https://pypi.org/simple selvage
 
 # 컨테이너가 계속 실행되도록 설정
 CMD ["bash", "-c", "while true; do sleep 1; done"] 

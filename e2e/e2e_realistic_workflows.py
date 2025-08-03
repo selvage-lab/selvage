@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from testcontainers.core.generic import DockerContainer
 
-from e2e.helpers import install_selvage_from_testpypi
+from e2e.helpers import verify_selvage_installation
 from selvage.src.config import get_api_key
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.json_extractor import JSONExtractor
@@ -37,7 +37,7 @@ def configured_workflow_container(workflow_container):
     """완전히 설정된 워크플로우 컨테이너 fixture (selvage 설치 및 설정 완료)"""
     container = workflow_container
 
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
 
     yield container
 
@@ -827,7 +827,7 @@ def openrouter_workflow_container():
 def configured_openrouter_container(openrouter_workflow_container):
     """완전히 설정된 OpenRouter 워크플로우 컨테이너 fixture"""
     container = openrouter_workflow_container
-    install_selvage_from_testpypi(container)
+    verify_selvage_installation(container)
     yield container
 
 
