@@ -58,15 +58,20 @@ def test_invalid_api_key_handling(error_test_container) -> None:
 
     # API 키 에러 처리 확인
     output_str = output.decode("utf-8", errors="ignore").lower()
-    
+
     # TestPyPI 버전에서 segfault 발생하는 경우 테스트 스킵
     if exit_code == 139:  # segfault
         pytest.skip("TestPyPI version has segfault issue with invalid API key")
-    
+
     # 실제 에러 메시지 확인
     assert any(
         keyword in output_str
-        for keyword in ["api_key_invalid", "400 invalid_argument", "api key not valid", "invalid_argument"]
+        for keyword in [
+            "api_key_invalid",
+            "400 invalid_argument",
+            "api key not valid",
+            "invalid_argument",
+        ]
     ), f"Should handle invalid API key error. Actual output: {output_str}"
 
 

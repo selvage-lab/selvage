@@ -315,4 +315,3 @@ class TestMeaningfulRangeFiltering:
 
         expected = [LineRange(2, 3), LineRange(5, 7), LineRange(1, 1)]
         assert meaningful_ranges == expected
-

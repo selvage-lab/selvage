@@ -183,9 +183,7 @@ class BaseGateway(abc.ABC):
                 context_limit=context_limit,
             )
 
-    def review_code(
-        self, review_prompt: ReviewPromptWithFileContent
-    ) -> ReviewResult:
+    def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
         """코드를 리뷰합니다.
 
         Args:
@@ -232,7 +230,8 @@ class BaseGateway(abc.ABC):
                     )
                 except Exception as parse_error:
                     console.error(
-                        f"OpenRouter 응답 파싱 오류: {str(parse_error)}", exception=parse_error
+                        f"OpenRouter 응답 파싱 오류: {str(parse_error)}",
+                        exception=parse_error,
                     )
                     return ReviewResult.get_error_result(
                         parse_error, self.get_model_name()

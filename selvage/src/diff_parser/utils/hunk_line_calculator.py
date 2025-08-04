@@ -1,4 +1,5 @@
 """Hunk 라인 계산을 위한 유틸리티 클래스."""
+
 from dataclasses import dataclass
 from enum import Enum
 

@@ -84,4 +84,3 @@ def test_formatted_hunk_empty_code(mock_hunk: Hunk):
     assert formatted_hunk.after_code == f"```{language}\nsingle line\n```"
     assert formatted_hunk.after_code_start_line_number == 1
     assert formatted_hunk.after_code_line_numbers == [1]
-

@@ -32,17 +32,17 @@ class TestPythonContextTree:
         tree = parser.parse(sample_file_path.read_bytes())
         query = language.query(query_scm)
         captures = query.captures(tree.root_node)
-        
+
         # captures를 활용한 파일 구조 추출
         file_structure = self._extract_file_structure(captures, tree)
-        
+
         print("Generated file structure:")
         print(file_structure)
-        
+
         # 예상되는 완전한 파일 구조 (module docstring, import, 모든 함수 포함)
         triple_quotes = '"""'
         module_doc = "테스트용 샘플 클래스 - tree-sitter 파싱 테스트에 사용됩니다."
-        expected_structure = f'''{triple_quotes}{module_doc}{triple_quotes}
+        expected_structure = f"""{triple_quotes}{module_doc}{triple_quotes}
 
 import json
 from typing import Any
@@ -77,8 +77,8 @@ def advanced_calculator_factory(mode: str = "basic") -> SampleCalculator:
    def create_calculator_with_mode(calc_mode: str) -> SampleCalculator:
           {triple_quotes}내부 함수: 모드별 계산기 생성{triple_quotes}
    def validate_mode(m: str) -> bool:
-          {triple_quotes}내부 함수: 모드 검증{triple_quotes}'''
-        
+          {triple_quotes}내부 함수: 모드 검증{triple_quotes}"""
+
         # 엄격한 완전 일치 검증
         assert file_structure == expected_structure, (
             f"실제 출력과 예상 구조가 다릅니다.\n"
@@ -88,8 +88,8 @@ def advanced_calculator_factory(mode: str = "basic") -> SampleCalculator:
 
     def _extract_file_structure(self, captures, tree) -> str:
         """captures 데이터를 활용하여 파일 구조를 텍스트로 생성합니다."""
-        source_code = tree.root_node.text.decode('utf-8').split('\n')
-        
+        source_code = tree.root_node.text.decode("utf-8").split("\n")
+
         def clean_docstring(docstring_text: str) -> str:
             """docstring 텍스트에서 따옴표를 제거하고 정리합니다."""
             if docstring_text.startswith('"""') and docstring_text.endswith('"""'):
@@ -101,84 +101,84 @@ def advanced_calculator_factory(mode: str = "basic") -> SampleCalculator:
             elif docstring_text.startswith("'") and docstring_text.endswith("'"):
                 return docstring_text[1:-1].strip()
             return docstring_text.strip()
-        
+
         # captures를 위에서부터 순회하면서 구조 생성
         result_lines = []
-        
+
         # 모든 captures를 위치별로 정렬
         all_captures = []
         for tag, nodes in captures.items():
             for node in nodes:
-                all_captures.append({
-                    'node': node,
-                    'tag': tag,
-                    'start_row': node.start_point[0],
-                    'start_col': node.start_point[1],
-                })
-        
+                all_captures.append(
+                    {
+                        "node": node,
+                        "tag": tag,
+                        "start_row": node.start_point[0],
+                        "start_col": node.start_point[1],
+                    }
+                )
+
         # 위치별로 정렬
-        all_captures.sort(key=lambda x: (x['start_row'], x['start_col']))
-        
+        all_captures.sort(key=lambda x: (x["start_row"], x["start_col"]))
+
         # 클래스 범위 찾기
         class_ranges = []
         for capture in all_captures:
-            if capture['tag'] == 'class.definition':
-                class_start = capture['start_row']
-                class_end = capture['node'].end_point[0]
+            if capture["tag"] == "class.definition":
+                class_start = capture["start_row"]
+                class_end = capture["node"].end_point[0]
                 class_ranges.append((class_start, class_end))
-        
+
         # 순회하면서 구조 생성 (클래스 내부 요소만)
         for capture in all_captures:
-            node = capture['node']
-            tag = capture['tag']
-            start_row = capture['start_row']
-            start_col = capture['start_col']
-            
+            node = capture["node"]
+            tag = capture["tag"]
+            start_row = capture["start_row"]
+            start_col = capture["start_col"]
+
             # 모든 함수 포함 (클래스 내부/외부 구분 없이)
-            
+
             # 들여쓰기 계산 (4칸 = 1레벨)
             indent_level = start_col // 4
-            indent_spaces = '   ' * indent_level
-            
-            if tag == 'module.docstring':
+            indent_spaces = "   " * indent_level
+
+            if tag == "module.docstring":
                 # 모듈 docstring 추가
-                docstring_text = node.text.decode('utf-8')
+                docstring_text = node.text.decode("utf-8")
                 cleaned_docstring = clean_docstring(docstring_text)
                 triple_quotes = chr(34) * 3  # """ 문자열
-                docstring_line = f'{triple_quotes}{cleaned_docstring}{triple_quotes}'
+                docstring_line = f"{triple_quotes}{cleaned_docstring}{triple_quotes}"
                 result_lines.append(docstring_line)
-                result_lines.append('')  # 빈 줄 추가
-                
+                result_lines.append("")  # 빈 줄 추가
+
             elif tag in [
-                'import.statement', 
-                'import.from_statement', 
-                'import.future_statement'
+                "import.statement",
+                "import.from_statement",
+                "import.future_statement",
             ]:
                 # import 문 추가
                 import_line = source_code[start_row].strip()
                 result_lines.append(import_line)
-                
-            elif tag == 'class.definition':
+
+            elif tag == "class.definition":
                 # 클래스 시그니처 추출
                 signature = source_code[start_row].strip()
                 result_lines.append(signature)
-                
-            elif tag == 'function.definition':
+
+            elif tag == "function.definition":
                 # 함수 시그니처 추출
                 signature = source_code[start_row].strip()
                 result_lines.append(f"{indent_spaces}{signature}")
-                
-            elif tag in ['class.docstring', 'function.docstring']:
+
+            elif tag in ["class.docstring", "function.docstring"]:
                 # docstring 추가
-                docstring_text = node.text.decode('utf-8')
+                docstring_text = node.text.decode("utf-8")
                 cleaned_docstring = clean_docstring(docstring_text)
-                
+
                 # docstring은 함수/클래스보다 한 단계 더 들여쓰기
-                docstring_indent = indent_spaces + '    '
+                docstring_indent = indent_spaces + "    "
                 triple_quotes = chr(34) * 3  # """ 문자열
-                docstring_line = (
-                    f'{docstring_indent}{triple_quotes}{cleaned_docstring}{triple_quotes}'
-                )
+                docstring_line = f"{docstring_indent}{triple_quotes}{cleaned_docstring}{triple_quotes}"
                 result_lines.append(docstring_line)
-        
-        return '\n'.join(result_lines)
+
+        return "\n".join(result_lines)

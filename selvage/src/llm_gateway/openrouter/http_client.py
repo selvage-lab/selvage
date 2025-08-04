@@ -48,6 +48,8 @@ class OpenRouterHTTPClient:
         """컨텍스트 매니저 진입점"""
         return self
 
-    def __exit__(self, exc_type: type | None, exc_val: Exception | None, exc_tb: object | None) -> None:
+    def __exit__(
+        self, exc_type: type | None, exc_val: Exception | None, exc_tb: object | None
+    ) -> None:
         """컨텍스트 매니저 종료점 - 리소스 정리"""
         self.close()

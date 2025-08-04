@@ -113,23 +113,30 @@ def multi_hunk_review_request() -> ReviewRequest:
 class TestPromptGenerator:
     """프롬프트 생성기 테스트 클래스"""
 
-    @patch('selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context')
-    @patch('selvage.src.utils.prompts.prompt_generator.ContextExtractor')
+    @patch(
+        "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
+    )
+    @patch("selvage.src.utils.prompts.prompt_generator.ContextExtractor")
     @patch.object(
         PromptGenerator,
         "_get_code_review_system_prompt",
         return_value="Mock system prompt",
     )
     def test_create_code_review_prompt(
-        self, mock_system_prompt, mock_context_extractor, mock_use_smart_context,
-        review_request: ReviewRequest
+        self,
+        mock_system_prompt,
+        mock_context_extractor,
+        mock_use_smart_context,
+        review_request: ReviewRequest,
     ):
         """코드 리뷰 프롬프트 생성 테스트 - SMART_CONTEXT 시나리오"""
         # Given
         mock_use_smart_context.return_value = True
         mock_extractor_instance = mock_context_extractor.return_value
-        mock_extractor_instance.extract_contexts.return_value = ["smart context from file.py"]
-        
+        mock_extractor_instance.extract_contexts.return_value = [
+            "smart context from file.py"
+        ]
+
         generator = PromptGenerator()
 
         # When
@@ -149,10 +156,10 @@ class TestPromptGenerator:
         # 3. UserPromptWithFileContent 필드 검증
         user_prompt = review_prompt.user_prompts[0]
         assert user_prompt.file_name == "file.py"
-        
+
         # file_context는 FileContextInfo 타입이어야 함
         assert isinstance(user_prompt.file_context, FileContextInfo)
-        
+
         # mock 설정으로 인해 smart context가 생성될 것
         assert user_prompt.file_context.context_type == ContextType.SMART_CONTEXT
         expected_description = "AST-based context extraction"
@@ -167,23 +174,30 @@ class TestPromptGenerator:
         assert "print('World')" in hunk.before_code
         assert "print('Hello')" in hunk.after_code
 
-    @patch('selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context')
-    @patch('selvage.src.utils.prompts.prompt_generator.ContextExtractor')
+    @patch(
+        "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
+    )
+    @patch("selvage.src.utils.prompts.prompt_generator.ContextExtractor")
     @patch.object(
         PromptGenerator,
         "_get_code_review_system_prompt",
         return_value="Mock system prompt",
     )
     def test_review_prompt_to_messages_conversion(
-        self, mock_system_prompt, mock_context_extractor, mock_use_smart_context,
-        review_request: ReviewRequest
+        self,
+        mock_system_prompt,
+        mock_context_extractor,
+        mock_use_smart_context,
+        review_request: ReviewRequest,
     ):
         """ReviewPromptWithFileContent에서 메시지 변환 테스트 - SMART_CONTEXT JSON"""
         # Given
         mock_use_smart_context.return_value = True
         mock_extractor_instance = mock_context_extractor.return_value
-        mock_extractor_instance.extract_contexts.return_value = ["smart context for json test"]
-        
+        mock_extractor_instance.extract_contexts.return_value = [
+            "smart context for json test"
+        ]
+
         generator = PromptGenerator()
 
         review_prompt = generator.create_code_review_prompt(review_request)
@@ -207,21 +221,25 @@ class TestPromptGenerator:
         # 4. 사용자 메시지 내용(JSON) 파싱 및 검증
         content = json.loads(user_message["content"])
         assert content["file_name"] == "file.py"
-        
+
         # file_context가 변경되었으므로 새로운 JSON 구조 확인
         assert "file_context" in content
         file_context = content["file_context"]
         assert isinstance(file_context, dict)
-        
+
         # FileContextInfo.to_dict() 결과 검증
         assert "context" in file_context
         assert "context_type" in file_context
         assert "description" in file_context
-        
+
         # 실제 동작에서는 context_type이 다를 수 있으므로 여러 경우 허용
         # 하지만 값은 정확한 enum 값이어야 함
-        assert file_context["context_type"] in ["smart_context", "fallback_context", "full_context"]
-        
+        assert file_context["context_type"] in [
+            "smart_context",
+            "fallback_context",
+            "full_context",
+        ]
+
         # mock 설정으로 인해 smart_context가 생성됨
         assert file_context["context_type"] == "smart_context"
         expected_desc = "AST-based context extraction"
@@ -236,7 +254,9 @@ class TestPromptGenerator:
         assert "print('Hello')" in hunk["after_code"]
         assert hunk["after_code_start_line_number"] == 1
 
-    @patch('selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context')
+    @patch(
+        "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
+    )
     @patch.object(
         PromptGenerator,
         "_get_code_review_system_prompt",
@@ -251,7 +271,7 @@ class TestPromptGenerator:
         """여러 hunk가 있는 경우 코드 리뷰 프롬프트 생성 테스트 - FULL_CONTEXT 시나리오"""
         # Given
         mock_use_smart_context.return_value = False  # FULL_CONTEXT 시나리오
-        
+
         generator = PromptGenerator()
 
         # When
@@ -271,10 +291,10 @@ class TestPromptGenerator:
         # 3. UserPromptWithFileContent 필드 검증
         user_prompt = review_prompt.user_prompts[0]
         assert user_prompt.file_name == "file.py"
-        
+
         # file_context는 FileContextInfo 타입이어야 함
         assert isinstance(user_prompt.file_context, FileContextInfo)
-        
+
         # mock 설정으로 인해 FULL_CONTEXT가 생성될 것
         assert user_prompt.file_context.context_type == ContextType.FULL_CONTEXT
         expected_description = "Complete file content"
@@ -427,19 +447,24 @@ def rewritten_file_review_request() -> ReviewRequest:
 class TestPromptGeneratorNewFileAndRewrite:
     """새 파일 생성 및 파일 재작성 케이스 테스트"""
 
-    @patch('selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context')
+    @patch(
+        "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
+    )
     @patch.object(
         PromptGenerator,
         "_get_code_review_system_prompt",
         return_value="New file review system prompt",
     )
     def test_create_code_review_prompt_new_file(
-        self, mock_system_prompt, mock_use_smart_context, new_file_review_request: ReviewRequest
+        self,
+        mock_system_prompt,
+        mock_use_smart_context,
+        new_file_review_request: ReviewRequest,
     ):
         """새로 생성된 파일에 대한 FULL_CONTEXT 특별 메시지 시나리오 테스트"""
         # Given - SmartContextUtils mock으로 False 설정하여 FULL_CONTEXT 플로우로 진입
         mock_use_smart_context.return_value = False
-        
+
         generator = PromptGenerator()
 
         # When
@@ -453,15 +478,15 @@ class TestPromptGeneratorNewFileAndRewrite:
         # 2. 새 파일의 경우 FULL_CONTEXT 특별 메시지 검증
         user_prompt = review_prompt.user_prompts[0]
         assert user_prompt.file_name == "new_file.py"
-        
+
         # file_context 구조에 맞게 검증
         assert isinstance(user_prompt.file_context, FileContextInfo)
-        
+
         # 새 파일에 대한 FULL_CONTEXT 특별 메시지 검증
         assert user_prompt.file_context.context_type == ContextType.FULL_CONTEXT
         expected_description = "Complete file content"
         assert user_prompt.file_context.description == expected_description
-        
+
         # 특별 메시지 내용 검증
         expected_message = (
             "NEWLY ADDED OR COMPLETELY REWRITTEN FILE: This file is either "
@@ -505,20 +530,20 @@ class TestPromptGeneratorNewFileAndRewrite:
         # 2. 파일 재작성의 경우 file_context 검증
         user_prompt = review_prompt.user_prompts[0]
         assert user_prompt.file_name == "rewritten.py"
-        
+
         # file_context 구조에 맞게 검증
         assert isinstance(user_prompt.file_context, FileContextInfo)
-        
+
         # 재작성 파일의 경우 여러 시나리오가 가능:
         # 1. 스마트 컨텍스트 추출 성공 -> SMART_CONTEXT
-        # 2. 스마트 컨텍스트 실패 -> FALLBACK_CONTEXT  
+        # 2. 스마트 컨텍스트 실패 -> FALLBACK_CONTEXT
         # 3. entirely_new_content 조건 만족 -> FULL_CONTEXT with special message
         assert user_prompt.file_context.context_type in [
-            ContextType.SMART_CONTEXT, 
+            ContextType.SMART_CONTEXT,
             ContextType.FALLBACK_CONTEXT,
-            ContextType.FULL_CONTEXT
+            ContextType.FULL_CONTEXT,
         ]
-        
+
         # 컨텍스트에 파일 관련 내용이 포함되어야 함
         context = user_prompt.file_context.context
         if user_prompt.file_context.context_type == ContextType.FULL_CONTEXT:
@@ -527,7 +552,7 @@ class TestPromptGeneratorNewFileAndRewrite:
         else:
             # 일반적인 컨텍스트 추출이 된 경우 (파일 내용 포함)
             assert "def new_function" in context or "new_function" in context
-        
+
         # description이 적절히 설정되어야 함
         assert len(user_prompt.file_context.description) > 0
 
@@ -659,23 +684,28 @@ class TestPromptGeneratorTemplateProcessing:
 class TestPromptGeneratorContextTypes:
     """PromptGenerator의 각 ContextType별 명확한 시나리오 테스트"""
 
-    @patch('selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context')
-    @patch('selvage.src.utils.prompts.prompt_generator.ContextExtractor')
+    @patch(
+        "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
+    )
+    @patch("selvage.src.utils.prompts.prompt_generator.ContextExtractor")
     @patch.object(
         PromptGenerator,
         "_get_code_review_system_prompt",
         return_value="Mock system prompt",
     )
     def test_smart_context_scenario(
-        self, mock_system_prompt, mock_context_extractor, mock_use_smart_context,
-        review_request: ReviewRequest
+        self,
+        mock_system_prompt,
+        mock_context_extractor,
+        mock_use_smart_context,
+        review_request: ReviewRequest,
     ):
         """SMART_CONTEXT 시나리오 테스트: 스마트 컨텍스트 추출 성공"""
         # Given
         mock_use_smart_context.return_value = True
         mock_extractor_instance = mock_context_extractor.return_value
         mock_extractor_instance.extract_contexts.return_value = ["extracted context"]
-        
+
         generator = PromptGenerator()
 
         # When
@@ -684,39 +714,46 @@ class TestPromptGeneratorContextTypes:
         # Then
         assert len(review_prompt.user_prompts) == 1
         user_prompt = review_prompt.user_prompts[0]
-        
+
         # 정확한 ContextType 검증
         assert user_prompt.file_context.context_type == ContextType.SMART_CONTEXT
-        
+
         # 정확한 description 검증
         expected_description = "AST-based context extraction"
         assert user_prompt.file_context.description == expected_description
-        
+
         # context 내용 검증
         assert user_prompt.file_context.context == "extracted context"
 
-    @patch('selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context')
-    @patch('selvage.src.utils.prompts.prompt_generator.ContextExtractor')
-    @patch('selvage.src.utils.prompts.prompt_generator.FallbackContextExtractor')
+    @patch(
+        "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
+    )
+    @patch("selvage.src.utils.prompts.prompt_generator.ContextExtractor")
+    @patch("selvage.src.utils.prompts.prompt_generator.FallbackContextExtractor")
     @patch.object(
         PromptGenerator,
         "_get_code_review_system_prompt",
         return_value="Mock system prompt",
     )
     def test_fallback_context_scenario(
-        self, mock_system_prompt, mock_fallback_extractor, 
-        mock_context_extractor, mock_use_smart_context,
-        review_request: ReviewRequest
+        self,
+        mock_system_prompt,
+        mock_fallback_extractor,
+        mock_context_extractor,
+        mock_use_smart_context,
+        review_request: ReviewRequest,
     ):
         """FALLBACK_CONTEXT 시나리오 테스트: 스마트 컨텍스트 추출 실패"""
         # Given
         mock_use_smart_context.return_value = True
         mock_extractor_instance = mock_context_extractor.return_value
-        mock_extractor_instance.extract_contexts.side_effect = Exception("Context extraction failed")
-        
+        mock_extractor_instance.extract_contexts.side_effect = Exception(
+            "Context extraction failed"
+        )
+
         mock_fallback_instance = mock_fallback_extractor.return_value
         mock_fallback_instance.extract_contexts.return_value = ["fallback context"]
-        
+
         generator = PromptGenerator()
 
         # When
@@ -725,32 +762,36 @@ class TestPromptGeneratorContextTypes:
         # Then
         assert len(review_prompt.user_prompts) == 1
         user_prompt = review_prompt.user_prompts[0]
-        
+
         # 정확한 ContextType 검증
         assert user_prompt.file_context.context_type == ContextType.FALLBACK_CONTEXT
-        
+
         # 정확한 description 검증
         expected_description = "Text-based context extraction (AST fallback)"
         assert user_prompt.file_context.description == expected_description
-        
+
         # context 내용 검증
         assert user_prompt.file_context.context == "fallback context"
 
-    @patch('selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context')
+    @patch(
+        "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
+    )
     @patch.object(
         PromptGenerator,
         "_get_code_review_system_prompt",
         return_value="Mock system prompt",
     )
     def test_full_context_entirely_new_content_scenario(
-        self, mock_system_prompt, mock_use_smart_context,
-        new_file_review_request: ReviewRequest
+        self,
+        mock_system_prompt,
+        mock_use_smart_context,
+        new_file_review_request: ReviewRequest,
     ):
         """FULL_CONTEXT (특별 메시지) 시나리오 테스트: 전체 새로운 내용"""
         # Given
         mock_use_smart_context.return_value = False
         # new_file_review_request는 is_entirely_new_content() == True 조건을 만족
-        
+
         generator = PromptGenerator()
 
         # When
@@ -759,31 +800,35 @@ class TestPromptGeneratorContextTypes:
         # Then
         assert len(review_prompt.user_prompts) == 1
         user_prompt = review_prompt.user_prompts[0]
-        
+
         # 정확한 ContextType 검증
         assert user_prompt.file_context.context_type == ContextType.FULL_CONTEXT
-        
+
         # 정확한 description 검증
         expected_description = "Complete file content"
         assert user_prompt.file_context.description == expected_description
-        
-        # 특별 메시지 검증
-        assert "NEWLY ADDED OR COMPLETELY REWRITTEN FILE" in user_prompt.file_context.context
 
-    @patch('selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context')
+        # 특별 메시지 검증
+        assert (
+            "NEWLY ADDED OR COMPLETELY REWRITTEN FILE"
+            in user_prompt.file_context.context
+        )
+
+    @patch(
+        "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
+    )
     @patch.object(
         PromptGenerator,
         "_get_code_review_system_prompt",
         return_value="Mock system prompt",
     )
     def test_full_context_regular_content_scenario(
-        self, mock_system_prompt, mock_use_smart_context,
-        review_request: ReviewRequest
+        self, mock_system_prompt, mock_use_smart_context, review_request: ReviewRequest
     ):
         """FULL_CONTEXT (일반) 시나리오 테스트: 일반 파일 내용"""
         # Given
         mock_use_smart_context.return_value = False
-        
+
         generator = PromptGenerator()
 
         # When
@@ -792,14 +837,14 @@ class TestPromptGeneratorContextTypes:
         # Then
         assert len(review_prompt.user_prompts) == 1
         user_prompt = review_prompt.user_prompts[0]
-        
+
         # 정확한 ContextType 검증
         assert user_prompt.file_context.context_type == ContextType.FULL_CONTEXT
-        
+
         # 정확한 description 검증
         expected_description = "Complete file content"
         assert user_prompt.file_context.description == expected_description
-        
+
         # 파일 내용 검증 (픽스쳐의 file_content와 일치해야 함)
         assert user_prompt.file_context.context == "file content"
 

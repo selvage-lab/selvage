@@ -31,7 +31,9 @@ class TestImportChanges:
         """Multiline import 구문 변경 시 올바른 추출 테스트."""
         # import 문이 있는 라인들을 변경 범위로 설정 (라인 3-5: import re, from dataclasses, 빈줄)
         changed_ranges = [LineRange(3, 5)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 정확한 예상 결과 정의
         expected_context = (
@@ -53,7 +55,9 @@ class TestImportChanges:
         """단일 import 라인 변경 시 추출 테스트."""
         # 단일 import 라인만 변경 (라인 3: "import re")
         changed_ranges = [LineRange(3, 3)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 예상 결과: import re와 모든 의존성 import들이 추출되어야 함
         expected_context = (
@@ -75,7 +79,9 @@ class TestImportChanges:
         """Import와 일반 코드가 섞여있을 때의 변경 테스트."""
         # import 문과 클래스 정의 부분 모두 포함
         changed_ranges = [LineRange(3, 14)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         all_context = "\n".join(contexts)
 
@@ -95,7 +101,9 @@ class TestImportChanges:
         """from import 라인만 변경될 때 정확한 추출 테스트 - 버그 재현용."""
         # dataclass import 라인만 변경 (라인 4: "from dataclasses import dataclass")
         changed_ranges = [LineRange(4, 4)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 올바른 예상 결과 정의
         expected_context = (
@@ -117,7 +125,9 @@ class TestImportChanges:
         """빈 줄과 import 문이 섞인 범위에서 발생하는 버그 테스트 - 정확한 검증."""
         # 라인 6 (빈 줄)과 라인 7 (from selvage... import 시작) 포함
         changed_ranges = [LineRange(6, 7)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 올바른 예상 결과 정의
         expected_context = (

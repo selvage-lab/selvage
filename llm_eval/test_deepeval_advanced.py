@@ -1,6 +1,5 @@
 """DeepEval을 사용한 고급 테스트 예제."""
 
-
 import pytest
 from deepeval import assert_test
 from deepeval.metrics import (
