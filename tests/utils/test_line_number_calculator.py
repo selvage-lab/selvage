@@ -291,3 +291,35 @@ def duplicate_first_line():
 
         # Then - 첫 번째 완전한 매칭의 시작 라인 반환
         assert line_number == 7  # 세 번째 def duplicate_first_line() 시작
+
+    def test_calculate_line_number_whitespace_only_target_code(self, tmpdir) -> None:
+        """공백으로만 구성된 target_code를 처리하는지 테스트"""
+        # Given - 일반적인 Python 파일 생성
+        sample_content = """def hello():
+    print("Hello")
+    return "world"
+
+# 빈 줄 포함
+
+class TestClass:
+    pass
+"""
+        test_file = tmpdir.join("whitespace_test.py")
+        test_file.write(sample_content)
+
+        # When & Then - 다양한 공백 패턴 테스트
+        
+        # 공백 문자들만 있는 경우
+        assert calculate_line_number(str(test_file), "   ") is None
+        assert calculate_line_number(str(test_file), "\t\t\t") is None  
+        assert calculate_line_number(str(test_file), "\n\n\n") is None
+        assert calculate_line_number(str(test_file), "   \n   ") is None
+        assert calculate_line_number(str(test_file), "\t\n\t\n\t") is None
+        
+        # 더 복잡한 공백 조합
+        assert calculate_line_number(str(test_file), "  \t  \n  \t  ") is None
+        assert calculate_line_number(str(test_file), "\r\n\t   \r\n") is None
+        
+        # 정상적인 코드는 여전히 잘 찾아야 함
+        assert calculate_line_number(str(test_file), "def hello():") == 1
+        assert calculate_line_number(str(test_file), "class TestClass:") == 7

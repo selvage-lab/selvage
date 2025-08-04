@@ -20,7 +20,7 @@ def calculate_line_number(file_path: str, target_code: str) -> int | None:
         FileNotFoundError: 파일이 존재하지 않는 경우
         OSError: 파일 읽기 오류가 발생한 경우
     """
-    if not file_path or not target_code:
+    if not file_path or not target_code or not target_code.strip():
         return None
 
     try:
