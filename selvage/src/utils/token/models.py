@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from selvage.src.diff_parser.models.diff_result import DiffResult
 from selvage.src.utils.base_console import console
-from selvage.src.utils.line_number_calculator import LineNumberCalculator
+from selvage.src.utils.line_number_calculator import calculate_line_number
 
 
 # Structured Outputs용 스키마 클래스 (기본값 없음)
@@ -87,7 +87,7 @@ class ReviewIssue(BaseModel):
             line_number = None
             if issue.file and issue.target_code:
                 try:
-                    line_number = LineNumberCalculator.calculate_line_number(
+                    line_number = calculate_line_number(
                         issue.file, issue.target_code
                     )
                 except (FileNotFoundError, OSError):

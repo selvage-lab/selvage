@@ -2,7 +2,7 @@
 
 import pytest
 
-from selvage.src.utils.line_number_calculator import LineNumberCalculator
+from selvage.src.utils.line_number_calculator import calculate_line_number
 
 
 @pytest.fixture
@@ -58,7 +58,7 @@ class TestLineNumberCalculator:
         target_code = "class TestClass:"
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -77,7 +77,7 @@ class TestLineNumberCalculator:
         target_code = "class TestClass"
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -96,7 +96,7 @@ class TestLineNumberCalculator:
         target_code = "def method(self):"
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -115,7 +115,7 @@ class TestLineNumberCalculator:
         target_code = "class TestClass:"
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -132,7 +132,7 @@ class TestLineNumberCalculator:
         target_code = "non_existent_code"
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -153,7 +153,7 @@ class TestLineNumberCalculator:
     y = 2"""
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -175,7 +175,7 @@ class TestLineNumberCalculator:
     return x + y"""
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -195,7 +195,7 @@ class TestLineNumberCalculator:
     x = 999"""
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -214,7 +214,7 @@ class TestLineNumberCalculator:
         target_code = "return x + y"
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             sample_python_file, target_code
         )
 
@@ -251,7 +251,7 @@ class TestLineNumberCalculator:
 
         # When - 성능 측정
         start_time = time.time()
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             str(large_file), target_code
         )
         elapsed_time = time.time() - start_time
@@ -285,7 +285,7 @@ def duplicate_first_line():
     return "found"""
 
         # When
-        line_number = LineNumberCalculator.calculate_line_number(
+        line_number = calculate_line_number(
             str(test_file), target_code
         )
 
