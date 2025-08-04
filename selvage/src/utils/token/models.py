@@ -65,7 +65,8 @@ class ReviewIssue(BaseModel):
 
     @staticmethod
     def from_structured_issue(
-        issue: StructuredReviewIssue, index: int = 0
+        issue: StructuredReviewIssue,
+        index: int = 0,
     ) -> "ReviewIssue":
         """구조화된 이슈 객체에서 ReviewIssue 인스턴스를 생성합니다.
 
@@ -83,16 +84,10 @@ class ReviewIssue(BaseModel):
             # severity 처리 (모든 게이트웨이에서 동일하게 처리)
             severity_value = issue.severity.value
 
-            # LineNumberCalculator를 사용하여 line_number 계산
+            # LineNumberCalculator를 사용하여 line_number 계산 (내부적으로 캐시 처리됨)
             line_number = None
             if issue.file and issue.target_code:
-                try:
-                    line_number = calculate_line_number(
-                        issue.file, issue.target_code
-                    )
-                except (FileNotFoundError, OSError):
-                    # 파일이 존재하지 않거나 읽을 수 없는 경우 None 반환
-                    line_number = None
+                line_number = calculate_line_number(issue.file, issue.target_code)
 
             return ReviewIssue(
                 type=issue.type,
@@ -131,7 +126,7 @@ class ReviewResponse(BaseModel):
         """
         issues = []
 
-        # 이슈 변환
+        # 이슈 변환 (calculate_line_number에서 내부적으로 캐시 처리됨)
         for i, issue in enumerate(structured_response.issues):
             try:
                 issues.append(ReviewIssue.from_structured_issue(issue, i))

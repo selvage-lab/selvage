@@ -1,6 +1,7 @@
 """target_code의 line_number를 계산하는 유틸리티."""
 
-from pathlib import Path
+from selvage.src.utils.base_console import console
+from selvage.src.utils.file_utils import read_file_lines_cached
 
 
 def calculate_line_number(file_path: str, target_code: str) -> int | None:
@@ -8,28 +9,23 @@ def calculate_line_number(file_path: str, target_code: str) -> int | None:
 
     단일 라인 및 멀티라인 target_code를 모두 지원합니다.
     멀티라인의 경우 첫 번째 라인의 번호를 반환합니다.
+    캐시된 파일 읽기를 사용하여 동일한 파일에 대한 반복 호출 시 성능이 최적화됩니다.
 
     Args:
         file_path: 검색할 파일의 경로
         target_code: 찾을 코드 문자열 (단일 라인 또는 멀티라인)
 
     Returns:
-        int | None: 1-based 라인 번호, 찾지 못하면 None
-
-    Raises:
-        FileNotFoundError: 파일이 존재하지 않는 경우
-        OSError: 파일 읽기 오류가 발생한 경우
+        int | None: 1-based 라인 번호, 찾지 못하거나 오류 시 None
     """
     if not file_path or not target_code or not target_code.strip():
         return None
 
     try:
-        file_path_obj = Path(file_path)
-        if not file_path_obj.exists():
-            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {file_path}")
-
-        with open(file_path_obj, encoding="utf-8") as file:
-            lines = file.readlines()
+        # 캐시된 파일 읽기 함수 사용
+        lines = read_file_lines_cached(file_path)
+        if lines is None:
+            return None
 
         # target_code를 줄별로 분할
         target_lines = [line.strip() for line in target_code.strip().split("\n")]
@@ -58,7 +54,6 @@ def calculate_line_number(file_path: str, target_code: str) -> int | None:
 
         return None
 
-    except FileNotFoundError:
-        raise
     except Exception as e:
-        raise OSError(f"파일 읽기 오류: {e}") from e
+        console.log_info(f"라인 번호 계산 중 예외 발생 ({file_path}): {str(e)}")
+        return None
