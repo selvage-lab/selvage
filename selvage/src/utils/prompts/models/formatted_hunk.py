@@ -12,8 +12,6 @@ class FormattedHunk:
     hunk_idx: str
     before_code: str
     after_code: str
-    after_code_start_line_number: int
-    after_code_line_numbers: list[int]
 
     def __init__(
         self,
@@ -31,10 +29,3 @@ class FormattedHunk:
         self.hunk_idx = str(hunk_idx + 1)
         self.before_code = f"```{language}\n{hunk.get_before_code()}\n```"
         self.after_code = f"```{language}\n{hunk.get_after_code()}\n```"
-        self.after_code_start_line_number = hunk.start_line_modified
-        self.after_code_line_numbers = list(
-            range(
-                hunk.start_line_modified,
-                hunk.start_line_modified + hunk.line_count_modified,
-            )
-        )

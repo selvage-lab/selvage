@@ -194,7 +194,6 @@ def test_review_code_success_with_instructor(
         {
             "type": "issue",
             "description": "함수에 구현 내용이 없습니다.",
-            "line_number": 1,
             "file": "example.py",
             "suggestion": "함수에 의미 있는 구현을 추가하세요.",
             "severity": IssueSeverityEnum.WARNING,
@@ -204,7 +203,6 @@ def test_review_code_success_with_instructor(
         {
             "type": "suggestion",
             "description": "변수명을 더 명확하게 변경하세요.",
-            "line_number": 5,
             "file": "another_module.py",
             "suggestion": "예: `data_list` -> `user_records`",
             "severity": IssueSeverityEnum.INFO,
@@ -249,7 +247,8 @@ def test_review_code_success_with_instructor(
             expected_issue_data = expected_issues_data[i]
             assert actual_issue.type == expected_issue_data["type"]
             assert actual_issue.description == expected_issue_data["description"]
-            assert actual_issue.line_number == expected_issue_data["line_number"]
+            # line_number는 LineNumberCalculator에 의해 계산되므로 파일이 없는 경우 None
+            assert actual_issue.line_number is None  # 테스트에서는 실제 파일이 없음
             assert actual_issue.file == expected_issue_data["file"]
             assert actual_issue.suggestion == expected_issue_data["suggestion"]
             assert actual_issue.severity == expected_issue_data["severity"].value
@@ -276,7 +275,6 @@ def test_review_code_success_with_genai(
             "type": "issue",
             "description": "genai: 함수 구현 필요",
             "severity": "warning",
-            "line_number": 10,
             "file": "main.py",
             "suggestion": "빠르게 구현해주세요.",
             "target_code": "def main():",
@@ -294,7 +292,7 @@ def test_review_code_success_with_genai(
             "type": expected_issues_raw_data[0]["type"],
             "description": expected_issues_raw_data[0]["description"],
             "severity": expected_issues_raw_data[0]["severity"],
-            "line_number": expected_issues_raw_data[0]["line_number"],
+            "line_number": None,  # LineNumberCalculator에 의해 계산되므로 LLM은 None 반환
             "file": expected_issues_raw_data[0]["file"],
             "suggestion": expected_issues_raw_data[0]["suggestion"],
             "target_code": expected_issues_raw_data[0]["target_code"],
@@ -335,7 +333,8 @@ def test_review_code_success_with_genai(
             expected_issue_data = expected_issues_raw_data[i]
             assert actual_issue.type == expected_issue_data["type"]
             assert actual_issue.description == expected_issue_data["description"]
-            assert actual_issue.line_number == expected_issue_data["line_number"]
+            # line_number는 LineNumberCalculator에 의해 계산되므로 파일이 없는 경우 None
+            assert actual_issue.line_number is None  # 테스트에서는 실제 파일이 없음
             assert actual_issue.file == expected_issue_data["file"]
             assert actual_issue.suggestion == expected_issue_data["suggestion"]
             assert actual_issue.severity == expected_issue_data["severity"]

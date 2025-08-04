@@ -170,7 +170,6 @@ class TestPromptGenerator:
         assert len(user_prompt.formatted_hunks) == 1
         hunk = user_prompt.formatted_hunks[0]
         assert hunk.hunk_idx == "1"
-        assert hunk.after_code_start_line_number == 1
         assert "print('World')" in hunk.before_code
         assert "print('Hello')" in hunk.after_code
 
@@ -252,7 +251,6 @@ class TestPromptGenerator:
         assert hunk["hunk_idx"] == "1"
         assert "print('World')" in hunk["before_code"]
         assert "print('Hello')" in hunk["after_code"]
-        assert hunk["after_code_start_line_number"] == 1
 
     @patch(
         "selvage.src.utils.prompts.prompt_generator.SmartContextUtils.use_smart_context"
@@ -307,14 +305,12 @@ class TestPromptGenerator:
         # 첫 번째 hunk 검증
         first_hunk = user_prompt.formatted_hunks[0]
         assert first_hunk.hunk_idx == "1"
-        assert first_hunk.after_code_start_line_number == 1
         assert "print('World')" in first_hunk.before_code
         assert "print('Hello')" in first_hunk.after_code
 
         # 두 번째 hunk 검증
         second_hunk = user_prompt.formatted_hunks[1]
         assert second_hunk.hunk_idx == "2"
-        assert second_hunk.after_code_start_line_number == 11
         assert "print('Debug')" in second_hunk.before_code
         assert "print('Log')" in second_hunk.after_code
         assert "print('Info')" in second_hunk.after_code
