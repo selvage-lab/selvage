@@ -75,7 +75,6 @@ You must also provide the following information:
   "issues": [
     {
       "type": "bug",
-      "line_number": 42,
       "file": "src/app.py",
       "description": "Potential NullPointerException.",
       "suggestion": "Check if the variable is null before using it.",
@@ -110,6 +109,5 @@ You must also provide the following information:
 5. If there are no specific issues to report (as defined in Rule #1), leave the `issues` array empty (`"issues": []`) and clearly state this in the `summary` field, as shown in the "No Issues Found" example.
 6. The target for review is `after_code`. `before_code` and `file_context` are for context only.
 7. Use the exact `file_name` provided in the input.
-8. **Line Number Assignment**: The `line_number` field will be automatically calculated based on the `target_code` and `file` information. You should set `line_number` to `null` for all issues, as the system will programmatically determine the correct line numbers.
-9. If a code line or an entire file needs to be deleted, specify "Remove code line" or "Remove file" at the top of `suggested_code`, and then provide the code to be deleted as comments below it. For example, to delete a Python line, use `# 코드 라인 제거\n# print("this will be deleted")`. If multiple lines are to be deleted, comment out each line.
+8. If a code line or an entire file needs to be deleted, specify "Remove code line" or "Remove file" at the top of `suggested_code`, and then provide the code to be deleted as comments below it. For example, to delete a Python line, use `# 코드 라인 제거\n# print("this will be deleted")`. If multiple lines are to be deleted, comment out each line.
 {{ENTIRELY_NEW_CONTENT_RULE}}

@@ -23,7 +23,7 @@ from .prompt_constants import get_entirely_new_content_rule
 
 PROMPT_PATH = "selvage.resources.prompt"
 PROMPT_FILE_NAME = "code_review_system_prompt"
-VERSION = "v3"
+VERSION = "v4"
 
 
 class PromptGenerator:
