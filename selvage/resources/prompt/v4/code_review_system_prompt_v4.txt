@@ -118,7 +118,7 @@ You must also provide the following information:
 2. Write specific and clear descriptions and suggestions. Avoid vague statements or generic advice. Refer to specific parts of the code (`target_code`) and present practical improvements (`suggested_code`).
 3. **NEVER** include any output other than the JSON object (e.g., no plain text, no markdown).
 4. The `target_code` and `suggested_code` values must contain only the raw code string. Do not add unnecessary blank lines at the start or end of the snippet, and do not wrap them in backticks (```) or other markdown.
-5. If there are no specific issues to report (as defined in Rule #1), leave the `issues` array empty (`"issues": []`) and clearly state this in the `summary` field, as shown in the "No Issues Found" example.
+5. If there are no specific issues to report (as defined in Rule #1), leave the issues array empty ("issues": []). Even if no issues are found, the summary field should still provide a high-level overview of the changes, focusing on aspects like architectural improvements, positive refactoring, or readability enhancements.
 6. The target for review is `after_code`. `before_code` and `file_context` are for context only.
 7. Use the exact `file_name` provided in the input.
 8. If a code line or an entire file needs to be deleted, specify "Remove code line" or "Remove file" at the top of `suggested_code`, and then provide the code to be deleted as comments below it. For example, to delete a Python line, use `# 코드 라인 제거\n# print("this will be deleted")`. If multiple lines are to be deleted, comment out each line.
