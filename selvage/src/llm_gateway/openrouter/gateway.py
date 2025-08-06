@@ -7,9 +7,6 @@ import os
 from typing import Any
 
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
-from selvage.src.exceptions.context_limit_exceeded_error import (
-    ContextLimitExceededError,
-)
 from selvage.src.exceptions.invalid_model_provider_error import (
     InvalidModelProviderError,
 )
@@ -200,13 +197,6 @@ class OpenRouterGateway(BaseGateway):
         Raises:
             Exception: API 호출 중 오류가 발생한 경우
         """
-        # 요청 준비
-        try:
-            self.validate_review_request(review_prompt)
-        except ContextLimitExceededError as e:
-            console.error(f"컨텍스트 제한 초과: {str(e)}", exception=e)
-            return ReviewResult.get_error_result(e, self.get_model_name())
-
         messages = review_prompt.to_messages()
 
         try:
