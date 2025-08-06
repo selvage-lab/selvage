@@ -15,9 +15,6 @@ import openai
 from google import genai
 from openai import OpenAI
 
-from selvage.src.exceptions.context_limit_exceeded_error import (
-    ContextLimitExceededError,
-)
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -31,7 +28,6 @@ from selvage.src.utils.token.models import (
     ReviewResponse,
     StructuredReviewResponse,
 )
-from selvage.src.utils.token.token_utils import TokenUtils
 
 
 class BaseGateway(abc.ABC):
@@ -158,30 +154,6 @@ class BaseGateway(abc.ABC):
         )
         return EstimatedCost.get_zero_cost(model_name)
 
-    def validate_review_request(
-        self, review_prompt: ReviewPromptWithFileContent
-    ) -> None:
-        """리뷰 요청 전 유효성 검사를 수행합니다.
-          input_token_count와 context_limit 을 비교하여 컨텍스트 제한을 초과한 경우 예외를 발생시킵니다.
-        Args:
-            review_prompt: 리뷰 프롬프트 객체
-
-        Returns:
-            None
-
-        Raises:
-            ContextLimitExceededError: 컨텍스트 제한을 초과한 경우
-        """
-        input_token_count = TokenUtils.count_tokens(
-            review_prompt, self.get_model_name()
-        )
-        # input_token_count는 디버깅 정보이므로 사용자에게 표시하지 않음
-        context_limit = TokenUtils.get_model_context_limit(self.get_model_name())
-        if input_token_count > context_limit:
-            raise ContextLimitExceededError(
-                input_tokens=input_token_count,
-                context_limit=context_limit,
-            )
 
     def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
         """코드를 리뷰합니다.
@@ -196,11 +168,6 @@ class BaseGateway(abc.ABC):
             Exception: API 호출 중 오류가 발생한 경우
         """
         # 요청 준비
-        try:
-            self.validate_review_request(review_prompt)
-        except ContextLimitExceededError as e:
-            console.error(f"컨텍스트 제한 초과: {str(e)}", exception=e)
-            return ReviewResult.get_error_result(e, self.get_model_name())
         messages = review_prompt.to_messages()
 
         try:
