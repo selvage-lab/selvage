@@ -600,7 +600,7 @@ class TestPromptGeneratorTemplateProcessing:
         # Then
         assert "{{LANGUAGE}}" not in system_prompt
         assert "{{ENTIRELY_NEW_CONTENT_RULE}}" not in system_prompt
-        assert "10. **Newly Added or Completely Rewritten Files**" in system_prompt
+        assert "9. **Newly Added or Completely Rewritten Files**" in system_prompt
         assert "treat the `after_code` as the entire file content" in system_prompt
 
     def test_get_code_review_system_prompt_with_entirely_new_content_false(self):
@@ -616,7 +616,7 @@ class TestPromptGeneratorTemplateProcessing:
         # Then
         assert "{{LANGUAGE}}" not in system_prompt
         assert "{{ENTIRELY_NEW_CONTENT_RULE}}" not in system_prompt
-        assert "10. **Newly Added or Completely Rewritten Files**" not in system_prompt
+        assert "9. **Newly Added or Completely Rewritten Files**" not in system_prompt
         assert "treat the `after_code` as the entire file content" not in system_prompt
 
     def test_template_variable_replacement_completeness(self):
@@ -666,7 +666,7 @@ class TestPromptGeneratorTemplateProcessing:
 
         # 3. rule이 포함된 버전에서 rule 제거하면 rule이 없는 버전과 유사해야 함
         rule_text = (
-            "10. **Newly Added or Completely Rewritten Files**: "
+            "9. **Newly Added or Completely Rewritten Files**: "
             "When `file_context.context` contains a message starting with "
             '"NEWLY ADDED OR COMPLETELY REWRITTEN FILE", treat the '
             "`after_code` as the entire file content. In this case, "
@@ -860,7 +860,7 @@ class TestPromptConstants:
         # Then
         assert isinstance(rule, str)
         assert len(rule) > 0
-        assert "10. **Newly Added or Completely Rewritten Files**" in rule
+        assert "9. **Newly Added or Completely Rewritten Files**" in rule
         assert "treat the `after_code` as the entire file content" in rule
         assert "NEWLY ADDED OR COMPLETELY REWRITTEN FILE" in rule
 
