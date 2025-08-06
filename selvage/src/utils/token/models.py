@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from selvage.src.diff_parser.models.diff_result import DiffResult
 from selvage.src.utils.base_console import console
+from selvage.src.utils.line_number_calculator import calculate_line_number
 
 
 # Structured Outputs용 스키마 클래스 (기본값 없음)
@@ -19,7 +20,6 @@ class StructuredReviewIssue(BaseModel):
     """Structured Outputs용 코드 리뷰 이슈 모델"""
 
     type: str
-    line_number: int | None
     file: str | None
     description: str
     suggestion: str | None
@@ -65,7 +65,8 @@ class ReviewIssue(BaseModel):
 
     @staticmethod
     def from_structured_issue(
-        issue: StructuredReviewIssue, index: int = 0
+        issue: StructuredReviewIssue,
+        index: int = 0,
     ) -> "ReviewIssue":
         """구조화된 이슈 객체에서 ReviewIssue 인스턴스를 생성합니다.
 
@@ -83,9 +84,14 @@ class ReviewIssue(BaseModel):
             # severity 처리 (모든 게이트웨이에서 동일하게 처리)
             severity_value = issue.severity.value
 
+            # LineNumberCalculator를 사용하여 line_number 계산 (내부적으로 캐시 처리됨)
+            line_number = None
+            if issue.file and issue.target_code:
+                line_number = calculate_line_number(issue.file, issue.target_code)
+
             return ReviewIssue(
                 type=issue.type,
-                line_number=issue.line_number,
+                line_number=line_number,
                 file=issue.file,
                 description=issue.description,
                 suggestion=issue.suggestion,
@@ -120,7 +126,7 @@ class ReviewResponse(BaseModel):
         """
         issues = []
 
-        # 이슈 변환
+        # 이슈 변환 (calculate_line_number에서 내부적으로 캐시 처리됨)
         for i, issue in enumerate(structured_response.issues):
             try:
                 issues.append(ReviewIssue.from_structured_issue(issue, i))

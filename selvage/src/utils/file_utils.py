@@ -200,6 +200,35 @@ def load_file_content(filename: str, repo_path: str) -> str:
         raise Exception(error_msg) from e
 
 
+@lru_cache(maxsize=128)
+def read_file_lines_cached(file_path: str) -> list[str] | None:
+    """파일을 읽어서 라인별로 분할된 리스트를 반환합니다. (캐시 적용)
+
+    동일한 파일에 대한 반복 호출 시 캐시된 결과를 반환하여 성능을 최적화합니다.
+
+    Args:
+        file_path: 읽을 파일의 경로
+
+    Returns:
+        list[str] | None: 파일 내용을 라인별로 분할한 리스트, 실패 시 None
+    """
+    try:
+        file_path_obj = Path(file_path)
+        if not file_path_obj.exists():
+            console.log_info(f"파일을 찾을 수 없습니다: {file_path}")
+            return None
+
+        with open(file_path_obj, encoding="utf-8") as file:
+            return file.readlines()
+
+    except (FileNotFoundError, OSError, PermissionError) as e:
+        console.log_info(f"파일 읽기 실패 ({file_path}): {str(e)}")
+        return None
+    except Exception as e:
+        console.log_info(f"파일 처리 중 예외 발생 ({file_path}): {str(e)}")
+        return None
+
+
 @lru_cache(maxsize=1)
 def find_project_root() -> Path:
     """프로젝트 루트 디렉토리를 찾습니다.

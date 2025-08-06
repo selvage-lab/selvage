@@ -257,7 +257,6 @@ class TestOpenRouterGateway(unittest.TestCase):
         self.assertEqual(gateway.get_model_name(), "claude-sonnet-4-20250514")
         self.assertEqual(gateway.model, model_info)
 
-
     def test_init_without_api_key(self):
         """API 키 없이 OpenRouterGateway 초기화 시 예외 발생 테스트"""
         from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway

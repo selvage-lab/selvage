@@ -31,7 +31,9 @@ class TestKotlinImportChanges:
         """Multiline Kotlin import 구문 변경 시 올바른 추출 테스트."""
         # import 문이 있는 라인들을 변경 범위로 설정 (라인 5-6: kotlin imports)
         changed_ranges = [LineRange(5, 6)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 정확한 예상 결과 정의
         expected_context = (
@@ -53,7 +55,9 @@ class TestKotlinImportChanges:
         """단일 Kotlin import 라인 변경 시 추출 테스트."""
         # 단일 import 라인만 변경 (라인 5: "import kotlin.collections.*")
         changed_ranges = [LineRange(5, 5)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 예상 결과: 모든 import들이 추출되어야 함
         expected_context = (
@@ -75,7 +79,9 @@ class TestKotlinImportChanges:
         """Kotlin Import와 일반 코드가 섞여있을 때의 변경 테스트."""
         # import 문과 클래스 정의 부분 모두 포함
         changed_ranges = [LineRange(5, 14)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         all_context = "\n".join(contexts)
 
@@ -96,7 +102,9 @@ class TestKotlinImportChanges:
         """Kotlin Date import 라인만 변경될 때 정확한 추출 테스트 - 버그 재현용."""
         # Date import 라인만 변경 (라인 8: "import java.util.Date")
         changed_ranges = [LineRange(8, 8)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 올바른 예상 결과 정의 (Kotlin context extractor 실제 동작에 맞춤)
         expected_context = (
@@ -118,7 +126,9 @@ class TestKotlinImportChanges:
         """빈 줄과 Kotlin import 문이 섞인 범위에서 발생하는 버그 테스트 - 정확한 검증."""
         # 라인 7 (빈 줄)과 라인 8 (import java.util.Date 시작) 포함
         changed_ranges = [LineRange(7, 8)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 올바른 예상 결과 정의 (Kotlin context extractor 실제 동작에 맞춤)
         expected_context = (
@@ -140,7 +150,9 @@ class TestKotlinImportChanges:
         """Kotlin Import 문 경계에서의 정확한 추출 테스트."""
         # 라인 8-9: 연속된 두 import 문
         changed_ranges = [LineRange(8, 9)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         # 예상 결과 (Kotlin context extractor 실제 동작에 맞춤)
         expected_context = (
@@ -162,7 +174,9 @@ class TestKotlinImportChanges:
         """빈 줄과 Kotlin import가 섞인 복잡한 조합 테스트."""
         # 라인 6-8: toIntOrNull import, 빈줄, Date import
         changed_ranges = [LineRange(6, 8)]
-        contexts = extractor.extract_contexts(sample_import_file_content, changed_ranges)
+        contexts = extractor.extract_contexts(
+            sample_import_file_content, changed_ranges
+        )
 
         expected_context = (
             "---- Dependencies/Imports ----\n"

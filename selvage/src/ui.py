@@ -185,13 +185,13 @@ def get_file_info(file: Path) -> dict[str, Any]:
 def get_uploaded_file_info(uploaded_file: UploadedFile, content: str) -> dict[str, Any]:
     """업로드된 파일 정보를 가져옵니다."""
     upload_time = datetime.now()
-    size = len(content.encode('utf-8'))
+    size = len(content.encode("utf-8"))
     size_str = f"{size / 1024:.1f}KB" if size >= 1024 else f"{size}B"
 
     # 파일명에서 확장자 추출
     file_name = uploaded_file.name
     file_stem = Path(file_name).stem
-    file_suffix = Path(file_name).suffix.lstrip('.').lower()
+    file_suffix = Path(file_name).suffix.lstrip(".").lower()
 
     # 날짜 추출
     date_candidate = parse_date_from_filename(file_stem)
@@ -208,7 +208,7 @@ def get_uploaded_file_info(uploaded_file: UploadedFile, content: str) -> dict[st
     file_format = (
         file_suffix if file_suffix in ["json", "log", "html", "txt"] else "txt"
     )
-    
+
     # repo_path 추출 (JSON 파일인 경우)
     repo_path = None
     if file_format == "json":
@@ -477,7 +477,7 @@ def display_uploaded_file_content(file_info: dict[str, Any]) -> None:
     """업로드된 파일 내용을 표시합니다."""
     content = file_info.get("content", "")
     file_format = file_info.get("format", "txt")
-    
+
     if file_format == "json":
         json_data = parse_json_content(content)
         if not json_data:
@@ -612,9 +612,9 @@ def app() -> None:
 
     # 파일 선택 방식 탭
     tab1, tab2 = st.sidebar.tabs(["💾 저장된 파일", "📁 파일 업로드"])
-    
+
     selected_file_info = None
-    
+
     with tab1:
         # 기존 파일 목록 가져오기
         if view_type == "리뷰 결과":
@@ -645,15 +645,13 @@ def app() -> None:
                     "📁 프로젝트 선택:",
                     ["전체 프로젝트"] + list(repo_path_options.keys()),
                     index=0,
-                    key="stored_project_select"
+                    key="stored_project_select",
                 )
 
                 # 선택된 repo_path로 파일 필터링
                 if selected_display_path == "전체 프로젝트":
                     files = all_files
-                    st.markdown(
-                        f"**표시 중**: 전체 프로젝트 ({len(all_files)}개 파일)"
-                    )
+                    st.markdown(f"**표시 중**: 전체 프로젝트 ({len(all_files)}개 파일)")
                 else:
                     selected_repo_path = repo_path_options[selected_display_path]
                     files = filter_files_by_repo_path(all_files, selected_repo_path)
@@ -695,39 +693,39 @@ def app() -> None:
                 key="stored_file_select",
             )
             selected_file_info = file_options[selected_file_name]
-    
+
     with tab2:
         # 파일 업로드 기능
         uploaded_file = st.file_uploader(
             "파일을 선택하세요",
-            type=['json', 'log', 'txt', 'html'],
+            type=["json", "log", "txt", "html"],
             help="JSON, LOG, TXT, HTML 형식의 파일을 업로드할 수 있습니다.",
-            key="file_uploader"
+            key="file_uploader",
         )
-        
+
         if uploaded_file is not None:
             try:
                 # 파일 내용 읽기
-                content = uploaded_file.read().decode('utf-8')
-                
+                content = uploaded_file.read().decode("utf-8")
+
                 # 업로드된 파일 정보 생성
                 uploaded_file_info = get_uploaded_file_info(uploaded_file, content)
-                
+
                 st.success(
                     f"파일 '{uploaded_file.name}'이 성공적으로 업로드되었습니다."
                 )
                 st.markdown(f"**파일 크기**: {uploaded_file_info['size_str']}")
-                
+
                 # 업로드된 파일을 선택된 파일로 설정
                 selected_file_info = uploaded_file_info
-                
+
             except Exception as e:
                 st.error(f"파일 업로드 중 오류가 발생했습니다: {str(e)}")
 
     # 선택된 파일 정보와 내용 표시
     if selected_file_info:
         display_file_info(selected_file_info)
-        
+
         # 업로드된 파일인지 확인하여 적절한 함수 호출
         if selected_file_info.get("is_uploaded", False):
             display_uploaded_file_content(selected_file_info)

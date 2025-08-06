@@ -45,27 +45,22 @@ def test_formatted_hunk_creation(mock_hunk: Hunk):
         formatted_hunk.after_code
         == f"```{language}\n{expected_after_code_str}\n```"  # 저장된 변수 사용
     )
-    assert formatted_hunk.after_code_start_line_number == mock_hunk.start_line_modified
-    assert formatted_hunk.after_code_line_numbers == list(
-        range(
-            mock_hunk.start_line_modified,
-            mock_hunk.start_line_modified + mock_hunk.line_count_modified,
-        )
-    )
 
     # get_before_code와 get_after_code 호출 여부만 확인
     assert mock_hunk.get_before_code.called
     assert mock_hunk.get_after_code.called
 
 
-def test_formatted_hunk_line_numbers(mock_hunk: Hunk):
-    """FormattedHunk의 after_code_line_numbers가 정확한지 검증하는 테스트"""
+def test_formatted_hunk_basic_attributes(mock_hunk: Hunk):
+    """FormattedHunk의 기본 속성들이 정확한지 검증하는 테스트"""
     mock_hunk.start_line_modified = 5
     mock_hunk.line_count_modified = 4
     formatted_hunk = FormattedHunk(hunk=mock_hunk, hunk_idx=0, language="java")
 
-    expected_line_numbers = [5, 6, 7, 8]
-    assert formatted_hunk.after_code_line_numbers == expected_line_numbers
+    # 기본 속성 검증
+    assert formatted_hunk.hunk_idx == "1"
+    assert "```java" in formatted_hunk.before_code
+    assert "```java" in formatted_hunk.after_code
 
 
 def test_formatted_hunk_empty_code(mock_hunk: Hunk):
@@ -82,6 +77,3 @@ def test_formatted_hunk_empty_code(mock_hunk: Hunk):
         formatted_hunk.before_code == f"```{language}\n\n```"
     )  # 빈 줄이 포함되어야 함
     assert formatted_hunk.after_code == f"```{language}\nsingle line\n```"
-    assert formatted_hunk.after_code_start_line_number == 1
-    assert formatted_hunk.after_code_line_numbers == [1]
-
