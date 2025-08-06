@@ -265,4 +265,6 @@ class OpenRouterGateway(BaseGateway):
 
         except Exception as e:
             console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
-            return ReviewResult.get_error_result(e, self.get_model_name())
+            return ReviewResult.get_error_result(
+                e, self.get_model_name(), self.get_provider().value
+            )
