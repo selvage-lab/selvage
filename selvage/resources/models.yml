@@ -152,7 +152,7 @@ models:
       input: 0.14
       output: 2.49
       description: "$0.14/$2.49 per 1M tokens"
-    context_limit: 63000
+    context_limit: 131000
     openrouter_name: "moonshotai/kimi-k2"
 
   kimi-k2-free:
