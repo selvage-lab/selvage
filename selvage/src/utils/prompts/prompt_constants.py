@@ -8,7 +8,7 @@ def get_entirely_new_content_rule() -> str:
         str: 새로 추가된 파일 처리 규칙 문자열
     """
     return (
-        "10. **Newly Added or Completely Rewritten Files**: "
+        "9. **Newly Added or Completely Rewritten Files**: "
         "When `file_context.context` contains a message starting with "
         '"NEWLY ADDED OR COMPLETELY REWRITTEN FILE", treat the '
         "`after_code` as the entire file content. In this case, "
