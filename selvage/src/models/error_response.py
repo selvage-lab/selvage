@@ -2,6 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .error_pattern_parser import ErrorPatternParser
+
 
 class ErrorResponse(BaseModel):
     """LLM API 에러 응답을 구조화한 모델"""
@@ -36,20 +38,34 @@ class ErrorResponse(BaseModel):
             ErrorResponse: 구조화된 에러 응답
         """
         error_message = str(error)
-        error_type = "api_error"  # 기본값
-        error_code = None
-        http_status_code = None
         raw_error = {}
         
-        # Provider별 에러 파싱 로직
-        if provider == "openai":
-            error_type, error_code, http_status_code, raw_error = cls._parse_openai_error(error)
-        elif provider == "anthropic":
-            error_type, error_code, http_status_code, raw_error = cls._parse_anthropic_error(error)
-        elif provider == "google":
-            error_type, error_code, http_status_code, raw_error = cls._parse_google_error(error)
-        elif provider == "openrouter":
-            error_type, error_code, http_status_code, raw_error = cls._parse_openrouter_error(error)
+        # 패턴 파서를 사용하여 에러 분석
+        try:
+            parser = ErrorPatternParser()
+            parsing_result = parser.parse_error(provider, error)
+            
+            error_type = parsing_result.error_type
+            error_code = parsing_result.error_code
+            http_status_code = parsing_result.http_status_code
+            
+            # 토큰 정보가 있는 경우 raw_error에 추가
+            if parsing_result.token_info:
+                if parsing_result.token_info.actual_tokens is not None:
+                    raw_error["actual_tokens"] = parsing_result.token_info.actual_tokens
+                if parsing_result.token_info.max_tokens is not None:
+                    raw_error["max_tokens"] = parsing_result.token_info.max_tokens
+                    
+            # 매칭된 패턴 정보 추가
+            if parsing_result.matched_pattern:
+                raw_error["matched_pattern"] = parsing_result.matched_pattern
+                
+        except Exception as parse_error:
+            # 패턴 파서 오류 시 기본값 사용
+            error_type = "parse_error"
+            error_code = None
+            http_status_code = None
+            raw_error["parse_error"] = str(parse_error)
         
         return cls(
             error_type=error_type,
@@ -59,75 +75,6 @@ class ErrorResponse(BaseModel):
             provider=provider,
             raw_error=raw_error,
         )
-    
-    @staticmethod
-    def _parse_openai_error(error: Exception) -> tuple[str, str | None, int | None, dict[str, Any]]:
-        """OpenAI 에러 파싱"""
-        error_message = str(error)
-        raw_error = {}
-        
-        # context_length_exceeded 패턴 감지
-        if "context_length_exceeded" in error_message:
-            return "context_limit_exceeded", "context_length_exceeded", 400, raw_error
-        
-        # InstructorRetryException 처리
-        if "InstructorRetryException" in str(type(error)):
-            if hasattr(error, "last_completion") and hasattr(error.last_completion, "choices"):
-                # API 응답에서 더 자세한 정보 추출 가능
-                pass
-        
-        return "api_error", None, None, raw_error
-    
-    @staticmethod  
-    def _parse_anthropic_error(error: Exception) -> tuple[str, str | None, int | None, dict[str, Any]]:
-        """Anthropic 에러 파싱"""
-        error_message = str(error)
-        raw_error = {}
-        
-        # prompt is too long 패턴 감지
-        if "prompt is too long" in error_message:
-            return "context_limit_exceeded", "invalid_request_error", 400, raw_error
-        
-        if "invalid_request_error" in error_message:
-            return "api_error", "invalid_request_error", 400, raw_error
-        
-        return "api_error", None, None, raw_error
-    
-    @staticmethod
-    def _parse_google_error(error: Exception) -> tuple[str, str | None, int | None, dict[str, Any]]:
-        """Google 에러 파싱"""
-        error_message = str(error)
-        raw_error = {}
-        
-        # RESOURCE_EXHAUSTED 패턴 감지 
-        if "RESOURCE_EXHAUSTED" in error_message:
-            return "quota_exceeded", "RESOURCE_EXHAUSTED", 429, raw_error
-            
-        # 실제 context limit 패턴 (향후 확장)
-        if "Token limit exceeded" in error_message or "Request payload size exceeds" in error_message:
-            return "context_limit_exceeded", "400", 400, raw_error
-        
-        return "api_error", None, None, raw_error
-    
-    @staticmethod
-    def _parse_openrouter_error(error: Exception) -> tuple[str, str | None, int | None, dict[str, Any]]:
-        """OpenRouter 에러 파싱"""
-        error_message = str(error)
-        raw_error = {}
-        
-        # HTTP 400 Bad Request 패턴 감지 (context limit으로 추정)
-        if "400 Bad Request" in error_message:
-            return "context_limit_exceeded", "400", 400, raw_error
-            
-        # HTTP 404 Not Found
-        if "404 Not Found" in error_message:
-            return "model_not_found", "404", 404, raw_error
-            
-        # HTTP 413 Payload Too Large
-        if "413" in error_message or "payload too large" in error_message:
-            return "context_limit_exceeded", "413", 413, raw_error
-        
-        return "api_error", None, None, raw_error
     
     def is_context_limit_error(self) -> bool:
         """Context limit 에러인지 확인합니다.

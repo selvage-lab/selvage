@@ -126,8 +126,6 @@ class MockBaseGateway(BaseGateway):
         return self.model["provider"]
 
 
-
-
 @patch("selvage.src.llm_gateway.base_gateway.BaseGateway._create_client")
 def test_review_code_success_with_instructor(
     mock_create_client,
@@ -322,8 +320,11 @@ def test_review_code_error_handling(
     review_result: ReviewResult = gateway.review_code(review_prompt_fixture)
     response: ReviewResponse = review_result.review_response
 
+    # 새로운 에러 처리 시스템: success=False, error_response에 에러 정보 저장
+    assert review_result.success is False
+    assert review_result.error_response is not None
+    assert "API 호출 중 오류 발생" in review_result.error_response.error_message
     assert len(response.issues) == 0
-    assert "오류 발생" in response.summary
 
 
 @patch("selvage.src.llm_gateway.base_gateway.BaseGateway._create_client")
@@ -346,8 +347,13 @@ def test_review_code_parsing_error(
         review_result: ReviewResult = gateway.review_code(review_prompt_fixture)
         response: ReviewResponse = review_result.review_response
 
+        # 새로운 에러 처리 시스템: success=False, error_response에 파싱 에러 정보 저장
+        assert review_result.success is False
+        assert review_result.error_response is not None
+        assert (
+            review_result.error_response.error_type == "api_error"
+        )  # 파싱 에러는 api_error로 분류
         assert len(response.issues) == 0
-        assert "API 처리 중 오류" in response.summary
 
 
 if __name__ == "__main__":
