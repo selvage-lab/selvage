@@ -3,5 +3,7 @@ repos:
     rev: v0.12.7
     hooks:
       - id: ruff
-        args: [--fix, --ignore, ANN101]
+        args: [--fix]
+        files: ^selvage/src/
       - id: ruff-format
+        files: ^selvage/src/

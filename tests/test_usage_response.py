@@ -61,9 +61,9 @@ def test_openai_instructor_usage():
     )
     assert hasattr(raw_response, "usage"), "OpenAI 응답에 usage 필드가 없습니다."
     usage = raw_response.usage
-    assert isinstance(
-        usage, openai.types.CompletionUsage
-    ), f"OpenAI usage 타입이 다릅니다: {type(usage)}"
+    assert isinstance(usage, openai.types.CompletionUsage), (
+        f"OpenAI usage 타입이 다릅니다: {type(usage)}"
+    )
     for field in ["prompt_tokens", "completion_tokens", "total_tokens"]:
         assert hasattr(usage, field), f"OpenAI usage에 {field} 필드가 없습니다."
 
@@ -92,9 +92,9 @@ def test_claude_instructor_usage():
     )
     assert hasattr(raw_response, "usage"), "Claude 응답에 usage 필드가 없습니다."
     usage = raw_response.usage
-    assert isinstance(
-        usage, anthropic.types.Usage
-    ), f"Claude usage 타입이 다릅니다: {type(usage)}"
+    assert isinstance(usage, anthropic.types.Usage), (
+        f"Claude usage 타입이 다릅니다: {type(usage)}"
+    )
     for field in ["input_tokens", "output_tokens"]:
         assert hasattr(usage, field), f"Claude usage에 {field} 필드가 없습니다."
 
@@ -128,9 +128,9 @@ def test_gemini_usage():
         "candidates_token_count",
         "cached_content_token_count",
     ]:
-        assert hasattr(
-            usage, field
-        ), f"Gemini usage_metadata에 {field} 필드가 없습니다."
+        assert hasattr(usage, field), (
+            f"Gemini usage_metadata에 {field} 필드가 없습니다."
+        )
 
 
 if __name__ == "__main__":
