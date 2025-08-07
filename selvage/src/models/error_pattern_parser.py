@@ -6,6 +6,7 @@
 """
 
 import importlib.resources
+import json
 import re
 from typing import Any, NamedTuple
 
@@ -74,7 +75,12 @@ class ErrorPatternParser:
         if not provider_patterns:
             return ErrorParsingResult(error_type="api_error")
 
-        error_message = str(error)
+        # OpenRouter의 경우 실제 JSON 응답에서 메시지 추출
+        if provider == "openrouter":
+            error_message = self._extract_openrouter_message(error)
+        else:
+            error_message = str(error)
+        
         error_attrs = self._extract_error_attributes(error)
 
         # 패턴 우선순위에 따라 정렬
@@ -136,6 +142,26 @@ class ErrorPatternParser:
 
         return attrs
 
+    def _extract_openrouter_message(self, error: Exception) -> str:
+        """OpenRouter HTTPStatusError에서 실제 JSON 응답 메시지를 추출합니다."""
+        try:
+            # HTTPStatusError에서 response.text 추출 시도
+            if hasattr(error, 'response') and hasattr(error.response, 'text'):
+                response_text = error.response.text
+                response_data = json.loads(response_text)
+                
+                # OpenRouter 응답 구조: {"error": {"message": "실제 메시지"}}
+                if isinstance(response_data, dict) and "error" in response_data:
+                    error_info = response_data["error"]
+                    if isinstance(error_info, dict) and "message" in error_info:
+                        return error_info["message"]
+                        
+        except (AttributeError, json.JSONDecodeError, KeyError):
+            pass
+            
+        # 추출 실패 시 기본 에러 메시지 반환
+        return str(error)
+
     def _try_match_pattern(
         self,
         pattern_name: str,
@@ -184,6 +210,22 @@ class ErrorPatternParser:
         if pattern_name == "api_error":
             # api_error는 항상 매칭 (catch-all)
             pass
+        elif pattern_name == "context_limit_exceeded":
+            # context_limit_exceeded는 메시지 패턴이 반드시 매칭되어야 함
+            message_patterns = pattern_config.get("message_patterns", [])
+            if message_patterns:
+                message_matched = False
+                for pattern_info in message_patterns:
+                    if isinstance(pattern_info, dict) and "regex" in pattern_info:
+                        regex = pattern_info["regex"]
+                        if re.search(regex, error_message):
+                            message_matched = True
+                            break
+                if not message_matched:
+                    return None
+            else:
+                # 메시지 패턴이 정의되지 않은 context_limit_exceeded 패턴은 매칭 불가
+                return None
         elif max_score == 0:
             # 매칭 조건이 없는 패턴은 매칭 안 함
             return None

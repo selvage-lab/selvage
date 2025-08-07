@@ -219,7 +219,7 @@ def test_anthropic_context_limit_workflow():
 @pytest.mark.parametrize(
     "model_name,context_limit",
     [
-        ("qwen3-coder", 32768),
+        ("qwen3-coder", 1000000),
         ("kimi-k2", 200000),
     ],
 )
