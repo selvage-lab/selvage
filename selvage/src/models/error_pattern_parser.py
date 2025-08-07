@@ -50,10 +50,7 @@ class ErrorPatternParser:
             content = file_ref.read_text(encoding="utf-8")
             self._patterns = yaml.safe_load(content)
         except FileNotFoundError as e:
-            if self.patterns_file is None:
-                msg = "패키지 리소스에서 error_patterns.yml을 찾을 수 없습니다"
-            else:
-                msg = f"패턴 설정 파일을 찾을 수 없습니다: {self.patterns_file}"
+            msg = "패키지 리소스에서 error_patterns.yml을 찾을 수 없습니다"
             raise FileNotFoundError(msg) from e
         except yaml.YAMLError as e:
             raise ValueError(f"패턴 설정 파일 파싱 실패: {e}") from e

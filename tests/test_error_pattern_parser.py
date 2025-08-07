@@ -58,10 +58,12 @@ class TestErrorPatternParser:
             "'type': 'invalid_request_error', 'param': 'messages', 'code': 'context_length_exceeded'}}"
         )
         mock_error.__str__ = MagicMock(return_value=error_message)
+        
+        # OpenAI 에러는 status_code를 직접 가지지 않음 - 명시적으로 제거
+        del mock_error.status_code
 
         # HTTP response 속성 시뮬레이션
-        mock_response = MagicMock()
-        mock_response.status_code = 400
+        mock_response = MagicMock(status_code=400)
         mock_response.json.return_value = {
             "error": {
                 "message": "This model's maximum context length is 128000 tokens. However, your messages resulted in 273619 tokens.",
