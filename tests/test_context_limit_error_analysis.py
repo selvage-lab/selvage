@@ -157,7 +157,7 @@ class DataProcessor_{index}:
             "다음 코드를 자세히 리뷰해주세요. "
             "모든 함수와 클래스에 대해 상세한 분석을 제공해주세요."
         )
-        
+
         messages = [
             {
                 "role": "user",
@@ -198,7 +198,7 @@ class DataProcessor_{index}:
             http_status = error.status_code
         if hasattr(error, "type"):
             error_code = error.type
-        
+
         # Anthropic 에러 상세 정보 추출
         if hasattr(error, "body") and isinstance(error.body, dict):
             raw_data.update(error.body)
@@ -214,18 +214,19 @@ class DataProcessor_{index}:
         # 추가 에러 정보 수집
         if hasattr(error, "code"):
             error_code = error.code
-            
+
         # OpenAI/OpenRouter 에러에서 토큰 정보 추출
         if "tokens" in error_message.lower() and provider in ["openai", "openrouter"]:
             # 에러 메시지에서 실제 토큰 수와 최대 토큰 수 추출 시도
             import re
+
             token_match = re.search(
                 r"(\d+,?\d*)\s+tokens.*maximum.*?(\d+,?\d*)\s+tokens", error_message
             )
             if token_match:
                 raw_data["actual_tokens"] = token_match.group(1).replace(",", "")
                 raw_data["max_tokens"] = token_match.group(2).replace(",", "")
-                
+
         # Google 에러에서 quota 정보 추출
         if provider == "google" and "quota" in error_message.lower():
             raw_data["quota_exceeded"] = True
@@ -236,9 +237,9 @@ class DataProcessor_{index}:
                         "error" in google_error_data
                         and "details" in google_error_data["error"]
                     ):
-                        raw_data["google_quota_details"] = (
-                            google_error_data["error"]["details"]
-                        )
+                        raw_data["google_quota_details"] = google_error_data["error"][
+                            "details"
+                        ]
                 except Exception as json_error:
                     print(f"   Google JSON 파싱 실패: {json_error}")
 
@@ -284,11 +285,13 @@ tester = ContextLimitTester()
 @pytest.fixture
 def models_config():
     """models.yml에서 모델 설정을 로드하는 fixture"""
-    models_yml_path = Path(__file__).parent.parent / "selvage" / "resources" / "models.yml"
-    
+    models_yml_path = (
+        Path(__file__).parent.parent / "selvage" / "resources" / "models.yml"
+    )
+
     with open(models_yml_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
-    
+
     return config["models"]
 
 
@@ -377,7 +380,7 @@ def test_anthropic_context_limit_error():
 
         # 직접 클라이언트 생성
         client = gateway._create_client()
-        
+
         print(f"프롬프트 크기: 약 {len(str(messages)) // 4:,} tokens 추정")
 
         # Anthropic API 직접 호출 - system을 별도 파라미터로 전달
@@ -389,7 +392,7 @@ def test_anthropic_context_limit_error():
                 max_tokens=1000,
                 system=system_content,
                 messages=messages,
-                temperature=0.0
+                temperature=0.0,
             )
         else:
             # 일반 Anthropic 클라이언트인 경우
@@ -398,7 +401,7 @@ def test_anthropic_context_limit_error():
                 max_tokens=1000,
                 system=system_content,
                 messages=messages,
-                temperature=0.0
+                temperature=0.0,
             )
 
         print(
@@ -477,17 +480,17 @@ def test_openrouter_models_context_limit_error(models_config, model_name):
     # models.yml에서 실제 모델 정보 가져오기
     if model_name not in models_config:
         pytest.skip(f"Model {model_name} not found in models.yml")
-    
+
     model_config = models_config[model_name]
-    
+
     # ModelInfoDict 형식으로 변환 (provider 문자열을 enum으로 변환)
     provider_map = {
         "openai": ModelProvider.OPENAI,
         "anthropic": ModelProvider.ANTHROPIC,
         "google": ModelProvider.GOOGLE,
-        "openrouter": ModelProvider.OPENROUTER
+        "openrouter": ModelProvider.OPENROUTER,
     }
-    
+
     model_info: ModelInfoDict = {
         "full_name": model_config["full_name"],
         "aliases": model_config.get("aliases", []),
@@ -498,7 +501,7 @@ def test_openrouter_models_context_limit_error(models_config, model_name):
         "pricing": model_config["pricing"],
         "context_limit": model_config["context_limit"],  # 실제 context limit 사용
     }
-    
+
     # OpenRouter 모델만 openrouter_name 추가
     if "openrouter_name" in model_config:
         model_info["openrouter_name"] = model_config["openrouter_name"]
