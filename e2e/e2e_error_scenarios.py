@@ -31,9 +31,9 @@ def test_invalid_api_key_handling(error_test_container) -> None:
     exit_code, output = container.exec(
         "bash -c 'mkdir -p /tmp/error_test_repo && cd /tmp/error_test_repo && git init'"
     )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
+    assert (
+        exit_code == 0
+    ), f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
 
     exit_code, output = container.exec(
         "bash -c 'cd /tmp/error_test_repo && git config user.email test@example.com'"
@@ -86,9 +86,9 @@ def test_not_config_default_model_handling(error_test_container) -> None:
     exit_code, output = container.exec(
         "bash -c 'mkdir -p /tmp/empty_repo && cd /tmp/empty_repo && git init'"
     )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
+    assert (
+        exit_code == 0
+    ), f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
 
     exit_code, output = container.exec(
         "bash -c 'cd /tmp/empty_repo && git config user.email test@example.com'"
@@ -123,9 +123,9 @@ def test_empty_repository_handling(error_test_container) -> None:
     exit_code, output = container.exec(
         "bash -c 'mkdir -p /tmp/empty_repo && cd /tmp/empty_repo && git init'"
     )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
+    assert (
+        exit_code == 0
+    ), f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
 
     exit_code, output = container.exec(
         "bash -c 'cd /tmp/empty_repo && git config user.email test@example.com'"
@@ -172,9 +172,7 @@ def test_non_git_directory_handling(error_test_container) -> None:
     assert any(
         keyword in output_str
         for keyword in ["git diff 오류", "유효한 git 저장소", "변경 사항이 없거나"]
-    ), (
-        f"Error message should mention git repository requirement. Actual output: {output_str}"
-    )
+    ), f"Error message should mention git repository requirement. Actual output: {output_str}"
 
 
 @pytest.mark.parametrize(
@@ -197,6 +195,4 @@ def test_invalid_model_configuration(error_test_container, invalid_model: str) -
     assert any(
         keyword in output_str
         for keyword in ["지원되지 않는 모델", "invalid value", "사용 가능한 ai 모델"]
-    ), (
-        f"Should handle invalid model '{invalid_model}' with appropriate error message. Actual output: {output_str}"
-    )
+    ), f"Should handle invalid model '{invalid_model}' with appropriate error message. Actual output: {output_str}"

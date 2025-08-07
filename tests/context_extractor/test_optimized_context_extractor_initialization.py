@@ -45,6 +45,6 @@ class TestContextExtractorInitialization:
         for language, expected_block_types in test_cases:
             block_types = ContextExtractor.get_block_types_for_language(language)
             for expected_type in expected_block_types:
-                assert expected_type in block_types, (
-                    f"{language}에서 {expected_type}이 누락됨"
-                )
+                assert (
+                    expected_type in block_types
+                ), f"{language}에서 {expected_type}이 누락됨"

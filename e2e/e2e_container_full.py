@@ -44,9 +44,9 @@ def test_selvage_installation_in_container(testpypi_container) -> None:
     container_attrs = wrapped_container.attrs
 
     assert container_attrs["State"]["Running"], "Container should be running"
-    assert container_attrs["State"]["Status"] == "running", (
-        "Container status should be 'running'"
-    )
+    assert (
+        container_attrs["State"]["Status"] == "running"
+    ), "Container status should be 'running'"
 
     # Python 버전 확인
     exit_code, output = container.exec("python --version")
@@ -148,14 +148,14 @@ def test_selvage_config_in_container(testpypi_container) -> None:
 
     # INI 파일 형식에서 설정 값들 확인
     assert "[model]" in config_content_str, "Config should contain [model] section"
-    assert "default_model = gpt-4o" in config_content_str, (
-        "Config should contain model setting gpt-4o"
-    )
+    assert (
+        "default_model = gpt-4o" in config_content_str
+    ), "Config should contain model setting gpt-4o"
 
     assert "[debug]" in config_content_str, "Config should contain [debug] section"
-    assert "debug_mode = false" in config_content_str, (
-        "Config should contain debug_mode = false setting"
-    )
+    assert (
+        "debug_mode = false" in config_content_str
+    ), "Config should contain debug_mode = false setting"
 
     print(
         f"✅ Config file validation successful!\n"
@@ -234,9 +234,9 @@ echo "Git workflow completed successfully"
         print(
             f"Workflow script failed. Output: {output.decode('utf-8', errors='ignore')}"
         )
-    assert exit_code == 0, (
-        f"Git workflow should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
+    assert (
+        exit_code == 0
+    ), f"Git workflow should succeed. Output: {output.decode('utf-8', errors='ignore')}"
 
     # 리뷰 결과 JSON 파일 경로 가져오기
     exit_code, config_dir_output = container.exec(
@@ -257,9 +257,9 @@ echo "Git workflow completed successfully"
         print(
             f"Selvage review failed. Output: {output.decode('utf-8', errors='ignore')}"
         )
-    assert exit_code == 0, (
-        f"Selvage review should succeed with valid API key. Output: {output.decode('utf-8', errors='ignore')}"
-    )
+    assert (
+        exit_code == 0
+    ), f"Selvage review should succeed with valid API key. Output: {output.decode('utf-8', errors='ignore')}"
 
     # 리뷰 로그 디렉토리에서 JSON 파일 확인
     exit_code, json_files = container.exec(
@@ -276,17 +276,17 @@ echo "Git workflow completed successfully"
     latest_json_file = json_files_list.split("\n")[0]
     # print(f"DEBUG: Latest JSON file: {latest_json_file!r}") # 디버그 로그 제거
     exit_code, json_content = container.exec(f"bash -c 'cat \"{latest_json_file}\"'")
-    assert exit_code == 0, (
-        f"Should be able to read JSON file content. File: {latest_json_file}, Error: {json_content.decode('utf-8', errors='ignore')}"
-    )
+    assert (
+        exit_code == 0
+    ), f"Should be able to read JSON file content. File: {latest_json_file}, Error: {json_content.decode('utf-8', errors='ignore')}"
 
     json_content_str = json_content.decode("utf-8", errors="ignore")
 
     # JSONExtractor를 사용한 JSON 검증 - 전체 파일 내용을 바로 검증
     json_data = json.loads(json_content_str)
-    assert "review_response" in json_data, (
-        "JSON file should contain 'review_response' field"
-    )
+    assert (
+        "review_response" in json_data
+    ), "JSON file should contain 'review_response' field"
 
     # review_response가 None이 아닌 경우에만 ReviewResponse 모델로 검증
     validated_response = None
@@ -294,9 +294,9 @@ echo "Git workflow completed successfully"
         validated_response = JSONExtractor.validate_and_parse_json(
             json.dumps(json_data["review_response"]), ReviewResponse
         )
-        assert validated_response is not None, (
-            "review_response should be valid ReviewResponse model"
-        )
+        assert (
+            validated_response is not None
+        ), "review_response should be valid ReviewResponse model"
 
     # 리뷰 결과 정보 준비
     review_summary = "리뷰 내용을 확인할 수 없음"

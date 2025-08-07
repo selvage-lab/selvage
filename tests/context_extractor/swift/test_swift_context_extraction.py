@@ -56,9 +56,9 @@ class TestBasicFunctionExtraction:
 
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
-        assert contexts == expected_result, (
-            f"Expected exact match:\n{expected_result}\n\nGot:\n{contexts}"
-        )
+        assert (
+            contexts == expected_result
+        ), f"Expected exact match:\n{expected_result}\n\nGot:\n{contexts}"
 
     def test_extract_multiple_line_context(
         self,
@@ -100,9 +100,9 @@ class TestBasicFunctionExtraction:
 
         # 엄격한 비교
         assert len(contexts) == 2, f"Expected 2 contexts, got {len(contexts)}"
-        assert contexts == expected_result, (
-            f"Expected exact match:\n{expected_result}\n\nGot:\n{contexts}"
-        )
+        assert (
+            contexts == expected_result
+        ), f"Expected exact match:\n{expected_result}\n\nGot:\n{contexts}"
 
     def test_extract_multiple_line_context_complex(
         self,

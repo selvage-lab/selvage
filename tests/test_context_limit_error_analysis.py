@@ -289,7 +289,7 @@ def models_config():
         Path(__file__).parent.parent / "selvage" / "resources" / "models.yml"
     )
 
-    with open(models_yml_path, "r", encoding="utf-8") as f:
+    with open(models_yml_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     return config["models"]

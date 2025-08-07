@@ -148,9 +148,9 @@ def test_openai_context_limit_workflow():
             )
 
         # 검증: 실패해야 하고, context limit 에러로 식별되어야 함
-        assert review_result.success is False, (
-            "Context limit 초과 시 success=False여야 합니다"
-        )
+        assert (
+            review_result.success is False
+        ), "Context limit 초과 시 success=False여야 합니다"
         assert review_result.error_response is not None, "에러 응답이 있어야 합니다"
         assert review_result.error_response.error_type == "context_limit_exceeded", (
             f"에러 타입이 'context_limit_exceeded'이어야 합니다. "
@@ -201,9 +201,9 @@ def test_anthropic_context_limit_workflow():
             )
 
         # 검증: 실패해야 하고, context limit 에러로 식별되어야 함
-        assert review_result.success is False, (
-            "Context limit 초과 시 success=False여야 합니다"
-        )
+        assert (
+            review_result.success is False
+        ), "Context limit 초과 시 success=False여야 합니다"
         assert review_result.error_response is not None, "에러 응답이 있어야 합니다"
         assert review_result.error_response.error_type == "context_limit_exceeded", (
             f"에러 타입이 'context_limit_exceeded'이어야 합니다. "
@@ -258,9 +258,9 @@ def test_openrouter_context_limit_workflow(model_name, context_limit):
             )
 
         # 검증: 실패해야 하고, context limit 에러로 식별되어야 함
-        assert review_result.success is False, (
-            "Context limit 초과 시 success=False여야 합니다"
-        )
+        assert (
+            review_result.success is False
+        ), "Context limit 초과 시 success=False여야 합니다"
         assert review_result.error_response is not None, "에러 응답이 있어야 합니다"
         assert review_result.error_response.error_type == "context_limit_exceeded", (
             f"에러 타입이 'context_limit_exceeded'이어야 합니다. "
@@ -311,9 +311,9 @@ def test_google_context_limit_workflow():
             )
 
         # 검증: 실패해야 하고, 에러가 식별되어야 함
-        assert review_result.success is False, (
-            "Context limit 초과 시 success=False여야 합니다"
-        )
+        assert (
+            review_result.success is False
+        ), "Context limit 초과 시 success=False여야 합니다"
         assert review_result.error_response is not None, "에러 응답이 있어야 합니다"
 
         # Google Gemini는 context limit 초과 시 quota_exceeded로 분류됨

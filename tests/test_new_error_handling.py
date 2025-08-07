@@ -2,7 +2,6 @@
 새로운 구조화된 에러 처리 시스템 테스트
 """
 
-import pytest
 from selvage.src.models.error_response import ErrorResponse
 from selvage.src.models.review_result import ReviewResult
 
@@ -74,7 +73,7 @@ class TestNewErrorHandling:
 
     def test_review_result_success(self):
         """ReviewResult 성공 케이스 테스트"""
-        from selvage.src.utils.token.models import ReviewResponse, EstimatedCost
+        from selvage.src.utils.token.models import EstimatedCost, ReviewResponse
 
         review_response = ReviewResponse.get_empty_response()
         estimated_cost = EstimatedCost.get_zero_cost("gpt-4")

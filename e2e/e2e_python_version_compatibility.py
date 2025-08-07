@@ -46,9 +46,9 @@ def test_selvage_python_compatibility(python_version: str) -> None:
         current_version = "0.1.1"  # 이전 단계에서 확인한 버전
         install_command = f"pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple selvage=={current_version}"
         exit_code, output = container.exec(f"bash -c '{install_command}'")
-        assert exit_code == 0, (
-            f"Selvage installation should succeed. Output: {output.decode()}"
-        )
+        assert (
+            exit_code == 0
+        ), f"Selvage installation should succeed. Output: {output.decode()}"
 
         # 기본 명령어 테스트
         exit_code, output = container.exec(

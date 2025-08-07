@@ -58,9 +58,9 @@ def setup_project_with_git(container, project_path: str) -> None:
     git config user.name 'Test User'
     """
     exit_code, output = container.exec(f"bash -c '{git_setup_command.strip()}'")
-    assert exit_code == 0, (
-        f"Git setup should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
+    assert (
+        exit_code == 0
+    ), f"Git setup should succeed. Output: {output.decode('utf-8', errors='ignore')}"
 
 
 def configure_selvage_model(
@@ -297,9 +297,9 @@ def _read_and_parse_json(container, json_file_path: str) -> dict[str, Any]:
         ls_output_str = ls_output.decode("utf-8", errors="ignore").strip()
         print(f"File check result (exit: {exit_code_ls}): {ls_output_str}")
 
-    assert exit_code == 0, (
-        f"Should be able to read JSON file content. File: {json_file_path}"
-    )
+    assert (
+        exit_code == 0
+    ), f"Should be able to read JSON file content. File: {json_file_path}"
 
     json_content_str = json_content.decode("utf-8", errors="ignore")
     return json.loads(json_content_str)
@@ -317,18 +317,18 @@ def _validate_review_response(json_data: dict[str, Any]) -> ReviewResponse | Non
     Raises:
         AssertionError: review_response 필드가 없을 때
     """
-    assert "review_response" in json_data, (
-        "JSON file should contain 'review_response' field"
-    )
+    assert (
+        "review_response" in json_data
+    ), "JSON file should contain 'review_response' field"
 
     # review_response가 None이 아닌 경우에만 ReviewResponse 모델로 검증
     if json_data["review_response"] is not None:
         validated_response = JSONExtractor.validate_and_parse_json(
             json.dumps(json_data["review_response"]), ReviewResponse
         )
-        assert validated_response is not None, (
-            "review_response should be valid ReviewResponse model"
-        )
+        assert (
+            validated_response is not None
+        ), "review_response should be valid ReviewResponse model"
         return validated_response
 
     return None
