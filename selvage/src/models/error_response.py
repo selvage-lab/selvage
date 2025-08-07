@@ -69,7 +69,7 @@ class ErrorResponse(BaseModel):
         
         return cls(
             error_type=error_type,
-            error_code=error_code,
+            error_code=str(error_code) if error_code is not None else None,
             error_message=error_message,
             http_status_code=http_status_code,
             provider=provider,
