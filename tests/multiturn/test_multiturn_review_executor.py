@@ -137,15 +137,15 @@ class TestMultiturnReviewExecutor:
         self,
         multiturn_executor: MultiturnReviewExecutor,
         sample_review_prompt_with_file_content: ReviewPromptWithFileContent,
-        sample_error_response_with_tokens: ErrorResponse,
+        sample_token_info_with_tokens: TokenInfo,
         mock_llm_gateway: Mock,
     ) -> None:
         """토큰 정보가 있을 때 성공적인 multiturn 리뷰 실행 테스트"""
-        # Given: 토큰 정보가 있는 에러와 프롬프트
+        # Given: 토큰 정보가 있는 TokenInfo와 프롬프트
         # When: multiturn 리뷰 실행
         result = multiturn_executor.execute_multiturn_review(
             review_prompt=sample_review_prompt_with_file_content,
-            error_response=sample_error_response_with_tokens,
+            token_info=sample_token_info_with_tokens,
             llm_gateway=mock_llm_gateway,
         )
 
@@ -159,15 +159,15 @@ class TestMultiturnReviewExecutor:
         self,
         multiturn_executor: MultiturnReviewExecutor,
         sample_review_prompt_with_file_content: ReviewPromptWithFileContent,
-        sample_error_response_without_tokens: ErrorResponse,
+        sample_token_info_without_tokens: TokenInfo,
         mock_llm_gateway: Mock,
     ) -> None:
         """토큰 정보가 없을 때 기본 분할로 실행 테스트"""
-        # Given: 토큰 정보가 없는 에러
+        # Given: 토큰 정보가 없는 TokenInfo
         # When: multiturn 리뷰 실행
         result = multiturn_executor.execute_multiturn_review(
             review_prompt=sample_review_prompt_with_file_content,
-            error_response=sample_error_response_without_tokens,
+            token_info=sample_token_info_without_tokens,
             llm_gateway=mock_llm_gateway,
         )
 
@@ -175,35 +175,36 @@ class TestMultiturnReviewExecutor:
         assert result.success is True
         assert mock_llm_gateway.review_code.call_count >= 1
 
-    def test_extract_token_info_with_tokens(
-        self,
-        multiturn_executor: MultiturnReviewExecutor,
-        sample_error_response_with_tokens: ErrorResponse,
+    def test_token_info_from_error_response_with_tokens(
+        self, sample_error_response_with_tokens: ErrorResponse
     ) -> None:
         """ErrorResponse에서 토큰 정보 추출 성공 테스트"""
-        # When: 토큰 정보 추출
-        actual_tokens, max_tokens = multiturn_executor._extract_token_info(
-            sample_error_response_with_tokens
-        )
+        # When: TokenInfo.from_error_response로 토큰 정보 추출
+        token_info = TokenInfo.from_error_response(sample_error_response_with_tokens)
 
         # Then: 올바른 토큰 정보 반환
-        assert actual_tokens == 150000
-        assert max_tokens == 100000
+        assert token_info.actual_tokens == 150000
+        assert token_info.max_tokens == 100000
 
-    def test_extract_token_info_without_tokens(
-        self,
-        multiturn_executor: MultiturnReviewExecutor,
-        sample_error_response_without_tokens: ErrorResponse,
+    def test_token_info_from_error_response_without_tokens(
+        self, sample_error_response_without_tokens: ErrorResponse
     ) -> None:
         """토큰 정보가 없을 때 None 반환 테스트"""
-        # When: 토큰 정보 추출
-        actual_tokens, max_tokens = multiturn_executor._extract_token_info(
-            sample_error_response_without_tokens
-        )
+        # When: TokenInfo.from_error_response로 토큰 정보 추출
+        token_info = TokenInfo.from_error_response(sample_error_response_without_tokens)
 
         # Then: None 반환
-        assert actual_tokens is None
-        assert max_tokens is None
+        assert token_info.actual_tokens is None
+        assert token_info.max_tokens is None
+
+    def test_token_info_empty(self) -> None:
+        """TokenInfo.empty() 테스트"""
+        # When: 빈 토큰 정보 생성
+        token_info = TokenInfo.empty()
+
+        # Then: 모든 값이 None
+        assert token_info.actual_tokens is None
+        assert token_info.max_tokens is None
 
     def test_parallel_api_calls(
         self,
@@ -245,7 +246,7 @@ class TestMultiturnReviewExecutor:
     def test_empty_user_prompts(
         self,
         multiturn_executor: MultiturnReviewExecutor,
-        sample_error_response_with_tokens: ErrorResponse,
+        sample_token_info_with_tokens: TokenInfo,
         mock_llm_gateway: Mock,
     ) -> None:
         """빈 user_prompts 처리 테스트"""
@@ -260,7 +261,7 @@ class TestMultiturnReviewExecutor:
         # When: multiturn 리뷰 실행
         result = multiturn_executor.execute_multiturn_review(
             review_prompt=empty_review_prompt,
-            error_response=sample_error_response_with_tokens,
+            token_info=sample_token_info_with_tokens,
             llm_gateway=mock_llm_gateway,
         )
 

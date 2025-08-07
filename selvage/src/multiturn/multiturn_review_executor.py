@@ -97,7 +97,9 @@ class MultiturnReviewExecutor:
         return review_results
 
     def _merge_review_results(self, review_results: list[ReviewResult]) -> ReviewResult:
-        """여러 ReviewResult를 하나로 합성 (간단한 버전)"""
+        """CR-18 구현을 위한 **최소 기능 구현(MVP)**이며,
+        CR-19에서 ReviewSynthesizer로 완전히 교체될 예정
+        """
         if not review_results:
             return ReviewResult.get_empty_result("unknown")
 
