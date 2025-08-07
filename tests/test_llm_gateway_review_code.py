@@ -12,9 +12,6 @@ from google import genai
 
 from selvage.src.context_extractor.line_range import LineRange
 from selvage.src.diff_parser.models import Hunk
-from selvage.src.exceptions.context_limit_exceeded_error import (
-    ContextLimitExceededError,
-)
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.model_config import ModelInfoDict, ModelParamsDict, ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -129,58 +126,9 @@ class MockBaseGateway(BaseGateway):
         return self.model["provider"]
 
 
-@patch("selvage.src.llm_gateway.base_gateway.TokenUtils.count_tokens")
-@patch("selvage.src.llm_gateway.base_gateway.TokenUtils.get_model_context_limit")
-def test_validate_review_request_context_limit_exceeded(
-    mock_get_model_context_limit,
-    mock_count_tokens,
-    model_info_fixture: ModelInfoDict,
-):
-    """컨텍스트 제한 초과 시 예외 발생을 테스트합니다."""
-    mock_count_tokens.return_value = 10000
-    mock_get_model_context_limit.return_value = 5000
-    test_model_info: Any = model_info_fixture.copy()
-    gateway = MockBaseGateway(test_model_info)
-    system_prompt = SystemPrompt(role="system", content="코드를 분석하고 리뷰하세요.")
-    # 큰 Hunk 객체 생성
-    large_content = "매우 큰 코드 블록입니다..." * 500
-    hunk = Hunk(
-        header="@@ -1,1 +1,1 @@",
-        content=f" {large_content}\n-{large_content}\n+{large_content}",
-        before_code=large_content,
-        after_code=large_content,
-        start_line_original=1,
-        line_count_original=1,
-        start_line_modified=1,
-        line_count_modified=1,
-        change_line=LineRange(start_line=1, end_line=1),
-    )
-
-    # FileContextInfo 생성
-    file_context = FileContextInfo.create_full_context(large_content)
-
-    user_prompt = UserPromptWithFileContent(
-        file_name="example.py",
-        file_context=file_context,
-        hunks=[hunk],
-        language="python",
-    )
-    review_prompt = ReviewPromptWithFileContent(
-        system_prompt=system_prompt, user_prompts=[user_prompt]
-    )
-
-    with pytest.raises(ContextLimitExceededError) as excinfo:
-        gateway.validate_review_request(review_prompt)
-
-    assert "10000" in str(excinfo.value)
-    assert "5000" in str(excinfo.value)
-
-
-@patch("selvage.src.llm_gateway.base_gateway.BaseGateway.validate_review_request")
 @patch("selvage.src.llm_gateway.base_gateway.BaseGateway._create_client")
 def test_review_code_success_with_instructor(
     mock_create_client,
-    mock_validate_request,
     model_info_fixture: ModelInfoDict,
     review_prompt_fixture: ReviewPromptWithFileContent,
 ):
@@ -235,7 +183,6 @@ def test_review_code_success_with_instructor(
         gateway = MockBaseGateway(model_info_fixture)
         review_result: ReviewResult = gateway.review_code(review_prompt_fixture)
         response: ReviewResponse = review_result.review_response
-        mock_validate_request.assert_called_once_with(review_prompt_fixture)
         mock_create_client.assert_called_once()
         mock_create_params.assert_called_once()
 
@@ -256,11 +203,9 @@ def test_review_code_success_with_instructor(
             assert actual_issue.suggested_code == expected_issue_data["suggested_code"]
 
 
-@patch("selvage.src.llm_gateway.base_gateway.BaseGateway.validate_review_request")
 @patch("selvage.src.llm_gateway.base_gateway.BaseGateway._create_client")
 def test_review_code_success_with_genai(
     mock_create_client,
-    mock_validate_request,
     google_model_info_fixture: ModelInfoDict,
     review_prompt_fixture: ReviewPromptWithFileContent,
 ):
@@ -321,7 +266,6 @@ def test_review_code_success_with_genai(
         review_result: ReviewResult = gateway.review_code(review_prompt_fixture)
         response: ReviewResponse = review_result.review_response
 
-        mock_validate_request.assert_called_once_with(review_prompt_fixture)
         mock_create_client.assert_called_once()
         mock_create_params.assert_called_once()
 
@@ -342,11 +286,9 @@ def test_review_code_success_with_genai(
             assert actual_issue.suggested_code == expected_issue_data["suggested_code"]
 
 
-@patch("selvage.src.llm_gateway.base_gateway.BaseGateway.validate_review_request")
 @patch("selvage.src.llm_gateway.base_gateway.BaseGateway._create_client")
 def test_review_code_empty_response(
     mock_create_client,
-    mock_validate_request,
     model_info_fixture: ModelInfoDict,
     review_prompt_fixture: ReviewPromptWithFileContent,
 ):
@@ -365,11 +307,9 @@ def test_review_code_empty_response(
     assert "비어있" in response.summary
 
 
-@patch("selvage.src.llm_gateway.base_gateway.BaseGateway.validate_review_request")
 @patch("selvage.src.llm_gateway.base_gateway.BaseGateway._create_client")
 def test_review_code_error_handling(
     mock_create_client,
-    mock_validate_request,
     model_info_fixture: ModelInfoDict,
     review_prompt_fixture: ReviewPromptWithFileContent,
 ):
@@ -380,15 +320,16 @@ def test_review_code_error_handling(
     review_result: ReviewResult = gateway.review_code(review_prompt_fixture)
     response: ReviewResponse = review_result.review_response
 
+    # 새로운 에러 처리 시스템: success=False, error_response에 에러 정보 저장
+    assert review_result.success is False
+    assert review_result.error_response is not None
+    assert "API 호출 중 오류 발생" in review_result.error_response.error_message
     assert len(response.issues) == 0
-    assert "오류 발생" in response.summary
 
 
-@patch("selvage.src.llm_gateway.base_gateway.BaseGateway.validate_review_request")
 @patch("selvage.src.llm_gateway.base_gateway.BaseGateway._create_client")
 def test_review_code_parsing_error(
     mock_create_client,
-    mock_validate_request,
     google_model_info_fixture: ModelInfoDict,
     review_prompt_fixture: ReviewPromptWithFileContent,
 ):
@@ -406,8 +347,13 @@ def test_review_code_parsing_error(
         review_result: ReviewResult = gateway.review_code(review_prompt_fixture)
         response: ReviewResponse = review_result.review_response
 
+        # 새로운 에러 처리 시스템: success=False, error_response에 파싱 에러 정보 저장
+        assert review_result.success is False
+        assert review_result.error_response is not None
+        assert (
+            review_result.error_response.error_type == "api_error"
+        )  # 파싱 에러는 api_error로 분류
         assert len(response.issues) == 0
-        assert "API 처리 중 오류" in response.summary
 
 
 if __name__ == "__main__":

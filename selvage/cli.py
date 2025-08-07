@@ -383,6 +383,28 @@ def _perform_new_review(
         review_prompt = PromptGenerator().create_code_review_prompt(review_request)
         review_result = llm_gateway.review_code(review_prompt)
 
+        # 에러 처리
+        if not review_result.success:
+            error_response = review_result.error_response
+            if error_response:
+                if error_response.is_context_limit_error():
+                    console.error(
+                        f"컨텍스트 제한 초과: {error_response.error_message}\n"
+                        f"향후 Multiturn 리뷰 기능으로 자동 재시도될 예정입니다."
+                    )
+                    # TODO: Multiturn 리뷰 구현 후 여기서 재시도
+                    raise Exception(
+                        f"Context limit exceeded: {error_response.error_message}"
+                    )
+                else:
+                    console.error(
+                        f"API 오류 ({error_response.provider}): {error_response.error_message}"
+                    )
+                    raise Exception(f"API error: {error_response.error_message}")
+            else:
+                console.error("알 수 없는 오류가 발생했습니다.")
+                raise Exception("Unknown error occurred")
+
         return review_result.review_response, review_result.estimated_cost
 
 
