@@ -72,9 +72,10 @@ class TestPromptSplitter:
         # 각 청크가 비어있지 않아야 함
         assert len(result[0]) > 0
         assert len(result[1]) > 0
-        # overlap=1이므로 두 번째 청크 첫 번째 파일은
-        # 첫 번째 청크 마지막 파일과 같아야 함
-        assert result[1][0].file_name == result[0][-1].file_name
+        # overlap 비적용: 두 청크 간 파일이 겹치지 않아야 함
+        left_files = [p.file_name for p in result[0]]
+        right_files = [p.file_name for p in result[1]]
+        assert set(left_files).isdisjoint(set(right_files))
 
     def test_split_without_token_info(
         self,
@@ -100,8 +101,10 @@ class TestPromptSplitter:
         # 각 청크가 비어있지 않아야 함
         assert len(result[0]) > 0
         assert len(result[1]) > 0
-        # overlap=1이므로 겹치는 파일이 있어야 함
-        assert result[1][0].file_name == result[0][-1].file_name
+        # overlap 비적용: 두 청크 간 파일이 겹치지 않아야 함
+        left_files = [p.file_name for p in result[0]]
+        right_files = [p.file_name for p in result[1]]
+        assert set(left_files).isdisjoint(set(right_files))
 
     def test_overlap_zero(
         self,
@@ -149,10 +152,11 @@ class TestPromptSplitter:
             overlap=overlap,
         )
 
-        # Then: 1개 파일이 겹쳐야 함
+        # Then: overlap 비적용, 2개 청크로 분할되며 겹치는 파일 없음
         assert len(result) == 2
-        if len(result[0]) >= 1:
-            assert result[1][0].file_name == result[0][-1].file_name
+        left_files = [p.file_name for p in result[0]]
+        right_files = [p.file_name for p in result[1]]
+        assert set(left_files).isdisjoint(set(right_files))
 
     def test_overlap_two(
         self,
@@ -173,12 +177,12 @@ class TestPromptSplitter:
             overlap=overlap,
         )
 
-        # Then: 2개 파일이 겹쳐야 함
+        # Then: overlap 비적용, 최소 2개 청크이며 겹치는 파일 없음
         assert len(result) >= 2
-        if len(result[0]) >= 2:
-            # 마지막 2개 파일이 다음 청크 처음 2개와 같아야 함
-            assert result[1][0].file_name == result[0][-2].file_name
-            assert result[1][1].file_name == result[0][-1].file_name
+        all_files = []
+        for chunk in result:
+            all_files.extend([p.file_name for p in chunk])
+        assert len(all_files) == len(set(all_files))
 
     def test_calculate_split_ratio(self, prompt_splitter: PromptSplitter) -> None:
         """분할 비율 계산 테스트"""

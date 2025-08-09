@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from selvage.src.llm_gateway.gateway_factory import GatewayFactory
+from selvage.src.model_config import get_model_context_limit
 from selvage.src.multiturn.models import TokenInfo
 from selvage.src.multiturn.multiturn_review_executor import MultiturnReviewExecutor
 from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
@@ -50,6 +51,40 @@ class TestMultiturnReviewExecutorIntegration:
         return prompt
 
     @pytest.fixture
+    def token_info_300k(self, test_data_dir: Path, model_name: str) -> TokenInfo:
+        """large_300k 프롬프트에 대한 TokenInfo.
+
+        info_file의 tokens 값을 actual_tokens로 사용하고, models.yml의 context_limit을 max_tokens로 사용합니다.
+        """
+        info_file = test_data_dir / "large_300k_prompt.json"
+        if not info_file.exists():
+            pytest.skip(f"테스트 데이터 파일이 없습니다: {info_file}")
+
+        with open(info_file, encoding="utf-8") as f:
+            info = json.load(f)
+
+        actual_tokens = int(info.get("tokens", info.get("total_tokens", 0)))
+        max_tokens = int(get_model_context_limit(model_name))
+        return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
+
+    @pytest.fixture
+    def token_info_1m(self, test_data_dir: Path, model_name: str) -> TokenInfo:
+        """synthetic_1m 프롬프트에 대한 TokenInfo.
+
+        info_file의 total_tokens(또는 tokens) 값을 actual_tokens로 사용하고, models.yml의 context_limit을 max_tokens로 사용합니다.
+        """
+        info_file = test_data_dir / "synthetic_1m_prompt.json"
+        if not info_file.exists():
+            pytest.skip(f"테스트 데이터 파일이 없습니다: {info_file}")
+
+        with open(info_file, encoding="utf-8") as f:
+            info = json.load(f)
+
+        actual_tokens = int(info.get("total_tokens", info.get("tokens", 0)))
+        max_tokens = int(get_model_context_limit(model_name))
+        return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
+
+    @pytest.fixture
     def synthetic_1m_prompt(self, test_data_dir: Path) -> ReviewPromptWithFileContent:
         """1M+ 토큰 합성 테스트 프롬프트 로드"""
         prompt_file = test_data_dir / "synthetic_1m_prompt.pkl"
@@ -72,9 +107,16 @@ class TestMultiturnReviewExecutorIntegration:
 
         return prompt
 
-    @pytest.fixture(params=["claude-sonnet-4-20250514"])
+    @pytest.fixture(
+        params=[
+            # "claude-sonnet-4",
+            # "gemini-2.5-pro",
+            "qwen3-coder",
+            # "kimi-k2",
+        ]
+    )
     def model_name(self, request) -> str:
-        """테스트할 모델 - 일단 claude-sonnet-4만"""
+        """테스트할 모델들 (Claude, Gemini, Qwen)"""
         return request.param
 
     @pytest.fixture
@@ -95,15 +137,13 @@ class TestMultiturnReviewExecutorIntegration:
         large_300k_prompt: ReviewPromptWithFileContent,
         model_name: str,
         llm_gateway,
+        token_info_300k: TokenInfo,
         results_dir: Path,
     ):
         """미리 준비된 300K 토큰 데이터로 MultiturnReviewExecutor 테스트"""
 
-        # 토큰 정보 생성 (Context limit exceeded 시뮬레이션)
-        token_info = TokenInfo(
-            actual_tokens=350_000,  # 350K tokens
-            max_tokens=200_000,  # 200K tokens limit
-        )
+        # 토큰 정보는 픽스처에서 주입됨
+        token_info = token_info_300k
 
         print(f"\\n=== {model_name} 300K 토큰 테스트 (미리 로드됨) ===")
         print(f"User prompts count: {len(large_300k_prompt.user_prompts)}")
@@ -198,15 +238,13 @@ class TestMultiturnReviewExecutorIntegration:
         synthetic_1m_prompt: ReviewPromptWithFileContent,
         model_name: str,
         llm_gateway,
+        token_info_1m: TokenInfo,
         results_dir: Path,
     ):
         """미리 준비된 1M 토큰 합성 데이터로 MultiturnReviewExecutor 테스트"""
 
-        # 토큰 정보 생성
-        token_info = TokenInfo(
-            actual_tokens=1_100_000,  # 1.1M tokens
-            max_tokens=200000,  # 1M tokens limit
-        )
+        # 토큰 정보는 픽스처에서 주입됨
+        token_info = token_info_1m
 
         print(f"\\n=== {model_name} 1M 토큰 합성 테스트 (미리 로드됨) ===")
         print(f"User prompts count: {len(synthetic_1m_prompt.user_prompts)}")

@@ -56,7 +56,8 @@ class OpenRouterGateway(BaseGateway):
 
         Raises:
             InvalidModelProviderError: OpenRouter에서 지원하지 않는 모델인 경우
-            UnsupportedModelError: OpenRouter에서 지원하지 않는 기능을 사용하는 모델인 경우
+            UnsupportedModelError:
+                OpenRouter에서 지원하지 않는 기능을 사용하는 모델인 경우
         """
         # OpenRouter를 통해 사용 가능한 모델인지 확인
         # 1. provider가 openrouter이거나 anthropic(Claude 모델)인 경우 허용
@@ -128,6 +129,7 @@ class OpenRouterGateway(BaseGateway):
             "usage": {
                 "include": True,
             },
+            "max_tokens": 10000,
         }
 
         # 모델별 파라미터 설정

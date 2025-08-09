@@ -207,3 +207,6 @@ data/
 llm_eval/results/
 .pypirc
 .aider*
+/multiturn_results
+/tests/results/multiturn_integration
+/tests/results/multiturn_integration_v2

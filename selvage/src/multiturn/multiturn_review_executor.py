@@ -76,9 +76,8 @@ class MultiturnReviewExecutor:
                 chunk_prompt, llm_gateway.get_model_name()
             )
             print(f"     → 실제 토큰 수: {chunk_tokens:,}")
-            print(
-                f"     → 200K 한계 {'🔴 초과' if chunk_tokens > 200_000 else '🟢 안전'}"
-            )
+            status_text = "초과" if chunk_tokens > token_info.max_tokens else "안전"
+            print(f"     -> {token_info.max_tokens} 한계 {status_text}")
         print()
 
         # 2. 순차 API 호출 (OpenRouter 동시성 문제 해결)
