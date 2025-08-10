@@ -4,13 +4,13 @@ import concurrent.futures
 
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.models.review_result import ReviewResult
+from selvage.src.utils.base_console import console
 from selvage.src.utils.prompts.models import (
     ReviewPromptWithFileContent,
     SystemPrompt,
     UserPromptWithFileContent,
 )
 from selvage.src.utils.token.models import EstimatedCost, ReviewResponse
-from selvage.src.utils.token.token_utils import TokenUtils
 
 from .models import TokenInfo
 from .prompt_splitter import PromptSplitter
@@ -43,13 +43,7 @@ class MultiturnReviewExecutor:
         if not review_prompt.user_prompts:
             return ReviewResult.get_empty_result(llm_gateway.get_model_name())
 
-        # 디버깅: 입력 파라미터 로깅
-        print("🔍 [DEBUG] MultiturnReviewExecutor 입력:")
-        print(f"   - Model: {llm_gateway.get_model_name()}")
-        print(f"   - Provider: {llm_gateway.get_provider().value}")
-        print(f"   - actual_tokens: {token_info.actual_tokens:,}")
-        print(f"   - max_tokens: {token_info.max_tokens:,}")
-        print(f"   - user_prompts count: {len(review_prompt.user_prompts)}")
+        console.info("Large context 처리 시작")
 
         # 1. user_prompts 분할 (system_prompt는 공통 사용)
         user_prompt_chunks = self.prompt_splitter.split_user_prompts(
@@ -59,24 +53,6 @@ class MultiturnReviewExecutor:
             overlap=0,
         )
 
-        # 디버깅: 분할 결과 로깅
-        print("🔍 [DEBUG] 분할 결과:")
-        print(f"   - 총 청크 개수: {len(user_prompt_chunks)}")
-        for i, chunk in enumerate(user_prompt_chunks):
-            print(f"   - 청크 {i}: {len(chunk)} user_prompts")
-
-            # 각 청크의 실제 토큰 수 계산
-            chunk_prompt = ReviewPromptWithFileContent(
-                system_prompt=review_prompt.system_prompt, user_prompts=chunk
-            )
-            chunk_tokens = TokenUtils.count_tokens(
-                chunk_prompt, llm_gateway.get_model_name()
-            )
-            print(f"     → 실제 토큰 수: {chunk_tokens:,}")
-            status_text = "초과" if chunk_tokens > token_info.max_tokens else "안전"
-            print(f"     -> {token_info.max_tokens} 한계 {status_text}")
-        print()
-
         # 2. 순차 API 호출 (OpenRouter 동시성 문제 해결)
         review_results = self._execute_sequential_reviews(
             user_prompt_chunks, review_prompt.system_prompt, llm_gateway
@@ -85,6 +61,7 @@ class MultiturnReviewExecutor:
         # 3. 결과 간단 병합
         merged_result = self._merge_review_results(review_results)
 
+        console.info("Large context 처리 완료")
         return merged_result
 
     def _execute_parallel_reviews(
@@ -132,11 +109,7 @@ class MultiturnReviewExecutor:
         """분할된 청크들에 대한 순차 API 호출 (OpenRouter 동시성 문제 해결)"""
         review_results: list[ReviewResult] = []
 
-        print(f"🔄 [DEBUG] 순차 처리 시작: {len(user_prompt_chunks)}개 청크")
-
-        for i, chunk in enumerate(user_prompt_chunks):
-            print(f"🔄 [DEBUG] 청크 {i + 1}/{len(user_prompt_chunks)} 순차 처리 시작")
-
+        for chunk in user_prompt_chunks:
             chunk_review_prompt = ReviewPromptWithFileContent(
                 system_prompt=system_prompt, user_prompts=chunk
             )
@@ -144,7 +117,6 @@ class MultiturnReviewExecutor:
             try:
                 result = llm_gateway.review_code(chunk_review_prompt)
                 review_results.append(result)
-                print(f"✅ [DEBUG] 청크 {i + 1} 처리 성공")
             except Exception as e:
                 # 개별 청크 실패 시 에러 결과 생성
                 error_result = ReviewResult.get_error_result(
@@ -153,9 +125,7 @@ class MultiturnReviewExecutor:
                     provider=llm_gateway.get_provider().value,
                 )
                 review_results.append(error_result)
-                print(f"❌ [DEBUG] 청크 {i + 1} 처리 실패: {str(e)}")
 
-        print(f"🔄 [DEBUG] 순차 처리 완료: {len(review_results)}개 결과")
         return review_results
 
     def _merge_review_results(self, review_results: list[ReviewResult]) -> ReviewResult:
