@@ -11,42 +11,70 @@ from selvage.src.utils.prompts.models import (
     SystemPrompt,
     UserPromptWithFileContent,
 )
-from selvage.src.utils.token.token_utils import TokenUtils
+
+
+def _scan_eval_directory(eval_log_dir: Path) -> list[Path]:
+    """eval 디렉토리에서 review_log 파일들을 스캔"""
+    eval_files = []
+
+    if not eval_log_dir.exists():
+        print(f"⚠️ Eval 디렉토리가 존재하지 않습니다: {eval_log_dir}")
+        return eval_files
+
+    # {project_name}/{session_id}/qwen3_coder/ 구조를 순회
+    for project_dir in eval_log_dir.iterdir():
+        if not project_dir.is_dir():
+            continue
+
+        print(f"프로젝트 디렉토리 스캔 중: {project_dir.name}")
+
+        for session_dir in project_dir.iterdir():
+            if not session_dir.is_dir():
+                continue
+
+            # qwen3-coder 디렉토리 확인
+            qwen_dir = session_dir / "qwen3-coder"
+            if not qwen_dir.exists():
+                continue
+
+            # qwen3-coder 디렉토리 안의 모든 JSON 파일 수집
+            for json_file in qwen_dir.glob("*.json"):
+                eval_files.append(json_file)
+                print(
+                    f"  발견: {project_dir.name}/{session_dir.name}/qwen3-coder/{json_file.name}"
+                )
+
+    return eval_files
 
 
 def prepare_test_data():
     """통합 테스트용 데이터를 미리 준비하여 저장"""
 
-    # review_log 디렉토리
-    review_log_dir = Path.home() / "Library/Application Support/selvage/review_log"
+    # eval 디렉토리
+    eval_log_dir = Path(
+        "/Users/demin_coder/Library/selvage-eval/review_logs/eval_20250810_161628_8f6fb0bd"
+    )
 
     # 결과 저장 디렉토리
     test_data_dir = Path(__file__).parent.parent / "tests/data/multiturn_integration"
     test_data_dir.mkdir(parents=True, exist_ok=True)
 
     print("=== 통합 테스트 데이터 준비 시작 ===")
-    print(f"Review log 디렉토리: {review_log_dir}")
+    print(f"Eval log 디렉토리: {eval_log_dir}")
     print(f"테스트 데이터 저장 디렉토리: {test_data_dir}")
 
     # 파일별 토큰 수 저장
     file_tokens = []
-    found_1m_file = None
-    found_300k_file = None
 
-    # 모든 review_log 파일들 스캔
-    all_files = list(review_log_dir.glob("*.json"))
-    print(f"Review log 파일 {len(all_files)}개 발견")
+    # eval 디렉토리에서 파일들 스캔
+    all_files = _scan_eval_directory(eval_log_dir)
+    print(f"Eval 디렉토리에서 {len(all_files)}개 파일 발견")
 
     for file_path in all_files:
         try:
-            review_prompt = _load_review_prompt_from_file(file_path)
+            review_prompt, token_count = _load_review_prompt_from_file(file_path)
             if not review_prompt:
                 continue
-
-            # 토큰 수 계산
-            token_count = TokenUtils.count_tokens(
-                review_prompt, "claude-sonnet-4-20250514"
-            )
 
             print(f"File: {file_path.name}, Tokens: {token_count:,}")
 
@@ -59,80 +87,51 @@ def prepare_test_data():
                 }
                 file_tokens.append(file_info)
 
-                # 1M+ 토큰 파일 발견시 우선 저장
-                if token_count >= 1_000_000 and not found_1m_file:
-                    found_1m_file = file_info
-                    print(
-                        f"✅ 1M+ 토큰 파일 발견: {file_path.name} ({token_count:,} 토큰)"
-                    )
-
-                # 300K+ 토큰 파일 발견시 저장 (더 큰 파일로 업데이트 가능)
-                if token_count >= 300_000:
-                    if not found_300k_file or token_count > found_300k_file["tokens"]:
-                        found_300k_file = file_info
-                        print(
-                            f"✅ 300K+ 토큰 파일: {file_path.name} ({token_count:,} 토큰)"
-                        )
-
-                # 1M+ 파일을 찾았고 300K+ 파일도 있으면 조기 종료
-                if found_1m_file and found_300k_file:
-                    print(
-                        f"✅ 목표 달성! 1M+: {found_1m_file['tokens']:,}, 300K+: {found_300k_file['tokens']:,}"
-                    )
-                    break
-
         except Exception as e:
             print(f"Error processing {file_path.name}: {e}")
             continue
 
-    # 300K+ 테스트 파일 저장
-    if found_300k_file:
-        _save_test_prompt(
-            found_300k_file["review_prompt"],
-            test_data_dir / "large_300k_prompt.pkl",
-            found_300k_file,
-        )
-    else:
-        print("❌ 300K+ 토큰 파일을 찾지 못했습니다.")
+    # 300K+ 토큰 파일들을 토큰 수 기준으로 내림차순 정렬
+    large_files = [f for f in file_tokens if f["tokens"] >= 300_000]
+    large_files.sort(key=lambda x: x["tokens"], reverse=True)
 
-    # 1M+ 테스트 파일 저장 (자연 파일 우선)
-    if found_1m_file:
-        # 자연적으로 1M+ 토큰 파일이 존재
+    print(f"\\n=== 300K+ 토큰 파일 {len(large_files)}개 발견 ===")
+
+    # 상위 5개 파일 저장
+    top_count = min(5, len(large_files))
+    for i in range(top_count):
+        file_info = large_files[i]
+        filename = f"top{i + 1}_300k_prompt.pkl"
         _save_test_prompt(
-            found_1m_file["review_prompt"],
-            test_data_dir / "natural_1m_prompt.pkl",
-            found_1m_file,
+            file_info["review_prompt"],
+            test_data_dir / filename,
+            file_info,
         )
-        print("✅ 자연적 1M+ 토큰 파일 사용 - 합성 불필요!")
-    elif len(file_tokens) >= 3:
-        # 자연 파일이 없으면 합성 생성
-        print("⚙️ 1M+ 토큰 자연 파일 없음 - 합성 파일 생성")
-        # 토큰 수 기준으로 내림차순 정렬
-        file_tokens.sort(key=lambda x: x["tokens"], reverse=True)
-        synthetic_prompt, synthetic_info = _create_synthetic_1m_prompt(file_tokens)
-        if synthetic_prompt:
-            _save_test_prompt(
-                synthetic_prompt,
-                test_data_dir / "synthetic_1m_prompt.pkl",
-                synthetic_info,
-            )
+        print(f"저장: {filename} - {file_info['tokens']:,} tokens")
+
+    if len(large_files) == 0:
+        print("❌ 300K+ 토큰 파일을 찾지 못했습니다.")
     else:
-        print("❌ 1M+ 토큰 파일 생성 불가 - 충분한 파일이 없습니다.")
+        print(f"✅ 상위 {top_count}개 파일 저장 완료")
 
     print("=== 데이터 준비 완료 ===")
 
 
 def _load_review_prompt_from_file(
     file_path: Path,
-) -> ReviewPromptWithFileContent | None:
-    """파일에서 ReviewPromptWithFileContent 로드"""
+) -> tuple[ReviewPromptWithFileContent | None, int]:
+    """파일에서 ReviewPromptWithFileContent 로드 및 토큰 정보 반환"""
     try:
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
 
+        # 토큰 정보 추출
+        token_info = data.get("token_info", {})
+        input_tokens = token_info.get("input_tokens", 0)
+
         prompt_data = data.get("prompt", [])
         if not prompt_data:
-            return None
+            return None, input_tokens
 
         # SystemPrompt와 UserPrompt 분리
         system_prompt = None
@@ -151,15 +150,16 @@ def _load_review_prompt_from_file(
                     continue
 
         if not system_prompt or not user_prompts:
-            return None
+            return None, input_tokens
 
-        return ReviewPromptWithFileContent(
+        review_prompt = ReviewPromptWithFileContent(
             system_prompt=system_prompt, user_prompts=user_prompts
         )
+        return review_prompt, input_tokens
 
     except Exception as e:
         print(f"Error loading {file_path.name}: {e}")
-        return None
+        return None, 0
 
 
 def _create_user_prompt_from_json(
@@ -226,53 +226,6 @@ def _detect_language(file_name: str) -> str:
         ".yml": "yaml",
     }
     return language_map.get(ext, "text")
-
-
-def _create_synthetic_1m_prompt(
-    file_tokens: list[dict],
-) -> tuple[ReviewPromptWithFileContent | None, dict]:
-    """여러 파일을 합쳐서 1M+ 토큰 합성 프롬프트 생성"""
-    print("\n=== 1M 토큰 합성 프롬프트 생성 시작 ===")
-
-    # 첫 번째 파일의 system_prompt 사용
-    base_file = file_tokens[0]
-    combined_system_prompt = base_file["review_prompt"].system_prompt
-    combined_user_prompts = []
-    total_tokens = 0
-    used_files = []
-
-    # 1M 토큰을 초과할 때까지 파일들을 합치기
-    for file_info in file_tokens:
-        if total_tokens > 1_000_000:
-            break
-
-        # 현재 파일의 user_prompts 추가
-        review_prompt = file_info["review_prompt"]
-        combined_user_prompts.extend(review_prompt.user_prompts)
-        total_tokens += file_info["tokens"]
-        used_files.append(Path(file_info["path"]).name)
-
-        print(
-            f"Added: {Path(file_info['path']).name} ({file_info['tokens']:,} tokens) - Total: {total_tokens:,}"
-        )
-
-    print(
-        f"최종 합성 프롬프트: {len(used_files)}개 파일, {total_tokens:,} 토큰, {len(combined_user_prompts)}개 user_prompts"
-    )
-
-    # 합성된 ReviewPromptWithFileContent 생성
-    synthetic_prompt = ReviewPromptWithFileContent(
-        system_prompt=combined_system_prompt, user_prompts=combined_user_prompts
-    )
-
-    synthetic_info = {
-        "total_tokens": total_tokens,
-        "used_files": used_files,
-        "user_prompts_count": len(combined_user_prompts),
-        "type": "synthetic_1m",
-    }
-
-    return synthetic_prompt, synthetic_info
 
 
 def _save_test_prompt(prompt: ReviewPromptWithFileContent, filepath: Path, info: dict):
