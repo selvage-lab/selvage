@@ -10,10 +10,10 @@ from selvage.src.utils.prompts.models import (
     SystemPrompt,
     UserPromptWithFileContent,
 )
-from selvage.src.utils.token.models import EstimatedCost, ReviewResponse
 
 from .models import TokenInfo
 from .prompt_splitter import PromptSplitter
+from .review_synthesizer import ReviewSynthesizer
 
 
 class MultiturnReviewExecutor:
@@ -58,8 +58,9 @@ class MultiturnReviewExecutor:
             user_prompt_chunks, review_prompt.system_prompt, llm_gateway
         )
 
-        # 3. 결과 간단 병합
-        merged_result = self._merge_review_results(review_results)
+        # 3. 결과 지능적 합성 (ReviewSynthesizer 사용)
+        synthesizer = ReviewSynthesizer(llm_gateway.get_model_name())
+        merged_result = synthesizer.synthesize_review_results(review_results)
 
         console.info("Large context 처리 완료")
         return merged_result
@@ -128,59 +129,5 @@ class MultiturnReviewExecutor:
 
         return review_results
 
-    def _merge_review_results(self, review_results: list[ReviewResult]) -> ReviewResult:
-        """CR-18 구현을 위한 **최소 기능 구현(MVP)**이며,
-        CR-19에서 ReviewSynthesizer로 완전히 교체될 예정
-        """
-        if not review_results:
-            return ReviewResult.get_empty_result("unknown")
-
-        # 실패한 결과가 있는지 확인
-        failed_results = [r for r in review_results if not r.success]
-        if failed_results:
-            # 첫 번째 실패 결과를 반환
-            return failed_results[0]
-
-        # 성공한 결과들을 합성
-        successful_results = [r for r in review_results if r.success]
-        if not successful_results:
-            return ReviewResult.get_empty_result("unknown")
-
-        # 내용 합성
-        merged_summary_parts = []
-        all_recommendations = []
-        all_issues = []
-        total_cost = EstimatedCost.get_zero_cost("merged")
-
-        for result in successful_results:
-            if result.review_response.summary:
-                merged_summary_parts.append(result.review_response.summary)
-            all_recommendations.extend(result.review_response.recommendations)
-            all_issues.extend(result.review_response.issues)
-
-            # 비용 합산
-            total_cost = EstimatedCost(
-                model=result.estimated_cost.model,
-                input_cost_usd=total_cost.input_cost_usd
-                + result.estimated_cost.input_cost_usd,
-                output_cost_usd=total_cost.output_cost_usd
-                + result.estimated_cost.output_cost_usd,
-                total_cost_usd=total_cost.total_cost_usd
-                + result.estimated_cost.total_cost_usd,
-                input_tokens=total_cost.input_tokens
-                + result.estimated_cost.input_tokens,
-                output_tokens=total_cost.output_tokens
-                + result.estimated_cost.output_tokens,
-            )
-
-        # 합성된 ReviewResponse 생성
-        merged_review_response = ReviewResponse(
-            summary="\n\n".join(merged_summary_parts) if merged_summary_parts else "",
-            recommendations=all_recommendations,
-            issues=all_issues,
-            score=successful_results[0].review_response.score,
-        )
-
-        return ReviewResult.get_success_result(
-            review_response=merged_review_response, estimated_cost=total_cost
-        )
+    # NOTE: _merge_review_results는 ReviewSynthesizer로 완전히 교체됨 (CR-19)
+    # 기존 단순 합성 방식 대신 LLM 기반 지능적 합성 사용
