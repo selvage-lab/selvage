@@ -33,7 +33,7 @@ def _scan_eval_directory(eval_log_dir: Path) -> list[Path]:
                 continue
 
             # qwen3-coder 디렉토리 확인
-            qwen_dir = session_dir / "qwen3-coder"
+            qwen_dir = session_dir / "gemini-2.5-flash"
             if not qwen_dir.exists():
                 continue
 
@@ -41,7 +41,7 @@ def _scan_eval_directory(eval_log_dir: Path) -> list[Path]:
             for json_file in qwen_dir.glob("*.json"):
                 eval_files.append(json_file)
                 print(
-                    f"  발견: {project_dir.name}/{session_dir.name}/qwen3-coder/{json_file.name}"
+                    f"  발견: {project_dir.name}/{session_dir.name}/gemini-2.5-flash/{json_file.name}"
                 )
 
     return eval_files
@@ -52,7 +52,7 @@ def prepare_test_data():
 
     # eval 디렉토리
     eval_log_dir = Path(
-        "/Users/demin_coder/Library/selvage-eval/review_logs/eval_20250810_161628_8f6fb0bd"
+        "/Users/demin_coder/Library/selvage-eval/review_logs/eval_20250810_200724_929f9329"
     )
 
     # 결과 저장 디렉토리

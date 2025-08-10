@@ -31,8 +31,8 @@ class TestMultiturnReviewExecutorIntegration:
     @pytest.fixture
     def large_300k_prompt(self, test_data_dir: Path) -> ReviewPromptWithFileContent:
         """300K+ 토큰 테스트 프롬프트 로드"""
-        prompt_file = test_data_dir / "large_300k_prompt.pkl"
-        info_file = test_data_dir / "large_300k_prompt.json"
+        prompt_file = test_data_dir / "top1_300k_prompt.pkl"
+        info_file = test_data_dir / "top1_300k_prompt.json"
 
         if not prompt_file.exists():
             pytest.skip(f"테스트 데이터 파일이 없습니다: {prompt_file}")
@@ -56,14 +56,15 @@ class TestMultiturnReviewExecutorIntegration:
 
         info_file의 tokens 값을 actual_tokens로 사용하고, models.yml의 context_limit을 max_tokens로 사용합니다.
         """
-        info_file = test_data_dir / "large_300k_prompt.json"
+        info_file = test_data_dir / "top1_300k_prompt.json"
         if not info_file.exists():
             pytest.skip(f"테스트 데이터 파일이 없습니다: {info_file}")
 
         with open(info_file, encoding="utf-8") as f:
             info = json.load(f)
 
-        actual_tokens = int(info.get("tokens", info.get("total_tokens", 0)))
+        base_tokens = int(info.get("tokens", info.get("total_tokens", 0)))
+        actual_tokens = int(base_tokens * 1.2)  # 20% 가중치 추가
         max_tokens = int(get_model_context_limit(model_name))
         return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
 
@@ -80,7 +81,8 @@ class TestMultiturnReviewExecutorIntegration:
         with open(info_file, encoding="utf-8") as f:
             info = json.load(f)
 
-        actual_tokens = int(info.get("total_tokens", info.get("tokens", 0)))
+        base_tokens = int(info.get("total_tokens", info.get("tokens", 0)))
+        actual_tokens = int(base_tokens * 1.2)  # 20% 가중치 추가
         max_tokens = int(get_model_context_limit(model_name))
         return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
 
@@ -109,10 +111,10 @@ class TestMultiturnReviewExecutorIntegration:
 
     @pytest.fixture(
         params=[
-            # "claude-sonnet-4",
-            # "gemini-2.5-pro",
+            "claude-sonnet-4",
+            "gemini-2.5-pro",
             "qwen3-coder",
-            # "kimi-k2",
+            "kimi-k2",
         ]
     )
     def model_name(self, request) -> str:
@@ -341,8 +343,8 @@ class TestMultiturnReviewExecutorIntegration:
 
         # 필요한 파일들
         required_files = [
-            "large_300k_prompt.pkl",
-            "large_300k_prompt.json",
+            "top1_300k_prompt.pkl",
+            "top1_300k_prompt.json",
             "synthetic_1m_prompt.pkl",
             "synthetic_1m_prompt.json",
         ]
