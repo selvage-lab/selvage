@@ -48,6 +48,7 @@ dev = [
     "build==1.0.3",
     "twine==6.1.0",
     "wheel==0.43.0",
+    "pre-commit==4.2.0",
 ]
 e2e = [
     "testcontainers>=4.0.0",
@@ -69,12 +70,14 @@ include = ["selvage*"]
 
 [tool.ruff]
 line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "B", "C4", "ARG", "N", "UP", "ANN", "S", "A", "ANN401"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002"]
-"llm_eval/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002"]
-"e2e/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002"]
+"tests/**/*.py" = ["S101", "E501", "E712", "B007", "S108", "S607", "ANN101"]
+"llm_eval/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002", "ANN101", "E501", "E712", "B007", "S108", "S607"]
+"e2e/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002", "ANN101", "E501", "E712", "B007", "S108", "S607"]
 
 [project.urls]
 Homepage = "https://github.com/anomie7/selvage/"

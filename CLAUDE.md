@@ -33,19 +33,6 @@ pytest tests/ -n auto
 pytest tests/ --timeout=300
 ```
 
-### Code Quality
-
-```bash
-# Format code with ruff
-ruff format .
-
-# Run linting with ruff
-ruff check .
-
-# Fix auto-fixable linting issues
-ruff check . --fix
-```
-
 ### Package Management
 
 ```bash

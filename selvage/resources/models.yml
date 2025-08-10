@@ -101,7 +101,7 @@ models:
       temperature: 1 # thinking 모드에서 더 다양한 사고 과정 생성을 위해 설정
       thinking:
         type: "enabled"
-        budget_tokens: 20000
+        budget_tokens: 10000
     thinking_mode: true
     pricing:
       input: 3.0
@@ -167,7 +167,7 @@ models:
       input: 0.0
       output: 0.0
       description: "Free tier"
-    context_limit: 63000
+    context_limit: 32768
     openrouter_name: "moonshotai/kimi-k2:free"
 
   deepseek-v3-0324:
@@ -242,7 +242,7 @@ models:
       input: 1.0
       output: 5.0
       description: "$1.00/$5.00 per 1M tokens"
-    context_limit: 1000000
+    context_limit: 262144
     openrouter_name: "qwen/qwen3-coder"
 
   qwen3-coder-free:
@@ -257,5 +257,5 @@ models:
       input: 0.0
       output: 0.0
       description: "Free tier"
-    context_limit: 1000000
+    context_limit: 32000
     openrouter_name: "qwen/qwen3-coder:free"

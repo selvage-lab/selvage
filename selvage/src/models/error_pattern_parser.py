@@ -80,7 +80,7 @@ class ErrorPatternParser:
             error_message = self._extract_openrouter_message(error)
         else:
             error_message = str(error)
-        
+
         error_attrs = self._extract_error_attributes(error)
 
         # 패턴 우선순위에 따라 정렬
@@ -146,19 +146,19 @@ class ErrorPatternParser:
         """OpenRouter HTTPStatusError에서 실제 JSON 응답 메시지를 추출합니다."""
         try:
             # HTTPStatusError에서 response.text 추출 시도
-            if hasattr(error, 'response') and hasattr(error.response, 'text'):
+            if hasattr(error, "response") and hasattr(error.response, "text"):
                 response_text = error.response.text
                 response_data = json.loads(response_text)
-                
+
                 # OpenRouter 응답 구조: {"error": {"message": "실제 메시지"}}
                 if isinstance(response_data, dict) and "error" in response_data:
                     error_info = response_data["error"]
                     if isinstance(error_info, dict) and "message" in error_info:
                         return error_info["message"]
-                        
+
         except (AttributeError, json.JSONDecodeError, KeyError):
             pass
-            
+
         # 추출 실패 시 기본 에러 메시지 반환
         return str(error)
 

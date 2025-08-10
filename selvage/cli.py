@@ -40,9 +40,7 @@ from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import find_project_root
 from selvage.src.utils.git_utils import GitDiffMode, GitDiffUtility
 from selvage.src.utils.logging import LOG_LEVEL_INFO, setup_logging
-from selvage.src.utils.prompts.models.review_prompt_with_file_content import (
-    ReviewPromptWithFileContent,
-)
+from selvage.src.utils.logging.review_log_manager import ReviewLogManager
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.review_display import review_display
 from selvage.src.utils.token.models import EstimatedCost, ReviewRequest, ReviewResponse
@@ -298,77 +296,8 @@ def config_list() -> None:
     console.info(f"기본 언어: {get_default_language()}")
 
 
-def generate_log_id(model: str) -> str:
-    """리뷰 로그 ID를 생성합니다."""
-    model_info = get_model_info(model)
-    provider = model_info.get("provider", "unknown")
-    model_name = model_info.get("full_name", model)
-    now = datetime.now()
-    return f"{provider.value}-{model_name}-{int(now.timestamp())}"
 
 
-def save_review_log(
-    prompt: ReviewPromptWithFileContent | None,
-    review_request: ReviewRequest,
-    review_response: ReviewResponse | None,
-    status: ReviewStatus,
-    error: Exception | None = None,
-    log_id: str | None = None,
-    review_log_dir: str | None = None,
-) -> str:
-    """리뷰 로그를 저장하고 파일 경로를 반환합니다."""
-    model_info = get_model_info(review_request.model)
-
-    # 리뷰 로그 디렉토리 결정: 파라미터로 제공되면 사용, 없으면 기본값 사용
-    if review_log_dir:
-        log_dir = Path(os.path.expanduser(review_log_dir))
-        # 절대 경로로 변환
-        if not log_dir.is_absolute():
-            log_dir = log_dir.resolve()
-    else:
-        log_dir = get_default_review_log_dir()
-
-    log_dir.mkdir(parents=True, exist_ok=True)
-
-    # 로그 저장을 위한 프롬프트 데이터 변환
-    prompt_data = None
-    if prompt:
-        prompt_data = prompt.to_messages()
-
-    # 로그 저장을 위한 응답 데이터 JSON 직렬화
-    response_data = None
-    if review_response:
-        response_data = review_response.model_dump(mode="json")
-
-    now = datetime.now()
-    if log_id is None:
-        log_id = generate_log_id(review_request.model)
-
-    provider = model_info.get("provider", "unknown")
-    model_name = model_info.get("full_name", review_request.model)
-
-    # JSON 로그 데이터 구성
-    review_log = {
-        "id": log_id,
-        "model": {"provider": provider.value, "name": model_name},
-        "created_at": now.isoformat(),
-        "prompt": prompt_data,
-        "review_request": review_request.model_dump(mode="json"),
-        "review_response": response_data,
-        "status": status.value,
-        "error": str(error) if error else None,
-        "prompt_version": "v3",
-        "repo_path": review_request.repo_path,
-    }
-
-    # 파일 저장
-    formatted = now.strftime("%Y%m%d_%H%M%S")
-    file_name = f"{formatted}_{model_name}_review_log"
-    file_path = log_dir / f"{file_name}.json"
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(review_log, f, ensure_ascii=False, indent=2)
-
-    return str(file_path)
 
 
 def _perform_new_review(
@@ -479,16 +408,17 @@ def review_code(
     try:
         if skip_cache:
             # 캐시 사용하지 않고 직접 리뷰 수행
-            log_id = generate_log_id(model)
+            log_id = ReviewLogManager.generate_log_id(model)
             review_response, estimated_cost = _perform_new_review(review_request)
             review_prompt = PromptGenerator().create_code_review_prompt(review_request)
-            log_path = save_review_log(
+            log_path = ReviewLogManager.save(
                 review_prompt,
                 review_request,
                 review_response,
                 ReviewStatus.SUCCESS,
                 log_id=log_id,
                 review_log_dir=review_log_dir,
+                estimated_cost=estimated_cost,
             )
         else:
             # 캐시 확인 시도
@@ -499,15 +429,16 @@ def review_code(
                 review_response, cached_cost = cached_result
 
                 # 캐시된 결과에 대해서도 log_id 생성
-                log_id = generate_log_id(model)
+                log_id = ReviewLogManager.generate_log_id(model)
 
-                log_path = save_review_log(
+                log_path = ReviewLogManager.save(
                     None,
                     review_request,
                     review_response,
                     ReviewStatus.SUCCESS,
                     log_id=log_id,
                     review_log_dir=review_log_dir,
+                    estimated_cost=estimated_cost,
                 )
 
                 # 캐시 적중 비용 표시 (0 USD)
@@ -516,7 +447,7 @@ def review_code(
                 console.success("캐시된 리뷰 결과를 사용했습니다! (API 비용 절약)")
             else:
                 # 캐시 미스: 새로운 리뷰 수행 후 캐시에 저장
-                log_id = generate_log_id(model)
+                log_id = ReviewLogManager.generate_log_id(model)
                 review_response, estimated_cost = _perform_new_review(review_request)
 
                 # 리뷰 결과를 캐시에 저장
@@ -527,13 +458,14 @@ def review_code(
                 review_prompt = PromptGenerator().create_code_review_prompt(
                     review_request
                 )
-                log_path = save_review_log(
+                log_path = ReviewLogManager.save(
                     review_prompt,
                     review_request,
                     review_response,
                     ReviewStatus.SUCCESS,
                     log_id=log_id,
                     review_log_dir=review_log_dir,
+                    estimated_cost=estimated_cost,
                 )
 
         # 리뷰 완료 정보 통합 출력
@@ -549,8 +481,8 @@ def review_code(
         return
     except Exception as e:
         console.error(f"코드 리뷰 중 오류가 발생했습니다: {str(e)}", exception=e)
-        error_log_id = generate_log_id(model)
-        log_path = save_review_log(
+        error_log_id = ReviewLogManager.generate_log_id(model)
+        log_path = ReviewLogManager.save(
             review_prompt,
             review_request,
             None,
