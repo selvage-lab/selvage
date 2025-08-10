@@ -1,9 +1,6 @@
 """멀티턴 리뷰 실행기"""
 
 import concurrent.futures
-import json
-from datetime import datetime
-from pathlib import Path
 
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.models.review_result import ReviewResult
@@ -85,15 +82,7 @@ class MultiturnReviewExecutor:
             user_prompt_chunks, review_prompt.system_prompt, llm_gateway
         )
 
-        # 기존 병렬 처리 (OpenRouter API 400 에러로 인해 주석처리)
-        # review_results = self._execute_parallel_reviews(
-        #     user_prompt_chunks, review_prompt.system_prompt, llm_gateway
-        # )
-
-        # 3. review_results를 파일로 저장
-        self._save_review_results(review_results, llm_gateway.get_model_name())
-
-        # 4. 결과 간단 병합
+        # 3. 결과 간단 병합
         merged_result = self._merge_review_results(review_results)
 
         return merged_result
@@ -225,87 +214,3 @@ class MultiturnReviewExecutor:
         return ReviewResult.get_success_result(
             review_response=merged_review_response, estimated_cost=total_cost
         )
-
-    def _save_review_results(
-        self, review_results: list[ReviewResult], model_name: str
-    ) -> None:
-        """병렬 처리된 review_results를 JSON 파일로 저장"""
-        if not review_results:
-            return
-
-        # 저장 디렉토리 생성
-        save_dir = Path("multiturn_results")
-        save_dir.mkdir(exist_ok=True)
-
-        # 타임스탬프와 모델명으로 파일명 생성
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_{model_name}_multiturn_results.json"
-        filepath = save_dir / filename
-
-        # ReviewResult 객체들을 JSON 직렬화 가능한 형태로 변환
-        serializable_results = []
-        for i, result in enumerate(review_results):
-            result_data = {
-                "chunk_index": i,
-                "success": result.success,
-                "review_response": {
-                    "summary": result.review_response.summary
-                    if result.review_response
-                    else None,
-                    "issues_count": len(result.review_response.issues)
-                    if result.review_response
-                    else 0,
-                    "recommendations_count": len(result.review_response.recommendations)
-                    if result.review_response
-                    else 0,
-                    "score": result.review_response.score
-                    if result.review_response
-                    else None,
-                    "issues": [str(issue) for issue in result.review_response.issues]
-                    if result.review_response
-                    else [],
-                    "recommendations": result.review_response.recommendations
-                    if result.review_response
-                    else [],
-                },
-                "estimated_cost": {
-                    "model": result.estimated_cost.model,
-                    "input_tokens": result.estimated_cost.input_tokens,
-                    "output_tokens": result.estimated_cost.output_tokens,
-                    "total_cost_usd": result.estimated_cost.total_cost_usd,
-                }
-                if result.estimated_cost
-                else None,
-                "error_info": {
-                    "error_type": result.error_response.error_type
-                    if result.error_response
-                    else None,
-                    "error_message": result.error_response.error_message
-                    if result.error_response
-                    else None,
-                    "provider": result.error_response.provider
-                    if result.error_response
-                    else None,
-                }
-                if not result.success
-                and hasattr(result, "error_response")
-                and result.error_response
-                else None,
-            }
-            serializable_results.append(result_data)
-
-        # 전체 결과 메타데이터
-        results_summary = {
-            "timestamp": timestamp,
-            "model_name": model_name,
-            "total_chunks": len(review_results),
-            "successful_chunks": len([r for r in review_results if r.success]),
-            "failed_chunks": len([r for r in review_results if not r.success]),
-            "chunks": serializable_results,
-        }
-
-        # JSON 파일로 저장
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(results_summary, f, indent=2, ensure_ascii=False)
-
-        print(f"📄 Multiturn review results 저장: {filepath}")
