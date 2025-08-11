@@ -1,8 +1,26 @@
 """리뷰 결과 합성기"""
 
+import importlib.resources
+import json
+from typing import Any
+
+import instructor
+from anthropic import Anthropic
+from google import genai
+
+from selvage.src.config import get_api_key
+from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
+from selvage.src.model_config import ModelConfig, ModelInfoDict
+from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
 from selvage.src.utils.base_console import console
-from selvage.src.utils.token.models import EstimatedCost, ReviewResponse
+from selvage.src.utils.json_extractor import JSONExtractor
+from selvage.src.utils.llm_client_factory import LLMClientFactory
+from selvage.src.utils.token.models import (
+    EstimatedCost,
+    ReviewResponse,
+    StructuredSynthesisResponse,
+)
 
 
 class ReviewSynthesizer:
@@ -68,45 +86,325 @@ class ReviewSynthesizer:
     def _synthesize_with_llm(
         self, successful_results: list[ReviewResult]
     ) -> tuple[str, list[str]]:
-        """
-        LLM을 사용하여 Summary와 Recommendations를 합성
+        """LLM 기반 합성 (에러 처리 및 fallback 포함)"""
 
-        Args:
-            successful_results: 성공한 리뷰 결과들
+        try:
+            # 1. API 키 검증
+            model_info = self._load_model_info()
+            try:
+                api_key = self._load_api_key(model_info["provider"])
+                if not api_key:
+                    console.warning("API 키가 없습니다. fallback 모드로 전환합니다.")
+                    return self._fallback_synthesis(successful_results)
+            except Exception as e:
+                console.warning(f"API 키 로드 실패: {e}. fallback 모드로 전환합니다.")
+                return self._fallback_synthesis(successful_results)
 
-        Returns:
-            tuple[str, list[str]]: (합성된 summary, 합성된 recommendations)
-        """
-        console.info("LLM 기반 합성은 현재 fallback 방식을 사용합니다")
-        return self._fallback_synthesis(successful_results)
+            # 2. LLM 합성 시도 (최대 3회 재시도)
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    result = self._execute_llm_synthesis(successful_results)
+                    if result is not None:
+                        console.info("LLM 합성 성공")
+                        return result
+                except Exception as e:
+                    console.debug(f"LLM 합성 시도 {attempt + 1}회 예외: {e}")
+                    if attempt == max_retries - 1:
+                        console.warning("LLM 합성 실패. fallback 모드로 전환합니다.")
+                        break
+
+            # 3. Fallback으로 전환
+            return self._fallback_synthesis(successful_results)
+
+        except Exception as e:
+            console.error(f"LLM 합성 중 예상치 못한 오류: {e}")
+            return self._fallback_synthesis(successful_results)
 
     def _fallback_synthesis(
         self, successful_results: list[ReviewResult]
     ) -> tuple[str, list[str]]:
-        """LLM 합성 실패 시 fallback으로 기존 방식 사용"""
-        # Summary는 단순 결합
-        summary_parts = []
+        """간단하고 안정적인 fallback 합성 로직 (CR-19 문서 명세 적용)"""
+        # 1. Summary 단순 결합
+        summaries = [
+            r.review_response.summary
+            for r in successful_results
+            if r.review_response.summary
+        ]
+
+        if not summaries:
+            combined_summary = "리뷰 결과를 합성할 수 없습니다."
+        elif len(summaries) == 1:
+            combined_summary = summaries[0]
+        else:
+            # 가장 긴 summary를 대표로 선택 (보통 가장 포괄적임)
+            combined_summary = max(summaries, key=len)
+
+        # 2. Recommendations 기본 중복 제거
+        all_recs = []
         for result in successful_results:
-            if result.review_response.summary:
-                summary_parts.append(result.review_response.summary)
+            all_recs.extend(result.review_response.recommendations)
 
-        # Recommendations는 단순 중복 제거
-        all_recommendations = []
-        for result in successful_results:
-            all_recommendations.extend(result.review_response.recommendations)
+        # 완전 동일한 권장사항만 제거 (단순하고 안전)
+        unique_recs = list(dict.fromkeys(all_recs))
 
-        # 중복 제거 (순서 유지)
-        unique_recommendations = []
-        seen = set()
-        for rec in all_recommendations:
-            if rec not in seen:
-                unique_recommendations.append(rec)
-                seen.add(rec)
+        return combined_summary, unique_recs
 
-        return (
-            "\n\n".join(summary_parts) if summary_parts else "",
-            unique_recommendations,
+    def _load_model_info(self) -> ModelInfoDict:
+        """model_name으로부터 ModelInfoDict 로드"""
+        config = ModelConfig()
+        return config.get_model_info(self.model_name)
+
+    def _load_api_key(self, provider: ModelProvider) -> str:
+        """프로바이더별 API 키 로드"""
+        return get_api_key(provider)
+
+    def _create_client(
+        self,
+        model_info: ModelInfoDict,
+        api_key: str,
+    ) -> instructor.Instructor | genai.Client | Anthropic | OpenRouterHTTPClient:
+        """프로바이더별 LLM 클라이언트 생성
+
+        Returns:
+            instructor.Instructor | genai.Client | Anthropic | OpenRouterHTTPClient
+            : 프로바이더별 LLM 클라이언트
+        """
+        return LLMClientFactory.create_client(
+            model_info["provider"], api_key, model_info
         )
+
+    def _get_synthesis_system_prompt(self) -> str:
+        """합성용 시스템 프롬프트 로드"""
+        file_ref = importlib.resources.files(
+            "selvage.resources.prompt.synthesis"
+        ).joinpath("synthesis_system_prompt.txt")
+        with importlib.resources.as_file(file_ref) as file_path:
+            return file_path.read_text(encoding="utf-8")
+
+    def _create_synthesis_messages(
+        self, successful_results: list[ReviewResult]
+    ) -> list[dict[str, str]]:
+        """합성용 메시지 구조 생성"""
+
+        # 1. 시스템 프롬프트 생성
+        system_prompt = self._get_synthesis_system_prompt()
+
+        # 2. 사용자 프롬프트 데이터 구조화
+        chunks_data = []
+        for i, result in enumerate(successful_results, 1):
+            chunk_data = {
+                "chunk_id": i,
+                "summary": result.review_response.summary,
+                "recommendations": result.review_response.recommendations,
+            }
+            chunks_data.append(chunk_data)
+
+        synthesis_data = {
+            "task": "synthesis",
+            "chunks": chunks_data,
+        }
+
+        # 3. 메시지 리스트 생성
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {
+                "role": "user",
+                "content": json.dumps(synthesis_data, ensure_ascii=False, indent=2),
+            },
+        ]
+
+        return messages
+
+    def _create_request_params(
+        self, messages: list[dict[str, str]], model_info: ModelInfoDict
+    ) -> dict[str, Any]:
+        """프로바이더별 API 요청 파라미터 생성"""
+
+        provider = model_info["provider"]
+
+        if provider == ModelProvider.OPENAI:
+            return {
+                "model": model_info["full_name"],
+                "messages": messages,
+                "max_tokens": model_info.get("max_tokens", 20000),
+                "temperature": 0.1,
+            }
+        elif provider == ModelProvider.GOOGLE:
+            # Gemini용 메시지 형식 변환
+            contents = []
+            for msg in messages:
+                if msg["role"] == "system":
+                    # Gemini는 system role을 지원하지 않으므로 user로 변환
+                    contents.append(
+                        {
+                            "role": "user",
+                            "parts": [{"text": f"System: {msg['content']}"}],
+                        }
+                    )
+                else:
+                    contents.append(
+                        {"role": msg["role"], "parts": [{"text": msg["content"]}]}
+                    )
+
+            return {
+                "model": model_info["full_name"],
+                "contents": contents,
+                "generation_config": {
+                    "max_output_tokens": model_info.get("max_tokens", 20000),
+                    "temperature": 0.1,
+                },
+            }
+        elif provider == ModelProvider.ANTHROPIC:
+            # system 메시지 분리
+            system_content = None
+            anthropic_messages = []
+
+            for msg in messages:
+                if msg["role"] == "system":
+                    system_content = msg["content"]
+                else:
+                    anthropic_messages.append(msg)
+
+            params = {
+                "model": model_info["full_name"],
+                "messages": anthropic_messages,
+                "max_tokens": model_info.get("max_tokens", 4000),
+                "temperature": 0.1,
+            }
+
+            if system_content:
+                params["system"] = system_content
+
+            return params
+        elif provider == ModelProvider.OPENROUTER:
+            # OpenRouter용 파라미터 (OpenAI 호환 + JSON Schema)
+            # models.yml의 openrouter_name 필드 사용
+            openrouter_model_name = model_info.get(
+                "openrouter_name", model_info["full_name"]
+            )
+
+            return {
+                "model": openrouter_model_name,
+                "messages": messages,
+                "max_tokens": model_info.get("max_tokens", 4000),
+                "temperature": 0.1,
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "structured_synthesis_response",
+                        "strict": True,
+                        "schema": StructuredSynthesisResponse.model_json_schema(),
+                    },
+                },
+                "usage": {
+                    "include_usage": True,
+                },
+            }
+        else:
+            raise ValueError(f"지원하지 않는 프로바이더: {provider}")
+
+    def _execute_llm_synthesis(
+        self, successful_results: list[ReviewResult]
+    ) -> tuple[str, list[str]] | None:
+        """LLM을 직접 호출하여 합성 실행 (BaseGateway 패턴 적용)"""
+
+        try:
+            # 1. 모델 정보 및 클라이언트 준비
+            model_info = self._load_model_info()
+            api_key = self._load_api_key(model_info["provider"])
+            client = self._create_client(model_info, api_key)
+
+            # 2. 합성용 메시지 구조 생성
+            messages = self._create_synthesis_messages(successful_results)
+
+            # 3. 프로바이더별 API 파라미터 생성
+            params = self._create_request_params(messages, model_info)
+
+            # 4. API 요청 송신 (프로바이더별 처리)
+            provider = model_info["provider"]
+
+            if provider == ModelProvider.OPENAI:
+                # OpenAI/Instructor 처리
+                structured_response, raw_api_response = (
+                    client.chat.completions.create_with_completion(
+                        response_model=StructuredSynthesisResponse,
+                        max_retries=2,
+                        **params,
+                    )
+                )
+
+            elif provider == ModelProvider.GOOGLE:
+                # Google Gemini 처리
+                raw_api_response = client.models.generate_content(**params)
+                response_text = raw_api_response.text
+                if response_text is None:
+                    return None
+
+                structured_response = StructuredSynthesisResponse.model_validate_json(
+                    response_text
+                )
+
+            elif provider == ModelProvider.ANTHROPIC:
+                # Anthropic Claude 처리
+                raw_api_response = client.messages.create(**params)
+                response_text = None
+                for block in raw_api_response.content:
+                    if block.type == "text":
+                        response_text = block.text
+
+                if response_text is None:
+                    return None
+
+                # JSON 추출 및 파싱
+                structured_response = JSONExtractor.validate_and_parse_json(
+                    response_text, StructuredSynthesisResponse
+                )
+
+                if structured_response is None:
+                    return None
+
+            elif provider == ModelProvider.OPENROUTER:
+                # OpenRouter 처리 (컨텍스트 매니저 방식)
+                with client as openrouter_client:
+                    raw_response_data = openrouter_client.create_completion(**params)
+
+                    # OpenRouter 응답을 OpenAI 형식으로 변환
+                    from selvage.src.llm_gateway.openrouter.models import (
+                        OpenRouterResponse,
+                    )
+
+                    raw_api_response = OpenRouterResponse.from_dict(raw_response_data)
+
+                    # 응답에서 텍스트 추출
+                    if not raw_api_response.choices:
+                        console.error("OpenRouter API 응답에 choices가 없습니다")
+                        return None
+
+                    response_text = raw_api_response.choices[0].message.content
+                    if not response_text:
+                        console.error("OpenRouter 응답 텍스트가 비어있습니다")
+                        return None
+
+                    # JSON Schema 응답이므로 직접 파싱
+                    structured_response = (
+                        StructuredSynthesisResponse.model_validate_json(response_text)
+                    )
+
+                    if structured_response is None:
+                        return None
+            else:
+                raise ValueError(f"지원하지 않는 프로바이더: {provider}")
+
+            # 5. 응답 검증 및 반환
+            if not structured_response:
+                return None
+
+            return structured_response.summary, structured_response.recommendations
+
+        except Exception as e:
+            console.error(f"LLM 합성 중 예외 발생: {e}")
+            return None
 
     def _calculate_total_cost(
         self, successful_results: list[ReviewResult]
