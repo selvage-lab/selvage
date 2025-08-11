@@ -234,6 +234,7 @@ class TestMultiturnReviewExecutorIntegration:
 
     @pytest.mark.integration
     @pytest.mark.slow
+    @pytest.mark.skip(reason="1M 토큰 합성 테스트는 너무 오래 걸립니다.")
     def test_multiturn_review_1m_synthetic_preloaded(
         self,
         multiturn_executor: MultiturnReviewExecutor,

@@ -4,12 +4,7 @@ import importlib.resources
 import json
 from typing import Any
 
-import instructor
-from anthropic import Anthropic
-from google import genai
-
 from selvage.src.config import get_api_key
-from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
 from selvage.src.model_config import ModelConfig, ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -163,12 +158,12 @@ class ReviewSynthesizer:
         self,
         model_info: ModelInfoDict,
         api_key: str,
-    ) -> instructor.Instructor | genai.Client | Anthropic | OpenRouterHTTPClient:
+    ) -> object:
         """프로바이더별 LLM 클라이언트 생성
 
         Returns:
-            instructor.Instructor | genai.Client | Anthropic | OpenRouterHTTPClient
-            : 프로바이더별 LLM 클라이언트
+            다양한 프로바이더 클라이언트 중 하나 (instructor.Instructor, genai.Client,
+            Anthropic, OpenRouterHTTPClient 등)
         """
         return LLMClientFactory.create_client(
             model_info["provider"], api_key, model_info

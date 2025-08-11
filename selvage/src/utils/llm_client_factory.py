@@ -6,7 +6,6 @@ import instructor
 from anthropic import Anthropic
 from google import genai
 
-from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 
@@ -19,7 +18,7 @@ class LLMClientFactory:
     @staticmethod
     def create_client(
         provider: ModelProvider, api_key: str, model_info: ModelInfoDict
-    ) -> instructor.Instructor | genai.Client | Anthropic | OpenRouterHTTPClient:
+    ) -> instructor.Instructor | genai.Client | Anthropic | object:
         """프로바이더에 맞는, 구조화된 응답을 지원하는 클라이언트를 생성합니다.
 
         Args:
@@ -31,7 +30,7 @@ class LLMClientFactory:
             instructor.Instructor: instructor 래핑된 LLM 클라이언트
             genai.Client: Google Gemini 클라이언트
             Anthropic: Claude thinking 모드용 직접 클라이언트
-            OpenRouterHTTPClient: OpenRouter HTTP 클라이언트
+            object: OpenRouter HTTP 클라이언트(지연 로딩)
         Raises:
             ValueError: 지원하지 않는 프로바이더인 경우
         """
@@ -52,7 +51,11 @@ class LLMClientFactory:
         elif provider == ModelProvider.GOOGLE:
             return genai.Client(api_key=api_key)
         elif provider == ModelProvider.OPENROUTER:
-            # OpenRouter 전용 HTTP 클라이언트 반환
+            # Lazy import to avoid circular dependency
+            from selvage.src.llm_gateway.openrouter.http_client import (
+                OpenRouterHTTPClient,
+            )
+
             return OpenRouterHTTPClient(api_key=api_key)
         else:
             raise ValueError(f"지원하지 않는 LLM 프로바이더입니다: {provider}")
