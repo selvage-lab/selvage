@@ -154,21 +154,6 @@ class ReviewSynthesizer:
         """프로바이더별 API 키 로드"""
         return get_api_key(provider)
 
-    def _create_client(
-        self,
-        model_info: ModelInfoDict,
-        api_key: str,
-    ) -> object:
-        """프로바이더별 LLM 클라이언트 생성
-
-        Returns:
-            다양한 프로바이더 클라이언트 중 하나 (instructor.Instructor, genai.Client,
-            Anthropic, OpenRouterHTTPClient 등)
-        """
-        return LLMClientFactory.create_client(
-            model_info["provider"], api_key, model_info
-        )
-
     def _get_synthesis_system_prompt(self) -> str:
         """합성용 시스템 프롬프트 로드"""
         file_ref = importlib.resources.files(
@@ -308,7 +293,9 @@ class ReviewSynthesizer:
             # 1. 모델 정보 및 클라이언트 준비
             model_info = self._load_model_info()
             api_key = self._load_api_key(model_info["provider"])
-            client = self._create_client(model_info, api_key)
+            client = LLMClientFactory.create_client(
+                model_info["provider"], api_key, model_info
+            )
 
             # 2. 합성용 메시지 구조 생성
             messages = self._create_synthesis_messages(successful_results)

@@ -1,7 +1,7 @@
 """ReviewSynthesizer 테스트"""
 
 import json
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -224,7 +224,6 @@ class TestReviewSynthesizer:
         self,
         review_synthesizer: ReviewSynthesizer,
         sample_review_results: list[ReviewResult],
-        mock_llm_gateway: Mock,
     ) -> None:
         """비용 계산 정확성 테스트"""
         # When: 합성 실행
@@ -348,24 +347,7 @@ class TestReviewSynthesizerLLMIntegration:
         assert result == "test_api_key_123"
         mock_get_api_key.assert_called_once_with(ModelProvider.OPENAI)
 
-    @patch("selvage.src.multiturn.review_synthesizer.LLMClientFactory.create_client")
-    def test_create_client(
-        self, mock_create_client: Mock, sample_model_info: ModelInfoDict
-    ) -> None:
-        """프로바이더별 클라이언트 생성 테스트"""
-        # Given: 클라이언트 생성 Mock 설정
-        mock_instructor_client = MagicMock()
-        mock_create_client.return_value = mock_instructor_client
-        synthesizer = ReviewSynthesizer("gpt-4o")
-
-        # When: _create_client 호출
-        result = synthesizer._create_client(sample_model_info, "test_api_key")
-
-        # Then: 올바른 클라이언트 반환
-        assert result == mock_instructor_client
-        mock_create_client.assert_called_once_with(
-            ModelProvider.OPENAI, "test_api_key", sample_model_info
-        )
+    # _create_client는 제거되었으므로 관련 테스트를 삭제합니다.
 
     def test_fallback_synthesis_single_result(
         self, sample_review_results: list[ReviewResult]
