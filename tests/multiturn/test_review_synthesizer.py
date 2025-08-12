@@ -15,6 +15,7 @@ from selvage.src.utils.token.models import (
     ReviewIssue,
     ReviewResponse,
     StructuredSynthesisResponse,
+    SynthesisResult,
 )
 
 
@@ -359,11 +360,11 @@ class TestReviewSynthesizerLLMIntegration:
         synthesizer = ReviewSynthesizer("gpt-4o")
 
         # When: fallback 합성 실행
-        summary, recommendations = synthesizer._fallback_synthesis(single_result)
+        result = synthesizer._fallback_synthesis(single_result)
 
         # Then: 결과가 그대로 반환되어야 함
-        assert summary == "첫 번째 청크: 함수가 추가되었습니다."
-        assert recommendations == ["함수명 개선", "에러 처리 추가"]
+        assert result.summary == "첫 번째 청크: 함수가 추가되었습니다."
+        assert result.recommendations == ["함수명 개선", "에러 처리 추가"]
 
     def test_fallback_synthesis_multiple_results(
         self, sample_review_results: list[ReviewResult]
@@ -373,7 +374,7 @@ class TestReviewSynthesizerLLMIntegration:
         synthesizer = ReviewSynthesizer("gpt-4o")
 
         # When: fallback 합성 실행
-        summary, recommendations = synthesizer._fallback_synthesis(
+        result = synthesizer._fallback_synthesis(
             sample_review_results
         )
 
@@ -381,12 +382,12 @@ class TestReviewSynthesizerLLMIntegration:
         expected_longest = (
             "두 번째 청크: 로직이 전면적으로 개선되었습니다."  # 더 긴 summary
         )
-        assert summary == expected_longest
+        assert result.summary == expected_longest
 
         # Then: 중복 제거된 권장사항이 반환되어야 함
         expected_recs = ["함수명 개선", "에러 처리 추가", "주석 추가"]  # 중복 제거됨
-        assert set(recommendations) == set(expected_recs)
-        assert len(recommendations) == 3
+        assert set(result.recommendations) == set(expected_recs)
+        assert len(result.recommendations) == 3
 
     def test_fallback_synthesis_empty_summaries(self) -> None:
         """Fallback 합성 - 빈 summary 처리 테스트"""
@@ -404,11 +405,11 @@ class TestReviewSynthesizerLLMIntegration:
         synthesizer = ReviewSynthesizer("gpt-4o")
 
         # When: fallback 합성 실행
-        summary, recommendations = synthesizer._fallback_synthesis(empty_results)
+        result = synthesizer._fallback_synthesis(empty_results)
 
         # Then: 기본 메시지 반환 (문서 명세)
-        assert summary == "리뷰 결과를 합성할 수 없습니다."
-        assert recommendations == ["권장사항1"]
+        assert result.summary == "리뷰 결과를 합성할 수 없습니다."
+        assert result.recommendations == ["권장사항1"]
 
     def test_synthesis_message_creation_structure(
         self, sample_review_results: list[ReviewResult]
@@ -461,7 +462,7 @@ class TestReviewSynthesizerLLMIntegration:
         # Then: OpenAI 파라미터 확인
         assert params["model"] == "gpt-4o"
         assert params["messages"] == messages
-        assert params["max_tokens"] == 20000  # 기본값
+        assert params["max_tokens"] == 10000  # 기본값
         assert params["temperature"] == 0.1
 
     def test_provider_specific_params_anthropic(self) -> None:
@@ -486,7 +487,7 @@ class TestReviewSynthesizerLLMIntegration:
         assert params["messages"] == [
             {"role": "user", "content": "test user"}
         ]  # system 제외
-        assert params["max_tokens"] == 8000
+        assert params["max_tokens"] == 10000
         assert params["temperature"] == 0.1
 
     def test_provider_specific_params_google(self) -> None:
@@ -546,7 +547,7 @@ class TestReviewSynthesizerLLMIntegration:
         # openrouter_name 필드 사용 확인
         assert params["model"] == "moonshot-v1/moonshot-v1-128k"
         assert params["messages"] == messages
-        assert params["max_tokens"] == 4096
+        assert params["max_tokens"] == 10000
         assert params["temperature"] == 0.1
 
         # JSON Schema 형식 확인

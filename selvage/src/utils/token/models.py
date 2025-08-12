@@ -201,6 +201,13 @@ class StructuredSynthesisResponse(BaseModel):
     )
 
 
+class SynthesisResult(BaseModel):
+    """리뷰 합성 결과"""
+
+    summary: str = Field(description="통합된 리뷰 요약")
+    recommendations: list[str] = Field(description="권장사항 목록")
+
+
 class EstimatedCost(BaseModel):
     """API 응답의 usage 정보를 이용한 비용 추정 결과 모델"""
 

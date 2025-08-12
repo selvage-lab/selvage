@@ -15,6 +15,7 @@ from selvage.src.utils.token.models import (
     EstimatedCost,
     ReviewResponse,
     StructuredSynthesisResponse,
+    SynthesisResult,
 )
 
 
@@ -81,7 +82,7 @@ class ReviewSynthesizer:
 
     def _synthesize_with_llm(
         self, successful_results: list[ReviewResult]
-    ) -> tuple[str, list[str]]:
+    ) -> SynthesisResult:
         """LLM 기반 합성 (에러 처리 및 fallback 포함)"""
 
         try:
@@ -119,7 +120,7 @@ class ReviewSynthesizer:
 
     def _fallback_synthesis(
         self, successful_results: list[ReviewResult]
-    ) -> tuple[str, list[str]]:
+    ) -> SynthesisResult:
         """간단하고 안정적인 fallback 합성 로직 (CR-19 문서 명세 적용)"""
         # 1. Summary 단순 결합
         summaries = [
@@ -144,7 +145,7 @@ class ReviewSynthesizer:
         # 완전 동일한 권장사항만 제거 (단순하고 안전)
         unique_recs = list(dict.fromkeys(all_recs))
 
-        return combined_summary, unique_recs
+        return SynthesisResult(summary=combined_summary, recommendations=unique_recs)
 
     def _combine_recommendations_simple(
         self, successful_results: list[ReviewResult]
@@ -162,8 +163,8 @@ class ReviewSynthesizer:
         """Summary만 LLM으로 합성 (부분적 LLM 활용)"""
         try:
             # LLM 합성 시도
-            synthesized_summary, _ = self._synthesize_with_llm(successful_results)
-            return synthesized_summary
+            result = self._synthesize_with_llm(successful_results)
+            return result.summary
         except Exception as e:
             console.warning(f"Summary LLM 합성 실패: {e}. fallback으로 전환합니다.")
             # fallback으로 전환
@@ -328,7 +329,7 @@ class ReviewSynthesizer:
 
     def _execute_llm_synthesis(
         self, successful_results: list[ReviewResult]
-    ) -> tuple[str, list[str]] | None:
+    ) -> SynthesisResult | None:
         """LLM을 직접 호출하여 합성 실행 (BaseGateway 패턴 적용)"""
 
         try:
@@ -440,7 +441,10 @@ class ReviewSynthesizer:
             if not structured_response:
                 return None
 
-            return structured_response.summary, structured_response.recommendations
+            return SynthesisResult(
+                summary=structured_response.summary,
+                recommendations=structured_response.recommendations,
+            )
 
         except Exception as e:
             console.error(f"LLM 합성 중 예외 발생: {e}")
