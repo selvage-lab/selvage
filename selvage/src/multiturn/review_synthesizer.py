@@ -5,6 +5,7 @@ import json
 from typing import Any
 
 from selvage.src.config import get_api_key, get_default_language
+from selvage.src.llm_gateway.gateway_factory import GatewayFactory
 from selvage.src.model_config import ModelConfig, ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -57,13 +58,29 @@ class ReviewSynthesizer:
             all_issues.extend(result.review_response.issues)
 
         # 현재 상황: overlap=0이므로 정보 보존 우선
-        synthesized_summary = self._synthesize_summary_only(successful_results)
+        # LLM 합성을 통해 summary와 비용 정보를 함께 획득
+        synthesis_result = None
+        synthesis_cost = EstimatedCost.get_zero_cost(self.model_name)
+
+        try:
+            synthesis_result = self._synthesize_with_llm(successful_results)
+            if synthesis_result and synthesis_result.estimated_cost:
+                synthesis_cost = synthesis_result.estimated_cost
+                console.info(f"Summary 합성 비용: ${synthesis_cost.total_cost_usd:.6f}")
+        except Exception as e:
+            console.warning(f"LLM 합성 실패: {e}. fallback으로 처리됩니다.")
+
+        synthesized_summary = (
+            synthesis_result.summary
+            if synthesis_result
+            else self._fallback_summary(successful_results)
+        )
         synthesized_recommendations = self._combine_recommendations_simple(
             successful_results
         )
 
-        # 3. 비용 합산
-        total_cost = self._calculate_total_cost(successful_results)
+        # 3. 비용 합산 (기존 리뷰 비용 + 합성 비용)
+        total_cost = self._calculate_total_cost(successful_results, synthesis_cost)
 
         # 4. 최종 결과 생성
         synthesized_review_response = ReviewResponse(
@@ -145,7 +162,13 @@ class ReviewSynthesizer:
         # 완전 동일한 권장사항만 제거 (단순하고 안전)
         unique_recs = list(dict.fromkeys(all_recs))
 
-        return SynthesisResult(summary=combined_summary, recommendations=unique_recs)
+        return SynthesisResult(
+            summary=combined_summary,
+            recommendations=unique_recs,
+            estimated_cost=EstimatedCost.get_zero_cost(
+                self.model_name
+            ),  # fallback은 LLM을 사용하지 않으므로 비용 0
+        )
 
     def _combine_recommendations_simple(
         self, successful_results: list[ReviewResult]
@@ -437,25 +460,57 @@ class ReviewSynthesizer:
             else:
                 raise ValueError(f"지원하지 않는 프로바이더: {provider}")
 
-            # 5. 응답 검증 및 반환
+            # 5. 비용 계산 (BaseGateway 패턴 적용)
+            estimated_cost = None
+            try:
+                gateway = GatewayFactory.create_gateway(
+                    model_info["provider"], api_key, model_info
+                )
+                estimated_cost = gateway.estimate_cost(raw_api_response)
+                console.info(f"합성 과정 비용: ${estimated_cost.total_cost_usd:.6f}")
+            except Exception as e:
+                console.warning(f"합성 비용 계산 중 오류 발생: {e}")
+                estimated_cost = EstimatedCost.get_zero_cost(model_info["model"])
+
+            # 6. 응답 검증 및 반환
             if not structured_response:
                 return None
 
             return SynthesisResult(
                 summary=structured_response.summary,
                 recommendations=structured_response.recommendations,
+                estimated_cost=estimated_cost,
             )
 
         except Exception as e:
             console.error(f"LLM 합성 중 예외 발생: {e}")
             return None
 
+    def _fallback_summary(self, successful_results: list[ReviewResult]) -> str:
+        """fallback summary 생성 로직"""
+        summaries = [
+            r.review_response.summary
+            for r in successful_results
+            if r.review_response.summary
+        ]
+
+        if not summaries:
+            return "리뷰 결과를 합성할 수 없습니다."
+        elif len(summaries) == 1:
+            return summaries[0]
+        else:
+            # 가장 긴 summary를 대표로 선택
+            return max(summaries, key=len)
+
     def _calculate_total_cost(
-        self, successful_results: list[ReviewResult]
+        self,
+        successful_results: list[ReviewResult],
+        synthesis_cost: EstimatedCost | None = None,
     ) -> EstimatedCost:
-        """비용 합산 계산"""
+        """비용 합산 계산 (기존 리뷰 비용 + 합성 비용)"""
         total_cost = EstimatedCost.get_zero_cost(self.model_name)
 
+        # 기존 리뷰 결과들의 비용 합산
         for result in successful_results:
             total_cost = EstimatedCost(
                 model=result.estimated_cost.model,
@@ -469,6 +524,20 @@ class ReviewSynthesizer:
                 + result.estimated_cost.input_tokens,
                 output_tokens=total_cost.output_tokens
                 + result.estimated_cost.output_tokens,
+            )
+
+        # 합성 비용 추가
+        if synthesis_cost:
+            total_cost = EstimatedCost(
+                model=total_cost.model,
+                input_cost_usd=total_cost.input_cost_usd
+                + synthesis_cost.input_cost_usd,
+                output_cost_usd=total_cost.output_cost_usd
+                + synthesis_cost.output_cost_usd,
+                total_cost_usd=total_cost.total_cost_usd
+                + synthesis_cost.total_cost_usd,
+                input_tokens=total_cost.input_tokens + synthesis_cost.input_tokens,
+                output_tokens=total_cost.output_tokens + synthesis_cost.output_tokens,
             )
 
         return total_cost
