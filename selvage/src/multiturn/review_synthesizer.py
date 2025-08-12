@@ -55,18 +55,11 @@ class ReviewSynthesizer:
         for result in successful_results:
             all_issues.extend(result.review_response.issues)
 
-        # 2. 조건부 합성 전략 (overlap=0이므로 현재는 단순 합산)
-        if self._should_use_llm_synthesis():
-            # LLM 전체 합성 (overlap>0 시)
-            synthesized_summary, synthesized_recommendations = (
-                self._synthesize_with_llm(successful_results)
-            )
-        else:
-            # 현재 상황: overlap=0이므로 정보 보존 우선
-            synthesized_summary = self._synthesize_summary_only(successful_results)
-            synthesized_recommendations = self._combine_recommendations_simple(
-                successful_results
-            )
+        # 현재 상황: overlap=0이므로 정보 보존 우선
+        synthesized_summary = self._synthesize_summary_only(successful_results)
+        synthesized_recommendations = self._combine_recommendations_simple(
+            successful_results
+        )
 
         # 3. 비용 합산
         total_cost = self._calculate_total_cost(successful_results)
@@ -211,28 +204,8 @@ class ReviewSynthesizer:
         with importlib.resources.as_file(file_ref) as file_path:
             base_prompt = file_path.read_text(encoding="utf-8")
 
-        # 사용자 언어 설정에 따른 언어 지시사항 추가
         user_language = get_default_language()
-        language_instruction = self._get_language_instruction(user_language)
-
-        # 언어 지시사항을 프롬프트 시작 부분에 추가
-        return f"{language_instruction}\n\n{base_prompt}"
-
-    def _get_language_instruction(self, user_language: str) -> str:
-        """사용자 언어 설정에 따른 언어 지시사항 생성"""
-        if user_language.lower() in ["korean", "ko", "한국어"]:
-            return (
-                "IMPORTANT: Respond in Korean language. All summaries and "
-                "recommendations must be written in Korean to match the user's "
-                "language preference. 한국어로 응답하세요. 모든 요약과 권장사항은 "
-                "사용자의 언어 설정에 맞춰 한국어로 작성해야 합니다."
-            )
-        else:
-            return (
-                "IMPORTANT: Respond in English language. All summaries and "
-                "recommendations must be written in English to match the user's "
-                "language preference."
-            )
+        return base_prompt.replace("{{LANGUAGE}}", user_language)
 
     def _create_synthesis_messages(
         self, successful_results: list[ReviewResult]
@@ -279,7 +252,7 @@ class ReviewSynthesizer:
             return {
                 "model": model_info["full_name"],
                 "messages": messages,
-                "max_tokens": model_info.get("max_tokens", 20000),
+                "max_tokens": 10000,
                 "temperature": 0.1,
             }
         elif provider == ModelProvider.GOOGLE:
@@ -318,7 +291,7 @@ class ReviewSynthesizer:
             params = {
                 "model": model_info["full_name"],
                 "messages": anthropic_messages,
-                "max_tokens": model_info.get("max_tokens", 4000),
+                "max_tokens": 10000,
                 "temperature": 0.1,
             }
 
@@ -336,7 +309,7 @@ class ReviewSynthesizer:
             return {
                 "model": openrouter_model_name,
                 "messages": messages,
-                "max_tokens": model_info.get("max_tokens", 4000),
+                "max_tokens": 10000,
                 "temperature": 0.1,
                 "response_format": {
                     "type": "json_schema",

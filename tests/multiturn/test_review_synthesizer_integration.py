@@ -41,6 +41,15 @@ class TestReviewSynthesizerRealIntegration:
             return json.load(f)
 
     @pytest.fixture
+    def complex_multiturn_data(self) -> dict[str, Any]:
+        """복잡한 multiturn 결과 데이터 로드 (더 많은 이슈와 권장사항 포함)"""
+        test_data_path = (
+            Path(__file__).parent.parent / "data" / "complex_multiturn_results.json"
+        )
+        with test_data_path.open(encoding="utf-8") as f:
+            return json.load(f)
+
+    @pytest.fixture
     def integration_review_results(
         self, sample_multiturn_data: dict[str, Any]
     ) -> list[ReviewResult]:
@@ -48,6 +57,53 @@ class TestReviewSynthesizerRealIntegration:
         results = []
 
         for chunk_data in sample_multiturn_data["chunks"]:
+            if chunk_data["success"]:
+                # 성공한 청크만 ReviewResult로 변환
+                issues = []
+                if chunk_data["review_response"].get("issues"):
+                    for issue_data in chunk_data["review_response"]["issues"]:
+                        issues.append(
+                            ReviewIssue(
+                                type=issue_data["type"],
+                                line_number=issue_data.get("line_number"),
+                                file=issue_data["file"],
+                                description=issue_data["description"],
+                                severity=issue_data["severity"],
+                                suggestion=issue_data.get("suggestion"),
+                            )
+                        )
+
+                review_response = ReviewResponse(
+                    summary=chunk_data["review_response"]["summary"],
+                    recommendations=chunk_data["review_response"]["recommendations"],
+                    issues=issues,
+                    score=chunk_data["review_response"].get("score"),
+                )
+
+                estimated_cost = EstimatedCost(
+                    model=chunk_data["estimated_cost"]["model"],
+                    input_tokens=chunk_data["estimated_cost"]["input_tokens"],
+                    input_cost_usd=chunk_data["estimated_cost"]["input_cost_usd"],
+                    output_tokens=chunk_data["estimated_cost"]["output_tokens"],
+                    output_cost_usd=chunk_data["estimated_cost"]["output_cost_usd"],
+                    total_cost_usd=chunk_data["estimated_cost"]["total_cost_usd"],
+                )
+
+                result = ReviewResult.get_success_result(
+                    review_response=review_response, estimated_cost=estimated_cost
+                )
+                results.append(result)
+
+        return results
+
+    @pytest.fixture
+    def complex_integration_review_results(
+        self, complex_multiturn_data: dict[str, Any]
+    ) -> list[ReviewResult]:
+        """복잡한 multiturn 데이터 기반 ReviewResult 리스트 생성"""
+        results = []
+
+        for chunk_data in complex_multiturn_data["chunks"]:
             if chunk_data["success"]:
                 # 성공한 청크만 ReviewResult로 변환
                 issues = []
@@ -228,22 +284,70 @@ class TestReviewSynthesizerRealIntegration:
 
         # 실제 비용 발생 확인
         assert result.estimated_cost.total_cost_usd >= 0  # 일부 무료 모델은 0일 수 있음
+
+        print(f"\n=== {model_name} 합성 결과 분석 ===")
+        print(f"합성된 Summary: {result.review_response.summary}")
+        print(
+            f"\n합성된 Recommendations ({len(result.review_response.recommendations)}개):"
+        )
+        for i, rec in enumerate(result.review_response.recommendations, 1):
+            print(f"  {i}. {rec}")
+        print(f"\n유지된 Issues ({len(result.review_response.issues)}개):")
+        for i, issue in enumerate(result.review_response.issues, 1):
+            print(f"  {i}. {issue.type}/{issue.severity}: {issue.description}")
+        print("\n비용 정보:")
+        print(f"  총 비용: ${result.estimated_cost.total_cost_usd}")
+        print(f"  입력 토큰: {result.estimated_cost.input_tokens}")
+        print(f"  출력 토큰: {result.estimated_cost.output_tokens}")
+        print("===========================\n")
+
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "gpt-4o",  # OpenAI
+            "claude-sonnet-4",  # Anthropic (일반)
+            "claude-sonnet-4-thinking",  # Anthropic (thinking 모드)
+            "gemini-2.5-flash",  # Google
+            "qwen3-coder",  # OpenRouter
+        ],
+    )
+    def test_integration_with_complex_dataset(
+        self, model_name: str, complex_integration_review_results: list[ReviewResult]
+    ) -> None:
+        """복잡한 데이터셋으로 Parametrized 모델별 통합 테스트"""
+
+        # Given: 복잡한 데이터셋 (더 많은 이슈와 권장사항 포함)
+        synthesizer = ReviewSynthesizer(model_name)
+
+        # When: 실제 API 호출하여 합성
+        result = synthesizer.synthesize_review_results(complex_integration_review_results)
+
+        # Then: 실제 LLM 통합 동작 검증
+        assert result.success is True
+        assert result.review_response.summary is not None
+        assert len(result.review_response.summary) > 10
+        assert len(result.review_response.recommendations) > 0
+
+        # 복잡한 데이터셋의 Issues는 더 많음 (총 9개: 3+0+2+4)
+        assert len(result.review_response.issues) == 9
+
+        # 실제 비용 발생 확인
+        assert result.estimated_cost.total_cost_usd >= 0  # 일부 무료 모델은 0일 수 있음
         
-        # 합성 결과 품질 분석을 위한 출력 (gemini-2.5-flash만)
-        if model_name == "gemini-2.5-flash":
-            print(f"\n=== {model_name} 합성 결과 분석 ===")
-            print(f"합성된 Summary: {result.review_response.summary}")
-            print(f"\n합성된 Recommendations ({len(result.review_response.recommendations)}개):")
-            for i, rec in enumerate(result.review_response.recommendations, 1):
-                print(f"  {i}. {rec}")
-            print(f"\n유지된 Issues ({len(result.review_response.issues)}개):")
-            for i, issue in enumerate(result.review_response.issues, 1):
-                print(f"  {i}. {issue.type}/{issue.severity}: {issue.description}")
-            print(f"\n비용 정보:")
-            print(f"  총 비용: ${result.estimated_cost.total_cost_usd}")
-            print(f"  입력 토큰: {result.estimated_cost.input_tokens}")
-            print(f"  출력 토큰: {result.estimated_cost.output_tokens}")
-            print("===========================\n")
+        # 복잡한 데이터셋 합성 결과 품질 분석을 위한 출력
+        print(f"\n=== {model_name} 복잡한 데이터셋 합성 결과 분석 ===")
+        print(f"합성된 Summary: {result.review_response.summary}")
+        print(f"\n합성된 Recommendations ({len(result.review_response.recommendations)}개):")
+        for i, rec in enumerate(result.review_response.recommendations, 1):
+            print(f"  {i}. {rec}")
+        print(f"\n유지된 Issues ({len(result.review_response.issues)}개):")
+        for i, issue in enumerate(result.review_response.issues, 1):
+            print(f"  {i}. {issue.type}/{issue.severity}: {issue.description[:80]}...")
+        print(f"\n비용 정보:")
+        print(f"  총 비용: ${result.estimated_cost.total_cost_usd}")
+        print(f"  입력 토큰: {result.estimated_cost.input_tokens}")
+        print(f"  출력 토큰: {result.estimated_cost.output_tokens}")
+        print("========== 복잡한 데이터셋 완료 ==========\n")
 
     def test_integration_no_api_key_fallback_behavior(
         self, integration_review_results: list[ReviewResult]
