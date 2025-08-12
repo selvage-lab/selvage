@@ -15,7 +15,6 @@ from selvage.src.utils.token.models import (
     ReviewIssue,
     ReviewResponse,
     StructuredSynthesisResponse,
-    SynthesisResult,
 )
 
 
@@ -374,9 +373,7 @@ class TestReviewSynthesizerLLMIntegration:
         synthesizer = ReviewSynthesizer("gpt-4o")
 
         # When: fallback 합성 실행
-        result = synthesizer._fallback_synthesis(
-            sample_review_results
-        )
+        result = synthesizer._fallback_synthesis(sample_review_results)
 
         # Then: 가장 긴 summary가 선택되어야 함 (문서 명세)
         expected_longest = (

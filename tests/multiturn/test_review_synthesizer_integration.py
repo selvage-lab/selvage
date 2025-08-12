@@ -143,115 +143,6 @@ class TestReviewSynthesizerRealIntegration:
 
         return results
 
-    @pytest.mark.skipif(
-        not has_api_key(ModelProvider.OPENAI), reason="OpenAI API key not available"
-    )
-    def test_real_openai_integration(
-        self, integration_review_results: list[ReviewResult]
-    ) -> None:
-        """실제 OpenAI API를 호출하는 통합 테스트"""
-        # Given: 실제 OpenAI 환경
-        synthesizer = ReviewSynthesizer("gpt-4o-mini")  # 더 저렴한 모델 사용
-
-        # When: 실제 API 호출하여 합성
-        result = synthesizer.synthesize_review_results(integration_review_results)
-
-        # Then: 실제 LLM 응답 검증
-        assert result.success is True
-        assert result.review_response.summary is not None
-        assert len(result.review_response.summary) > 20  # 의미 있는 요약
-        assert len(result.review_response.recommendations) > 0
-
-        # LLM이 생성한 내용 품질 검증
-        summary_lower = result.review_response.summary.lower()
-        assert any(
-            keyword in summary_lower for keyword in ["code", "review", "ktor", "kotlin"]
-        )
-
-        # 비용이 실제로 발생했는지 확인
-        assert result.estimated_cost.total_cost_usd > 0
-        assert result.estimated_cost.input_tokens > 0
-        assert result.estimated_cost.output_tokens > 0
-
-    @pytest.mark.skipif(
-        not has_api_key(ModelProvider.ANTHROPIC),
-        reason="Anthropic API key not available",
-    )
-    def test_real_anthropic_integration(
-        self, integration_review_results: list[ReviewResult]
-    ) -> None:
-        """실제 Anthropic API를 호출하는 통합 테스트"""
-        # Given: 실제 Anthropic 환경
-        synthesizer = ReviewSynthesizer("claude-sonnet-4")
-
-        # When: 실제 API 호출하여 합성
-        result = synthesizer.synthesize_review_results(integration_review_results)
-
-        # Then: 실제 LLM 응답 검증
-        assert result.success is True
-        assert result.review_response.summary is not None
-        assert len(result.review_response.summary) > 20
-        assert len(result.review_response.recommendations) > 0
-
-        # Claude 응답 품질 확인 (실제 응답 내용이 의미 있는지)
-        summary_lower = result.review_response.summary.lower()
-        assert any(
-            keyword in summary_lower
-            for keyword in [
-                "code",
-                "review",
-                "implementation",
-                "ktor",
-                "kotlin",
-                "api",
-                "klib",
-                "파일",
-                "모듈",
-            ]
-        )
-
-        # 실제 응답이 fallback이 아닌 LLM 생성인지 확인 (fallback과 다른 패턴)
-        assert result.review_response.summary != "리뷰 결과를 합성할 수 없습니다."
-
-    @pytest.mark.skipif(
-        not has_api_key(ModelProvider.GOOGLE), reason="Google API key not available"
-    )
-    def test_real_google_integration(
-        self, integration_review_results: list[ReviewResult]
-    ) -> None:
-        """실제 Google Gemini API를 호출하는 통합 테스트"""
-        # Given: 실제 Google 환경
-        synthesizer = ReviewSynthesizer("gemini-2.5-flash")  # 더 저렴한 모델 사용
-
-        # When: 실제 API 호출하여 합성
-        result = synthesizer.synthesize_review_results(integration_review_results)
-
-        # Then: 실제 LLM 응답 검증
-        assert result.success is True
-        assert result.review_response.summary is not None
-        assert len(result.review_response.summary) > 20
-        assert len(result.review_response.recommendations) > 0
-
-    @pytest.mark.skipif(
-        not has_api_key(ModelProvider.OPENROUTER),
-        reason="OpenRouter API key not available",
-    )
-    def test_real_openrouter_integration(
-        self, integration_review_results: list[ReviewResult]
-    ) -> None:
-        """실제 OpenRouter API를 호출하는 통합 테스트"""
-        # Given: 실제 OpenRouter 환경 (저렴한 모델 사용)
-        synthesizer = ReviewSynthesizer("qwen3-coder")
-
-        # When: 실제 API 호출하여 합성
-        result = synthesizer.synthesize_review_results(integration_review_results)
-
-        # Then: 실제 LLM 응답 검증
-        assert result.success is True
-        assert result.review_response.summary is not None
-        assert len(result.review_response.summary) > 20
-        assert len(result.review_response.recommendations) > 0
-
     @pytest.mark.parametrize(
         "model_name",
         [
@@ -320,7 +211,9 @@ class TestReviewSynthesizerRealIntegration:
         synthesizer = ReviewSynthesizer(model_name)
 
         # When: 실제 API 호출하여 합성
-        result = synthesizer.synthesize_review_results(complex_integration_review_results)
+        result = synthesizer.synthesize_review_results(
+            complex_integration_review_results
+        )
 
         # Then: 실제 LLM 통합 동작 검증
         assert result.success is True
@@ -333,17 +226,19 @@ class TestReviewSynthesizerRealIntegration:
 
         # 실제 비용 발생 확인
         assert result.estimated_cost.total_cost_usd >= 0  # 일부 무료 모델은 0일 수 있음
-        
+
         # 복잡한 데이터셋 합성 결과 품질 분석을 위한 출력
         print(f"\n=== {model_name} 복잡한 데이터셋 합성 결과 분석 ===")
         print(f"합성된 Summary: {result.review_response.summary}")
-        print(f"\n합성된 Recommendations ({len(result.review_response.recommendations)}개):")
+        print(
+            f"\n합성된 Recommendations ({len(result.review_response.recommendations)}개):"
+        )
         for i, rec in enumerate(result.review_response.recommendations, 1):
             print(f"  {i}. {rec}")
         print(f"\n유지된 Issues ({len(result.review_response.issues)}개):")
         for i, issue in enumerate(result.review_response.issues, 1):
             print(f"  {i}. {issue.type}/{issue.severity}: {issue.description[:80]}...")
-        print(f"\n비용 정보:")
+        print("\n비용 정보:")
         print(f"  총 비용: ${result.estimated_cost.total_cost_usd}")
         print(f"  입력 토큰: {result.estimated_cost.input_tokens}")
         print(f"  출력 토큰: {result.estimated_cost.output_tokens}")

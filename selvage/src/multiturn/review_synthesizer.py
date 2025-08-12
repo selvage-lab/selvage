@@ -4,19 +4,31 @@ import importlib.resources
 import json
 from typing import Any
 
+import anthropic
+import openai
+from google.genai import types as genai_types
+
 from selvage.src.config import get_api_key, get_default_language
-from selvage.src.llm_gateway.gateway_factory import GatewayFactory
 from selvage.src.model_config import ModelConfig, ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
 from selvage.src.utils.base_console import console
 from selvage.src.utils.json_extractor import JSONExtractor
 from selvage.src.utils.llm_client_factory import LLMClientFactory
+from selvage.src.utils.token.cost_estimator import CostEstimator
 from selvage.src.utils.token.models import (
     EstimatedCost,
     ReviewResponse,
     StructuredSynthesisResponse,
     SynthesisResult,
+)
+
+# API 응답 타입 정의
+ApiResponseType = (
+    openai.types.Completion  # OpenAI instructor 응답
+    | anthropic.types.Message  # Anthropic 응답
+    | genai_types.GenerateContentResponse  # Google Gemini 응답
+    | dict[str, Any]  # OpenRouter 응답 (dict 형태)
 )
 
 
@@ -433,19 +445,24 @@ class ReviewSynthesizer:
                 with client as openrouter_client:
                     raw_response_data = openrouter_client.create_completion(**params)
 
+                    # 비용 계산을 위해 원본 데이터를 저장
+                    raw_api_response = raw_response_data
+
                     # OpenRouter 응답을 OpenAI 형식으로 변환
                     from selvage.src.llm_gateway.openrouter.models import (
                         OpenRouterResponse,
                     )
 
-                    raw_api_response = OpenRouterResponse.from_dict(raw_response_data)
+                    openrouter_response = OpenRouterResponse.from_dict(
+                        raw_response_data
+                    )
 
                     # 응답에서 텍스트 추출
-                    if not raw_api_response.choices:
+                    if not openrouter_response.choices:
                         console.error("OpenRouter API 응답에 choices가 없습니다")
                         return None
 
-                    response_text = raw_api_response.choices[0].message.content
+                    response_text = openrouter_response.choices[0].message.content
                     if not response_text:
                         console.error("OpenRouter 응답 텍스트가 비어있습니다")
                         return None
@@ -460,17 +477,12 @@ class ReviewSynthesizer:
             else:
                 raise ValueError(f"지원하지 않는 프로바이더: {provider}")
 
-            # 5. 비용 계산 (BaseGateway 패턴 적용)
-            estimated_cost = None
-            try:
-                gateway = GatewayFactory.create_gateway(
-                    model_info["provider"], api_key, model_info
-                )
-                estimated_cost = gateway.estimate_cost(raw_api_response)
+            # 5. 비용 계산 (프로바이더별 직접 처리)
+            estimated_cost = self._calculate_synthesis_cost(
+                provider, raw_api_response, model_info["full_name"]
+            )
+            if estimated_cost.total_cost_usd > 0:
                 console.info(f"합성 과정 비용: ${estimated_cost.total_cost_usd:.6f}")
-            except Exception as e:
-                console.warning(f"합성 비용 계산 중 오류 발생: {e}")
-                estimated_cost = EstimatedCost.get_zero_cost(model_info["model"])
 
             # 6. 응답 검증 및 반환
             if not structured_response:
@@ -541,3 +553,109 @@ class ReviewSynthesizer:
             )
 
         return total_cost
+
+    def _calculate_synthesis_cost(
+        self,
+        provider: ModelProvider,
+        raw_api_response: ApiResponseType,
+        model_name: str,
+    ) -> EstimatedCost:
+        """합성 과정에서 발생한 비용을 프로바이더별로 계산합니다.
+
+        Args:
+            provider: 모델 프로바이더
+            raw_api_response: API 응답 객체
+            model_name: 모델 이름
+
+        Returns:
+            EstimatedCost: 계산된 비용 정보
+        """
+        try:
+            if provider == ModelProvider.OPENAI:
+                return self._calculate_openai_synthesis_cost(
+                    raw_api_response, model_name
+                )
+            elif provider == ModelProvider.ANTHROPIC:
+                return self._calculate_anthropic_synthesis_cost(
+                    raw_api_response, model_name
+                )
+            elif provider == ModelProvider.GOOGLE:
+                return self._calculate_google_synthesis_cost(
+                    raw_api_response, model_name
+                )
+            elif provider == ModelProvider.OPENROUTER:
+                return self._calculate_openrouter_synthesis_cost(
+                    raw_api_response, model_name
+                )
+            else:
+                console.warning(f"지원하지 않는 프로바이더입니다: {provider}")
+
+        except Exception as e:
+            console.error(f"합성 비용 계산 중 오류 발생: {e}")
+
+        # 오류 발생 시 또는 usage 정보가 없는 경우 0 비용 반환
+        return EstimatedCost.get_zero_cost(model_name)
+
+    def _calculate_openai_synthesis_cost(
+        self, raw_api_response: ApiResponseType, model_name: str
+    ) -> EstimatedCost:
+        """OpenAI 프로바이더의 합성 비용을 계산합니다."""
+        if hasattr(raw_api_response, "usage") and raw_api_response.usage:
+            return CostEstimator.estimate_cost_from_openai_usage(
+                model_name, raw_api_response.usage
+            )
+        else:
+            console.warning(
+                f"OpenAI 응답에서 usage 정보를 찾을 수 없습니다: {model_name}"
+            )
+            return EstimatedCost.get_zero_cost(model_name)
+
+    def _calculate_anthropic_synthesis_cost(
+        self, raw_api_response: ApiResponseType, model_name: str
+    ) -> EstimatedCost:
+        """Anthropic 프로바이더의 합성 비용을 계산합니다."""
+        if hasattr(raw_api_response, "usage") and raw_api_response.usage:
+            return CostEstimator.estimate_cost_from_anthropic_usage(
+                model_name, raw_api_response.usage
+            )
+        else:
+            console.warning(
+                f"Anthropic 응답에서 usage 정보를 찾을 수 없습니다: {model_name}"
+            )
+            return EstimatedCost.get_zero_cost(model_name)
+
+    def _calculate_google_synthesis_cost(
+        self, raw_api_response: ApiResponseType, model_name: str
+    ) -> EstimatedCost:
+        """Google 프로바이더의 합성 비용을 계산합니다."""
+        if (
+            hasattr(raw_api_response, "usage_metadata")
+            and raw_api_response.usage_metadata
+        ):
+            return CostEstimator.estimate_cost_from_gemini_usage(
+                model_name, raw_api_response.usage_metadata
+            )
+        else:
+            console.warning(
+                f"Google 응답에서 usage_metadata 정보를 찾을 수 없습니다: {model_name}"
+            )
+            return EstimatedCost.get_zero_cost(model_name)
+
+    def _calculate_openrouter_synthesis_cost(
+        self, raw_api_response: ApiResponseType, model_name: str
+    ) -> EstimatedCost:
+        """OpenRouter 프로바이더의 합성 비용을 계산합니다."""
+        if isinstance(raw_api_response, dict) and "usage" in raw_api_response:
+            usage_dict = raw_api_response["usage"]
+            # OpenAI 형식의 Usage 객체로 변환
+            usage = openai.types.CompletionUsage(
+                prompt_tokens=usage_dict.get("prompt_tokens", 0),
+                completion_tokens=usage_dict.get("completion_tokens", 0),
+                total_tokens=usage_dict.get("total_tokens", 0),
+            )
+            return CostEstimator.estimate_cost_from_openai_usage(model_name, usage)
+        else:
+            console.warning(
+                f"OpenRouter 응답에서 usage 정보를 찾을 수 없습니다: {model_name}"
+            )
+            return EstimatedCost.get_zero_cost(model_name)
