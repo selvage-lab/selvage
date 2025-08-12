@@ -4,7 +4,7 @@ import importlib.resources
 import json
 from typing import Any
 
-from selvage.src.config import get_api_key
+from selvage.src.config import get_api_key, get_default_language
 from selvage.src.model_config import ModelConfig, ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -55,10 +55,18 @@ class ReviewSynthesizer:
         for result in successful_results:
             all_issues.extend(result.review_response.issues)
 
-        # 2. Summary와 Recommendations를 LLM으로 합성
-        synthesized_summary, synthesized_recommendations = self._synthesize_with_llm(
-            successful_results
-        )
+        # 2. 조건부 합성 전략 (overlap=0이므로 현재는 단순 합산)
+        if self._should_use_llm_synthesis():
+            # LLM 전체 합성 (overlap>0 시)
+            synthesized_summary, synthesized_recommendations = (
+                self._synthesize_with_llm(successful_results)
+            )
+        else:
+            # 현재 상황: overlap=0이므로 정보 보존 우선
+            synthesized_summary = self._synthesize_summary_only(successful_results)
+            synthesized_recommendations = self._combine_recommendations_simple(
+                successful_results
+            )
 
         # 3. 비용 합산
         total_cost = self._calculate_total_cost(successful_results)
@@ -104,7 +112,7 @@ class ReviewSynthesizer:
                         console.info("LLM 합성 성공")
                         return result
                 except Exception as e:
-                    console.debug(f"LLM 합성 시도 {attempt + 1}회 예외: {e}")
+                    console.error(f"LLM 합성 중 예외 발생: {e}")
                     if attempt == max_retries - 1:
                         console.warning("LLM 합성 실패. fallback 모드로 전환합니다.")
                         break
@@ -145,6 +153,47 @@ class ReviewSynthesizer:
 
         return combined_summary, unique_recs
 
+    def _combine_recommendations_simple(
+        self, successful_results: list[ReviewResult]
+    ) -> list[str]:
+        """권장사항 단순 합산 (overlap=0 환경에서 정보 보존 우선)"""
+        all_recs = []
+        for result in successful_results:
+            all_recs.extend(result.review_response.recommendations)
+
+        # 완전 동일한 권장사항만 제거 (단순하고 안전)
+        unique_recs = list(dict.fromkeys(all_recs))
+        return unique_recs
+
+    def _synthesize_summary_only(self, successful_results: list[ReviewResult]) -> str:
+        """Summary만 LLM으로 합성 (부분적 LLM 활용)"""
+        try:
+            # LLM 합성 시도
+            synthesized_summary, _ = self._synthesize_with_llm(successful_results)
+            return synthesized_summary
+        except Exception as e:
+            console.warning(f"Summary LLM 합성 실패: {e}. fallback으로 전환합니다.")
+            # fallback으로 전환
+            summaries = [
+                r.review_response.summary
+                for r in successful_results
+                if r.review_response.summary
+            ]
+
+            if not summaries:
+                return "리뷰 결과를 합성할 수 없습니다."
+            elif len(summaries) == 1:
+                return summaries[0]
+            else:
+                # 가장 긴 summary를 대표로 선택
+                return max(summaries, key=len)
+
+    def _should_use_llm_synthesis(self) -> bool:
+        """LLM 합성을 사용할지 결정 (현재는 overlap=0이므로 False)"""
+        # TODO: 향후 overlap 감지 로직 구현 시 동적으로 결정
+        # 현재는 overlap=0으로 고정되어 있으므로 단순 합산 방식 사용
+        return False
+
     def _load_model_info(self) -> ModelInfoDict:
         """model_name으로부터 ModelInfoDict 로드"""
         config = ModelConfig()
@@ -155,12 +204,35 @@ class ReviewSynthesizer:
         return get_api_key(provider)
 
     def _get_synthesis_system_prompt(self) -> str:
-        """합성용 시스템 프롬프트 로드"""
+        """합성용 시스템 프롬프트 로드 (사용자 언어 설정 반영)"""
         file_ref = importlib.resources.files(
             "selvage.resources.prompt.synthesis"
         ).joinpath("synthesis_system_prompt.txt")
         with importlib.resources.as_file(file_ref) as file_path:
-            return file_path.read_text(encoding="utf-8")
+            base_prompt = file_path.read_text(encoding="utf-8")
+
+        # 사용자 언어 설정에 따른 언어 지시사항 추가
+        user_language = get_default_language()
+        language_instruction = self._get_language_instruction(user_language)
+
+        # 언어 지시사항을 프롬프트 시작 부분에 추가
+        return f"{language_instruction}\n\n{base_prompt}"
+
+    def _get_language_instruction(self, user_language: str) -> str:
+        """사용자 언어 설정에 따른 언어 지시사항 생성"""
+        if user_language.lower() in ["korean", "ko", "한국어"]:
+            return (
+                "IMPORTANT: Respond in Korean language. All summaries and "
+                "recommendations must be written in Korean to match the user's "
+                "language preference. 한국어로 응답하세요. 모든 요약과 권장사항은 "
+                "사용자의 언어 설정에 맞춰 한국어로 작성해야 합니다."
+            )
+        else:
+            return (
+                "IMPORTANT: Respond in English language. All summaries and "
+                "recommendations must be written in English to match the user's "
+                "language preference."
+            )
 
     def _create_synthesis_messages(
         self, successful_results: list[ReviewResult]
@@ -230,10 +302,7 @@ class ReviewSynthesizer:
             return {
                 "model": model_info["full_name"],
                 "contents": contents,
-                "generation_config": {
-                    "max_output_tokens": model_info.get("max_tokens", 20000),
-                    "temperature": 0.1,
-                },
+                # Google Gemini에서는 generation_config를 직접 전달하지 않음
             }
         elif provider == ModelProvider.ANTHROPIC:
             # system 메시지 분리
@@ -320,31 +389,47 @@ class ReviewSynthesizer:
                 # Google Gemini 처리
                 raw_api_response = client.models.generate_content(**params)
                 response_text = raw_api_response.text
-                if response_text is None:
-                    return None
-
-                structured_response = StructuredSynthesisResponse.model_validate_json(
-                    response_text
-                )
-
-            elif provider == ModelProvider.ANTHROPIC:
-                # Anthropic Claude 처리
-                raw_api_response = client.messages.create(**params)
-                response_text = None
-                for block in raw_api_response.content:
-                    if block.type == "text":
-                        response_text = block.text
 
                 if response_text is None:
                     return None
 
-                # JSON 추출 및 파싱
+                # JSON 추출 및 파싱 (markdown 코드 블록 처리)
                 structured_response = JSONExtractor.validate_and_parse_json(
                     response_text, StructuredSynthesisResponse
                 )
 
                 if structured_response is None:
                     return None
+
+            elif provider == ModelProvider.ANTHROPIC:
+                # Anthropic Claude 처리
+                if model_info.get("thinking_mode", False):
+                    # thinking 모드는 직접 호출
+                    raw_api_response = client.messages.create(**params)
+                    response_text = None
+                    for block in raw_api_response.content:
+                        if block.type == "text":
+                            response_text = block.text
+
+                    if response_text is None:
+                        return None
+
+                    # JSON 추출 및 파싱
+                    structured_response = JSONExtractor.validate_and_parse_json(
+                        response_text, StructuredSynthesisResponse
+                    )
+
+                    if structured_response is None:
+                        return None
+                else:
+                    # 일반 모드는 instructor 사용
+                    structured_response, raw_api_response = (
+                        client.chat.completions.create_with_completion(
+                            response_model=StructuredSynthesisResponse,
+                            max_retries=2,
+                            **params,
+                        )
+                    )
 
             elif provider == ModelProvider.OPENROUTER:
                 # OpenRouter 처리 (컨텍스트 매니저 방식)
