@@ -887,13 +887,6 @@ class TestReviewSynthesizerEndToEndMock:
         assert result.review_response.summary is not None
         assert len(result.review_response.summary) > 20
 
-    def test_should_use_llm_synthesis_current_behavior(self) -> None:
-        """_should_use_llm_synthesis 현재 동작 확인"""
-        synthesizer = ReviewSynthesizer("test-model")
-
-        # 현재는 overlap=0이므로 False를 반환해야 함
-        assert synthesizer._should_use_llm_synthesis() is False
-
     def test_combine_recommendations_simple_method(
         self, integration_review_results: list[ReviewResult]
     ) -> None:

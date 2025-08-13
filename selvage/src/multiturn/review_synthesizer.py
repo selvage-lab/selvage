@@ -217,12 +217,6 @@ class ReviewSynthesizer:
                 # 가장 긴 summary를 대표로 선택
                 return max(summaries, key=len)
 
-    def _should_use_llm_synthesis(self) -> bool:
-        """LLM 합성을 사용할지 결정 (현재는 overlap=0이므로 False)"""
-        # TODO: 향후 overlap 감지 로직 구현 시 동적으로 결정
-        # 현재는 overlap=0으로 고정되어 있으므로 단순 합산 방식 사용
-        return False
-
     def _load_model_info(self) -> ModelInfoDict:
         """model_name으로부터 ModelInfoDict 로드"""
         config = ModelConfig()

@@ -2,6 +2,8 @@
 
 import concurrent.futures
 
+from deprecated import deprecated
+
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.models.review_result import ReviewResult
 from selvage.src.utils.base_console import console
@@ -65,6 +67,7 @@ class MultiturnReviewExecutor:
         console.info("Large context 처리 완료")
         return merged_result
 
+    @deprecated(reason="Use _execute_sequential_reviews instead")
     def _execute_parallel_reviews(
         self,
         user_prompt_chunks: list[list[UserPromptWithFileContent]],
