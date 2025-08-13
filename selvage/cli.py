@@ -3,10 +3,8 @@ CLI 인터페이스를 제공하는 모듈입니다.
 """
 
 import getpass
-import json
 import os
 import sys
-from datetime import datetime
 from pathlib import Path
 
 import click
@@ -31,16 +29,21 @@ from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.exceptions.unsupported_model_error import UnsupportedModelError
 from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
+from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.llm_gateway.gateway_factory import GatewayFactory
 from selvage.src.model_config import ModelProvider, get_model_info
 from selvage.src.models import ModelChoice, ReviewStatus
 from selvage.src.models.claude_provider import ClaudeProvider
+from selvage.src.models.error_response import ErrorResponse
+from selvage.src.multiturn.models import TokenInfo
+from selvage.src.multiturn.multiturn_review_executor import MultiturnReviewExecutor
 from selvage.src.ui import run_app
 from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import find_project_root
 from selvage.src.utils.git_utils import GitDiffMode, GitDiffUtility
 from selvage.src.utils.logging import LOG_LEVEL_INFO, setup_logging
 from selvage.src.utils.logging.review_log_manager import ReviewLogManager
+from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.review_display import review_display
 from selvage.src.utils.token.models import EstimatedCost, ReviewRequest, ReviewResponse
@@ -296,8 +299,37 @@ def config_list() -> None:
     console.info(f"기본 언어: {get_default_language()}")
 
 
+def _handle_context_limit_error(
+    review_prompt: ReviewPromptWithFileContent,
+    error_response: ErrorResponse,
+    llm_gateway: BaseGateway,
+) -> tuple[ReviewResponse, EstimatedCost]:
+    """Context limit 에러 시 multiturn review 실행"""
+    console.info("컨텍스트 제한 초과 감지, Multiturn 리뷰로 재시도합니다...")
+
+    token_info = TokenInfo.from_error_response(error_response)
+    executor = MultiturnReviewExecutor()
+    multiturn_result = executor.execute_multiturn_review(
+        review_prompt=review_prompt,
+        token_info=token_info,
+        llm_gateway=llm_gateway,
+    )
+
+    return multiturn_result.review_response, multiturn_result.estimated_cost
 
 
+def _handle_api_error(error_response: ErrorResponse) -> None:
+    """일반 API 에러 처리"""
+    console.error(
+        f"API 오류 ({error_response.provider}): {error_response.error_message}"
+    )
+    raise Exception(f"API error: {error_response.error_message}")
+
+
+def _handle_unknown_error() -> None:
+    """알 수 없는 에러 처리"""
+    console.error("알 수 없는 오류가 발생했습니다.")
+    raise Exception("Unknown error occurred")
 
 
 def _perform_new_review(
@@ -314,25 +346,16 @@ def _perform_new_review(
 
         # 에러 처리
         if not review_result.success:
+            if not review_result.error_response:
+                _handle_unknown_error()
+
             error_response = review_result.error_response
-            if error_response:
-                if error_response.is_context_limit_error():
-                    console.error(
-                        f"컨텍스트 제한 초과: {error_response.error_message}\n"
-                        f"향후 Multiturn 리뷰 기능으로 자동 재시도될 예정입니다."
-                    )
-                    # TODO: Multiturn 리뷰 구현 후 여기서 재시도
-                    raise Exception(
-                        f"Context limit exceeded: {error_response.error_message}"
-                    )
-                else:
-                    console.error(
-                        f"API 오류 ({error_response.provider}): {error_response.error_message}"
-                    )
-                    raise Exception(f"API error: {error_response.error_message}")
+            if error_response.is_context_limit_error():
+                return _handle_context_limit_error(
+                    review_prompt, error_response, llm_gateway
+                )
             else:
-                console.error("알 수 없는 오류가 발생했습니다.")
-                raise Exception("Unknown error occurred")
+                _handle_api_error(error_response)
 
         return review_result.review_response, review_result.estimated_cost
 
