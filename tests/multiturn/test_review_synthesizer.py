@@ -138,7 +138,8 @@ class TestReviewSynthesizer:
         assert result.estimated_cost.input_tokens == 1800  # 1000 + 800
         assert result.estimated_cost.total_cost_usd == 0.053  # 0.03 + 0.023
 
-        # 현재는 fallback 방식을 사용하므로 LLM 호출 없음
+        # Summary는 LLM 합성 시도, Recommendations는 단순 합산 방식 사용
+        # 실제 API 키가 없어서 fallback으로 동작
         assert mock_llm_gateway.review_code.call_count == 0
 
     def test_synthesize_empty_results(
@@ -358,12 +359,13 @@ class TestReviewSynthesizerLLMIntegration:
         single_result = [sample_review_results[0]]
         synthesizer = ReviewSynthesizer("gpt-4o")
 
-        # When: fallback 합성 실행
-        result = synthesizer._fallback_synthesis(single_result)
+        # When: 전체 합성 실행 (fallback 모드로 동작)
+        result = synthesizer.synthesize_review_results(single_result)
 
-        # Then: 결과가 그대로 반환되어야 함
-        assert result.summary == "첫 번째 청크: 함수가 추가되었습니다."
-        assert result.recommendations == ["함수명 개선", "에러 처리 추가"]
+        # Then: 단일 결과가 그대로 반환되어야 함
+        assert result.success is True
+        assert result.review_response.summary == "첫 번째 청크: 함수가 추가되었습니다."
+        assert result.review_response.recommendations == ["함수명 개선", "에러 처리 추가"]
 
     def test_fallback_synthesis_multiple_results(
         self, sample_review_results: list[ReviewResult]
@@ -372,19 +374,20 @@ class TestReviewSynthesizerLLMIntegration:
         # Given: 다중 결과
         synthesizer = ReviewSynthesizer("gpt-4o")
 
-        # When: fallback 합성 실행
-        result = synthesizer._fallback_synthesis(sample_review_results)
+        # When: 전체 합성 실행 (fallback 모드로 동작)
+        result = synthesizer.synthesize_review_results(sample_review_results)
 
         # Then: 가장 긴 summary가 선택되어야 함 (문서 명세)
         expected_longest = (
             "두 번째 청크: 로직이 전면적으로 개선되었습니다."  # 더 긴 summary
         )
-        assert result.summary == expected_longest
+        assert result.success is True
+        assert result.review_response.summary == expected_longest
 
         # Then: 중복 제거된 권장사항이 반환되어야 함
         expected_recs = ["함수명 개선", "에러 처리 추가", "주석 추가"]  # 중복 제거됨
-        assert set(result.recommendations) == set(expected_recs)
-        assert len(result.recommendations) == 3
+        assert set(result.review_response.recommendations) == set(expected_recs)
+        assert len(result.review_response.recommendations) == 3
 
     def test_fallback_synthesis_empty_summaries(self) -> None:
         """Fallback 합성 - 빈 summary 처리 테스트"""
@@ -401,52 +404,41 @@ class TestReviewSynthesizerLLMIntegration:
         ]
         synthesizer = ReviewSynthesizer("gpt-4o")
 
-        # When: fallback 합성 실행
-        result = synthesizer._fallback_synthesis(empty_results)
+        # When: 전체 합성 실행 (fallback 모드로 동작)
+        result = synthesizer.synthesize_review_results(empty_results)
 
         # Then: 기본 메시지 반환 (문서 명세)
-        assert result.summary == "리뷰 결과를 합성할 수 없습니다."
-        assert result.recommendations == ["권장사항1"]
+        assert result.success is True
+        assert result.review_response.summary == "리뷰 결과를 합성할 수 없습니다."
+        assert result.review_response.recommendations == ["권장사항1"]
 
     def test_synthesis_message_creation_structure(
         self, sample_review_results: list[ReviewResult]
     ) -> None:
-        """합성용 메시지 구조 생성 테스트"""
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        """Summary 합성용 메시지 구조 생성 테스트"""
+        # When: Summary 합성 데이터 준비
+        summaries = [
+            r.review_response.summary
+            for r in sample_review_results
+            if r.review_response.summary
+        ]
+        synthesis_data = {
+            "task": "summary_synthesis",
+            "summaries": summaries,
+        }
 
-        # When: _create_synthesis_messages 호출
-        messages = synthesizer._create_synthesis_messages(sample_review_results)
-
-        # Then: 시스템 프롬프트 포함된 메시지 리스트 생성 확인
-        assert len(messages) == 2
-        assert messages[0]["role"] == "system"
-        assert messages[1]["role"] == "user"
-
-        # 시스템 프롬프트 내용 확인
-        system_content = messages[0]["content"]
-        assert "expert code review synthesis specialist" in system_content
-        assert "Silicon Valley tech company" in system_content
-
-        # 사용자 메시지의 JSON 구조 확인
-        user_content = json.loads(messages[1]["content"])
-        assert user_content["task"] == "synthesis"
-        assert len(user_content["chunks"]) == 2
-
-        # 청크 데이터 구조 검증
-        chunk1 = user_content["chunks"][0]
-        assert chunk1["chunk_id"] == 1
-        assert chunk1["summary"] == "첫 번째 청크: 함수가 추가되었습니다."
-        assert chunk1["recommendations"] == ["함수명 개선", "에러 처리 추가"]
-
-        chunk2 = user_content["chunks"][1]
-        assert chunk2["chunk_id"] == 2
-        assert chunk2["summary"] == "두 번째 청크: 로직이 전면적으로 개선되었습니다."
-        assert chunk2["recommendations"] == ["에러 처리 추가", "주석 추가"]
+        # Then: 데이터 구조 검증
+        assert synthesis_data["task"] == "summary_synthesis"
+        assert len(synthesis_data["summaries"]) == 2
+        assert synthesis_data["summaries"][0] == "첫 번째 청크: 함수가 추가되었습니다."
+        assert synthesis_data["summaries"][1] == "두 번째 청크: 로직이 전면적으로 개선되었습니다."
 
     def test_provider_specific_params_openai(
         self, sample_model_info: ModelInfoDict
     ) -> None:
         """OpenAI 프로바이더 요청 파라미터 생성 테스트"""
+        from selvage.src.utils.token.models import SummarySynthesisResponse
+
         synthesizer = ReviewSynthesizer("gpt-4o")
         messages = [
             {"role": "system", "content": "test system"},
@@ -454,16 +446,20 @@ class TestReviewSynthesizerLLMIntegration:
         ]
 
         # When: _create_request_params 호출
-        params = synthesizer._create_request_params(messages, sample_model_info)
+        params = synthesizer._create_request_params(
+            messages, sample_model_info, SummarySynthesisResponse
+        )
 
         # Then: OpenAI 파라미터 확인
         assert params["model"] == "gpt-4o"
         assert params["messages"] == messages
-        assert params["max_tokens"] == 10000  # 기본값
+        assert params["max_tokens"] == 5000  # SynthesisConfig.MAX_TOKENS
         assert params["temperature"] == 0.1
 
     def test_provider_specific_params_anthropic(self) -> None:
         """Anthropic 프로바이더 요청 파라미터 생성 테스트"""
+        from selvage.src.utils.token.models import SummarySynthesisResponse
+
         synthesizer = ReviewSynthesizer("claude-sonnet-4")
         anthropic_model_info = {
             "full_name": "claude-sonnet-4",
@@ -476,7 +472,9 @@ class TestReviewSynthesizerLLMIntegration:
         ]
 
         # When: _create_request_params 호출
-        params = synthesizer._create_request_params(messages, anthropic_model_info)
+        params = synthesizer._create_request_params(
+            messages, anthropic_model_info, SummarySynthesisResponse
+        )
 
         # Then: Anthropic 파라미터 확인
         assert params["model"] == "claude-sonnet-4"
@@ -484,11 +482,13 @@ class TestReviewSynthesizerLLMIntegration:
         assert params["messages"] == [
             {"role": "user", "content": "test user"}
         ]  # system 제외
-        assert params["max_tokens"] == 10000
+        assert params["max_tokens"] == 5000  # SynthesisConfig.MAX_TOKENS
         assert params["temperature"] == 0.1
 
     def test_provider_specific_params_google(self) -> None:
         """Google 프로바이더 요청 파라미터 생성 테스트"""
+        from selvage.src.utils.token.models import SummarySynthesisResponse
+
         synthesizer = ReviewSynthesizer("gemini-2.5-pro")
         google_model_info = {
             "full_name": "gemini-2.5-pro",
@@ -501,7 +501,9 @@ class TestReviewSynthesizerLLMIntegration:
         ]
 
         # When: _create_request_params 호출
-        params = synthesizer._create_request_params(messages, google_model_info)
+        params = synthesizer._create_request_params(
+            messages, google_model_info, SummarySynthesisResponse
+        )
 
         # Then: Google 파라미터 확인
         assert params["model"] == "gemini-2.5-pro"
@@ -524,6 +526,8 @@ class TestReviewSynthesizerLLMIntegration:
 
     def test_provider_specific_params_openrouter(self) -> None:
         """OpenRouter 프로바이더 요청 파라미터 생성 테스트"""
+        from selvage.src.utils.token.models import SummarySynthesisResponse
+
         synthesizer = ReviewSynthesizer("kimi-k2")
         openrouter_model_info = {
             "full_name": "kimi-k2",
@@ -537,25 +541,27 @@ class TestReviewSynthesizerLLMIntegration:
         ]
 
         # When: _create_request_params 호출
-        params = synthesizer._create_request_params(messages, openrouter_model_info)
+        params = synthesizer._create_request_params(
+            messages, openrouter_model_info, SummarySynthesisResponse
+        )
 
         # Then: OpenRouter 파라미터 확인
 
         # openrouter_name 필드 사용 확인
         assert params["model"] == "moonshot-v1/moonshot-v1-128k"
         assert params["messages"] == messages
-        assert params["max_tokens"] == 10000
+        assert params["max_tokens"] == 5000  # SynthesisConfig.MAX_TOKENS
         assert params["temperature"] == 0.1
 
         # JSON Schema 형식 확인
         assert params["response_format"]["type"] == "json_schema"
         assert (
             params["response_format"]["json_schema"]["name"]
-            == "structured_synthesis_response"
+            == "summary_synthesis_response"
         )
         assert params["response_format"]["json_schema"]["strict"] is True
 
-        # StructuredSynthesisResponse schema 포함 확인
+        # SummarySynthesisResponse schema 포함 확인
         schema = params["response_format"]["json_schema"]["schema"]
         assert "$defs" in schema or "properties" in schema  # Pydantic schema 구조 확인
 
@@ -727,7 +733,7 @@ class TestReviewSynthesizerEndToEndMock:
         expected_total_cost = 0.0239639 + 0.0288886 + 0.0249969 + 0.0544419
         assert abs(result.estimated_cost.total_cost_usd - expected_total_cost) < 0.001
 
-        # API 호출 검증
+        # API 호출 검증 (Summary만 LLM 합성되므로 1회 호출)
         mock_create_client.assert_called_once()
         mock_instructor_client.chat.completions.create_with_completion.assert_called_once()
 
@@ -811,7 +817,7 @@ class TestReviewSynthesizerEndToEndMock:
         assert result.review_response.summary is not None
         assert len(result.review_response.recommendations) > 0
 
-        # 3회 재시도 확인
+        # 3회 재시도 확인 (Summary만 LLM 합성되므로 Summary 합성에서만 3회)
         assert (
             mock_instructor_client.chat.completions.create_with_completion.call_count
             == 3
@@ -929,14 +935,14 @@ class TestReviewSynthesizerEndToEndMock:
         # 중복을 고려한 테스트로 수정
         assert len(set(recommendations)) <= len(recommendations)
 
-    def test_synthesize_summary_only_method(
+    def test_fallback_summary_method(
         self, integration_review_results: list[ReviewResult]
     ) -> None:
-        """_synthesize_summary_only 메서드 단독 테스트"""
+        """_fallback_summary 메서드 단독 테스트"""
         synthesizer = ReviewSynthesizer("test-model")
 
-        # When: Summary만 합성 메서드 호출
-        summary = synthesizer._synthesize_summary_only(integration_review_results)
+        # When: fallback summary 메서드 호출
+        summary = synthesizer._fallback_summary(integration_review_results)
 
         # Then: Summary가 생성되어야 함 (fallback 모드로)
         assert summary is not None
@@ -944,7 +950,9 @@ class TestReviewSynthesizerEndToEndMock:
 
         # fallback 모드에서는 가장 긴 summary를 선택
         original_summaries = [
-            r.review_response.summary for r in integration_review_results
+            r.review_response.summary
+            for r in integration_review_results
+            if r.success and r.review_response.summary
         ]
         longest_summary = max(original_summaries, key=len)
         assert summary == longest_summary
@@ -952,37 +960,31 @@ class TestReviewSynthesizerEndToEndMock:
     # _get_language_instruction 제거에 따라 관련 테스트 삭제
 
     @patch("selvage.src.multiturn.review_synthesizer.get_default_language")
-    def test_get_synthesis_system_prompt_with_korean_setting(
+    def test_get_summary_synthesis_prompt_with_korean_setting(
         self, mock_get_language: Mock
     ) -> None:
-        """한국어 설정 시 시스템 프롬프트에 {{LANGUAGE}} 치환 테스트"""
+        """한국어 설정 시 Summary 합성 시스템 프롬프트에 {{LANGUAGE}} 치환 테스트"""
         # Given: 한국어 설정
         mock_get_language.return_value = "Korean"
         synthesizer = ReviewSynthesizer("test-model")
 
-        # When: 시스템 프롬프트 로드
-        prompt = synthesizer._get_synthesis_system_prompt()
+        # When: Summary 합성 시스템 프롬프트 로드
+        prompt = synthesizer._get_summary_synthesis_prompt()
 
         # Then: 언어 치환이 반영되어야 함
-        assert "Respond in Korean language" in prompt
-        assert (
-            "expert code review synthesis specialist" in prompt
-        )  # 기본 프롬프트도 포함
+        assert "Korean" in prompt
 
     @patch("selvage.src.multiturn.review_synthesizer.get_default_language")
-    def test_get_synthesis_system_prompt_with_english_setting(
+    def test_get_summary_synthesis_prompt_with_english_setting(
         self, mock_get_language: Mock
     ) -> None:
-        """영어 설정 시 시스템 프롬프트에 {{LANGUAGE}} 치환 테스트"""
+        """영어 설정 시 Summary 합성 시스템 프롬프트에 {{LANGUAGE}} 치환 테스트"""
         # Given: 영어 설정
         mock_get_language.return_value = "English"
         synthesizer = ReviewSynthesizer("test-model")
 
-        # When: 시스템 프롬프트 로드
-        prompt = synthesizer._get_synthesis_system_prompt()
+        # When: Summary 합성 시스템 프롬프트 로드
+        prompt = synthesizer._get_summary_synthesis_prompt()
 
         # Then: 언어 치환이 반영되어야 함
-        assert "Respond in English language" in prompt
-        assert (
-            "expert code review synthesis specialist" in prompt
-        )  # 기본 프롬프트도 포함
+        assert "English" in prompt

@@ -186,8 +186,25 @@ class ReviewResponse(BaseModel):
         )
 
 
+class SummarySynthesisResponse(BaseModel):
+    """Summary 전용 합성 응답 모델"""
+
+    summary: str = Field(
+        description="통합된 리뷰 요약. 각 청크의 summary를 종합",
+        min_length=10,
+    )
+
+
+class RecommendationSynthesisResponse(BaseModel):
+    """Recommendations 전용 합성 응답 모델"""
+
+    recommendations: list[str] = Field(
+        description="정제된 권장사항 목록. 중복 제거 및 우선순위 정렬 완료", min_items=0
+    )
+
+
 class StructuredSynthesisResponse(BaseModel):
-    """합성 결과 전용 Structured Outputs 모델"""
+    """합성 결과 전용 Structured Outputs 모델 (기존 호환성 유지)"""
 
     summary: str = Field(
         description="통합된 리뷰 요약. 각 청크의 내용을 종합",
