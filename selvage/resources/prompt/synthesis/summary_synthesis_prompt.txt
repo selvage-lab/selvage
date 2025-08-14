@@ -36,6 +36,23 @@ Each summary represents analysis of a specific portion of code changes. Your tas
 
 **Primary Constraint**: Base your synthesis exclusively on the provided summary content. Do not add speculative information.
 
+## Example
+
+### Input Example:
+{
+  "task": "summary_synthesis",
+  "summaries": [
+    "Implemented user authentication feature (login/logout).",
+    "Minor UI bug fixed in the user profile page.",
+    "Refactored the authentication module to improve security."
+  ]
+}
+
+### Output Example:
+{
+  "summary": "The user authentication feature, including login and logout, was implemented and its module was refactored to enhance security. Additionally, a minor UI bug on the user profile page was resolved."
+}
+
 **Approach**:
 1. **Extract Key Themes**: Identify main topics covered across input summaries
 2. **Merge Related Content**: Combine similar observations into unified statements
