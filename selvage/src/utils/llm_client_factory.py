@@ -40,7 +40,7 @@ class LLMClientFactory:
             return instructor.from_openai(OpenAI(api_key=api_key))
         elif provider == ModelProvider.ANTHROPIC:
             # thinking 모드인 경우 instructor 사용 안 함
-            if model_info["thinking_mode"]:
+            if model_info.get("thinking_mode", False):
                 return Anthropic(
                     api_key=api_key,
                     timeout=ANTHROPIC_THINKING_MODE_TIMEOUT_SECONDS,

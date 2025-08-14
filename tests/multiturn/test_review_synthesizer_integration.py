@@ -28,6 +28,7 @@ def has_any_api_key() -> bool:
 
 
 @pytest.mark.integration
+# @pytest.mark.skip(reason="Skipping real integration tests")
 class TestReviewSynthesizerRealIntegration:
     """ReviewSynthesizer 실제 LLM API 통합 테스트"""
 

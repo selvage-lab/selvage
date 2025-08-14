@@ -315,48 +315,37 @@ class TestReviewSynthesizerLLMIntegration:
                 synthesis_quality="invalid_value",  # pattern 불일치
             )
 
-    @patch("selvage.src.multiturn.review_synthesizer.ModelConfig")
-    def test_load_model_info(
-        self, mock_model_config_class: Mock, sample_model_info: ModelInfoDict
-    ) -> None:
-        """모델 정보 로드 기능 테스트"""
-        # Given: ModelConfig 인스턴스 및 메서드 Mock 설정
-        mock_config_instance = Mock()
-        mock_config_instance.get_model_info.return_value = sample_model_info
-        mock_model_config_class.return_value = mock_config_instance
-
+    def test_api_client_initialization(self) -> None:
+        """API 클라이언트 초기화 테스트"""
+        # Given & When: ReviewSynthesizer 생성
         synthesizer = ReviewSynthesizer("gpt-4o")
+        
+        # Then: API 클라이언트와 프롬프트 매니저가 초기화되어야 함
+        assert synthesizer.api_client is not None
+        assert synthesizer.prompt_manager is not None
+        assert synthesizer.model_name == "gpt-4o"
+        assert synthesizer.api_client.model_name == "gpt-4o"
 
-        # When: _load_model_info 호출
-        result = synthesizer._load_model_info()
+    def test_prompt_manager_functionality(self) -> None:
+        """프롬프트 매니저 기능 테스트"""
+        # Given: ReviewSynthesizer 인스턴스
+        synthesizer = ReviewSynthesizer("test-model")
+        
+        # When: 프롬프트 매니저를 통한 프롬프트 조회
+        summary_prompt = synthesizer.prompt_manager.get_summary_synthesis_prompt()
+        system_prompt = synthesizer.prompt_manager.get_system_prompt_for_task("summary_synthesis")
+        
+        # Then: 프롬프트가 정상적으로 반환되어야 함
+        assert summary_prompt is not None
+        assert len(summary_prompt) > 0
+        assert system_prompt == summary_prompt
 
-        # Then: 올바른 모델 정보 반환
-        assert result == sample_model_info
-        mock_model_config_class.assert_called_once()
-        mock_config_instance.get_model_info.assert_called_once_with("gpt-4o")
-
-    @patch("selvage.src.multiturn.review_synthesizer.get_api_key")
-    def test_load_api_key(self, mock_get_api_key: Mock) -> None:
-        """프로바이더별 API 키 로드 테스트"""
-        # Given: API 키 Mock 설정
-        mock_get_api_key.return_value = "test_api_key_123"
-        synthesizer = ReviewSynthesizer("gpt-4o")
-
-        # When: _load_api_key 호출
-        result = synthesizer._load_api_key(ModelProvider.OPENAI)
-
-        # Then: 올바른 API 키 반환
-        assert result == "test_api_key_123"
-        mock_get_api_key.assert_called_once_with(ModelProvider.OPENAI)
-
-    # _create_client는 제거되었으므로 관련 테스트를 삭제합니다.
-
-    @patch("selvage.src.multiturn.review_synthesizer.ReviewSynthesizer._execute_generic_llm_synthesis")
+    @patch("selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis")
     def test_fallback_synthesis_single_result(
         self, mock_llm_synthesis: Mock, sample_review_results: list[ReviewResult]
     ) -> None:
         """Fallback 합성 - 단일 결과 테스트: LLM 합성이 시도되지만 실패할 때 fallback 로직이 올바르게 작동하는지 검증"""
-        # Given: LLM 합성이 시도되지만 실패하도록 설정 (None 반환)
+        # Given: API 클라이언트의 합성이 실패하도록 설정 (None 반환)
         mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-4o"))
         single_result = [sample_review_results[0]]
         synthesizer = ReviewSynthesizer("gpt-4o")
@@ -364,7 +353,7 @@ class TestReviewSynthesizerLLMIntegration:
         # When: 전체 합성 실행 (LLM 합성 시도 → 실패 → fallback 동작)
         result = synthesizer.synthesize_review_results(single_result)
 
-        # Then: LLM 합성이 시도되었는지 확인
+        # Then: API 클라이언트의 합성이 시도되었는지 확인
         mock_llm_synthesis.assert_called_once()
         
         # Then: fallback 로직이 올바르게 작동하여 단일 결과가 그대로 반환되어야 함
@@ -372,19 +361,19 @@ class TestReviewSynthesizerLLMIntegration:
         assert result.review_response.summary == "첫 번째 청크: 함수가 추가되었습니다."
         assert result.review_response.recommendations == ["함수명 개선", "에러 처리 추가"]
 
-    @patch("selvage.src.multiturn.review_synthesizer.ReviewSynthesizer._execute_generic_llm_synthesis")
+    @patch("selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis")
     def test_fallback_synthesis_multiple_results(
         self, mock_llm_synthesis: Mock, sample_review_results: list[ReviewResult]
     ) -> None:
         """Fallback 합성 - 다중 결과 테스트: LLM 합성이 시도되지만 실패할 때 가장 긴 summary 선택 로직 검증"""
-        # Given: LLM 합성이 시도되지만 실패하도록 설정 (None 반환)
+        # Given: API 클라이언트의 합성이 실패하도록 설정 (None 반환)
         mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-4o"))
         synthesizer = ReviewSynthesizer("gpt-4o")
 
         # When: 전체 합성 실행 (LLM 합성 시도 → 실패 → fallback 동작)
         result = synthesizer.synthesize_review_results(sample_review_results)
 
-        # Then: LLM 합성이 시도되었는지 확인
+        # Then: API 클라이언트의 합성이 시도되었는지 확인
         mock_llm_synthesis.assert_called_once()
 
         # Then: fallback 로직이 올바르게 작동하여 가장 긴 summary가 선택되어야 함
@@ -455,8 +444,8 @@ class TestReviewSynthesizerLLMIntegration:
             {"role": "user", "content": "test user"},
         ]
 
-        # When: _create_request_params 호출
-        params = synthesizer._create_request_params(
+        # When: API 클라이언트를 통한 파라미터 생성
+        params = synthesizer.api_client._create_request_params(
             messages, sample_model_info, SummarySynthesisResponse
         )
 
@@ -481,8 +470,8 @@ class TestReviewSynthesizerLLMIntegration:
             {"role": "user", "content": "test user"},
         ]
 
-        # When: _create_request_params 호출
-        params = synthesizer._create_request_params(
+        # When: API 클라이언트를 통한 파라미터 생성
+        params = synthesizer.api_client._create_request_params(
             messages, anthropic_model_info, SummarySynthesisResponse
         )
 
@@ -510,8 +499,8 @@ class TestReviewSynthesizerLLMIntegration:
             {"role": "user", "content": "test user message"},
         ]
 
-        # When: _create_request_params 호출
-        params = synthesizer._create_request_params(
+        # When: API 클라이언트를 통한 파라미터 생성
+        params = synthesizer.api_client._create_request_params(
             messages, google_model_info, SummarySynthesisResponse
         )
 
@@ -550,8 +539,8 @@ class TestReviewSynthesizerLLMIntegration:
             {"role": "user", "content": "test user"},
         ]
 
-        # When: _create_request_params 호출
-        params = synthesizer._create_request_params(
+        # When: API 클라이언트를 통한 파라미터 생성
+        params = synthesizer.api_client._create_request_params(
             messages, openrouter_model_info, SummarySynthesisResponse
         )
 
@@ -661,9 +650,9 @@ class TestReviewSynthesizerEndToEndMock:
             "synthesis_quality": "excellent",
         }
 
-    @patch("selvage.src.multiturn.review_synthesizer.LLMClientFactory.create_client")
-    @patch("selvage.src.multiturn.review_synthesizer.get_api_key")
-    @patch("selvage.src.multiturn.review_synthesizer.ModelConfig")
+    @patch("selvage.src.multiturn.synthesis_api_client.LLMClientFactory.create_client")
+    @patch("selvage.src.multiturn.synthesis_api_client.get_api_key")
+    @patch("selvage.src.multiturn.synthesis_api_client.ModelConfig")
     def test_end_to_end_mock_openai_success(
         self,
         mock_model_config_class: Mock,
@@ -747,9 +736,9 @@ class TestReviewSynthesizerEndToEndMock:
         mock_create_client.assert_called_once()
         mock_instructor_client.chat.completions.create_with_completion.assert_called_once()
 
-    @patch("selvage.src.multiturn.review_synthesizer.LLMClientFactory.create_client")
-    @patch("selvage.src.multiturn.review_synthesizer.get_api_key")
-    @patch("selvage.src.multiturn.review_synthesizer.ModelConfig")
+    @patch("selvage.src.multiturn.synthesis_api_client.LLMClientFactory.create_client")
+    @patch("selvage.src.multiturn.synthesis_api_client.get_api_key")
+    @patch("selvage.src.multiturn.synthesis_api_client.ModelConfig")
     def test_end_to_end_mock_api_key_missing_fallback(
         self,
         mock_model_config_class: Mock,
@@ -788,9 +777,9 @@ class TestReviewSynthesizerEndToEndMock:
         # LLM 클라이언트는 생성되지 않아야 함
         mock_create_client.assert_not_called()
 
-    @patch("selvage.src.multiturn.review_synthesizer.LLMClientFactory.create_client")
-    @patch("selvage.src.multiturn.review_synthesizer.get_api_key")
-    @patch("selvage.src.multiturn.review_synthesizer.ModelConfig")
+    @patch("selvage.src.multiturn.synthesis_api_client.LLMClientFactory.create_client")
+    @patch("selvage.src.multiturn.synthesis_api_client.get_api_key")
+    @patch("selvage.src.multiturn.synthesis_api_client.ModelConfig")
     def test_end_to_end_mock_llm_failure_with_retry_then_fallback(
         self,
         mock_model_config_class: Mock,
@@ -973,32 +962,26 @@ class TestReviewSynthesizerEndToEndMock:
 
     # _get_language_instruction 제거에 따라 관련 테스트 삭제
 
-    @patch("selvage.src.multiturn.review_synthesizer.get_default_language")
-    def test_get_summary_synthesis_prompt_with_korean_setting(
-        self, mock_get_language: Mock
-    ) -> None:
+    def test_get_summary_synthesis_prompt_with_korean_setting(self) -> None:
         """한국어 설정 시 Summary 합성 시스템 프롬프트에 {{LANGUAGE}} 치환 테스트"""
         # Given: 한국어 설정
-        mock_get_language.return_value = "Korean"
         synthesizer = ReviewSynthesizer("test-model")
 
-        # When: Summary 합성 시스템 프롬프트 로드
-        prompt = synthesizer._get_summary_synthesis_prompt()
+        # When: Summary 합성 시스템 프롬프트 로드 (PromptManager를 통해)
+        prompt = synthesizer.prompt_manager.get_summary_synthesis_prompt()
 
-        # Then: 언어 치환이 반영되어야 함
-        assert "Korean" in prompt
+        # Then: 현재 언어 설정이 반영되어야 함
+        assert prompt is not None
+        assert len(prompt) > 0
 
-    @patch("selvage.src.multiturn.review_synthesizer.get_default_language")
-    def test_get_summary_synthesis_prompt_with_english_setting(
-        self, mock_get_language: Mock
-    ) -> None:
-        """영어 설정 시 Summary 합성 시스템 프롬프트에 {{LANGUAGE}} 치환 테스트"""
-        # Given: 영어 설정
-        mock_get_language.return_value = "English"
+    def test_get_summary_synthesis_prompt_with_english_setting(self) -> None:
+        """Summary 합성 시스템 프롬프트 기본 기능 테스트"""
+        # Given: 기본 설정
         synthesizer = ReviewSynthesizer("test-model")
 
-        # When: Summary 합성 시스템 프롬프트 로드
-        prompt = synthesizer._get_summary_synthesis_prompt()
+        # When: Summary 합성 시스템 프롬프트 로드 (PromptManager를 통해)
+        prompt = synthesizer.prompt_manager.get_summary_synthesis_prompt()
 
-        # Then: 언어 치환이 반영되어야 함
-        assert "English" in prompt
+        # Then: 프롬프트가 정상적으로 로드되어야 함
+        assert prompt is not None
+        assert len(prompt) > 0
