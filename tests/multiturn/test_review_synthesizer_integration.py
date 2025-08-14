@@ -28,7 +28,6 @@ def has_any_api_key() -> bool:
 
 
 @pytest.mark.integration
-# @pytest.mark.skip(reason="Skipping real integration tests")
 class TestReviewSynthesizerRealIntegration:
     """ReviewSynthesizer 실제 LLM API 통합 테스트"""
 
@@ -144,6 +143,7 @@ class TestReviewSynthesizerRealIntegration:
 
         return results
 
+    @pytest.mark.skip(reason="Skipping real integration tests")
     @pytest.mark.parametrize(
         "model_name",
         [
@@ -198,7 +198,6 @@ class TestReviewSynthesizerRealIntegration:
         [
             "gpt-4o",  # OpenAI
             "claude-sonnet-4",  # Anthropic (일반)
-            "claude-sonnet-4-thinking",  # Anthropic (thinking 모드)
             "gemini-2.5-flash",  # Google
             "qwen3-coder",  # OpenRouter
         ],

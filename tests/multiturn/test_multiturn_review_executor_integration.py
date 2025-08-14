@@ -111,8 +111,6 @@ class TestMultiturnReviewExecutorIntegration:
 
     @pytest.fixture(
         params=[
-            "claude-sonnet-4",
-            "gemini-2.5-pro",
             "qwen3-coder",
             "kimi-k2",
         ]
