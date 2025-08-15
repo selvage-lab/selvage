@@ -66,7 +66,10 @@ class MultiturnReviewExecutor:
         console.info("Large context 처리 완료")
         return merged_result
 
-    @deprecated(reason="Use _execute_sequential_reviews instead")
+    @deprecated(
+        reason="Use _execute_sequential_reviews instead."
+        "Parallel execution causes concurrency issues with OpenRouter."
+    )
     def _execute_parallel_reviews(
         self,
         user_prompt_chunks: list[list[UserPromptWithFileContent]],
