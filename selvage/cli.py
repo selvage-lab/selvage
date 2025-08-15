@@ -380,7 +380,6 @@ def review_code(
 
     # Claude 모델인 경우 claude-provider 설정에 따라 실제 provider 결정
     if provider == ModelProvider.ANTHROPIC:
-        from selvage.src.config import get_claude_provider
         from selvage.src.models.claude_provider import ClaudeProvider
 
         claude_provider = get_claude_provider()
@@ -453,9 +452,11 @@ def review_code(
 
                 # 캐시된 결과에 대해서도 log_id 생성
                 log_id = ReviewLogManager.generate_log_id(model)
-
+                review_prompt = PromptGenerator().create_code_review_prompt(
+                    review_request
+                )
                 log_path = ReviewLogManager.save(
-                    None,
+                    review_prompt,
                     review_request,
                     review_response,
                     ReviewStatus.SUCCESS,
