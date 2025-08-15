@@ -1,16 +1,14 @@
 """합성 API 클라이언트 모듈"""
 
 import json
-from typing import Any, TypeVar
+from typing import Any
 
-import anthropic
 import openai
-from google.genai import types as genai_types
-from pydantic import BaseModel
 
 from selvage.src.config import get_api_key
 from selvage.src.model_config import ModelConfig, ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
+from selvage.src.multiturn.synthesis_types import ApiResponseType, ClientType, T
 from selvage.src.utils.base_console import console
 from selvage.src.utils.json_extractor import JSONExtractor
 from selvage.src.utils.llm_client_factory import LLMClientFactory
@@ -21,20 +19,6 @@ from selvage.src.utils.token.models import (
     StructuredSynthesisResponse,
     SummarySynthesisResponse,
 )
-
-# 제네릭 타입 변수 정의
-T = TypeVar("T", bound=BaseModel)
-
-# API 응답 타입 정의
-ApiResponseType = (
-    openai.types.Completion
-    | anthropic.types.Message
-    | genai_types.GenerateContentResponse
-    | dict[str, Any]
-)
-
-# 클라이언트 타입 정의
-ClientType = Any | object
 
 
 class SynthesisConfig:
