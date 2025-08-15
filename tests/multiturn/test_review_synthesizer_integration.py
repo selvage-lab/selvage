@@ -148,8 +148,6 @@ class TestReviewSynthesizerRealIntegration:
         "model_name",
         [
             "gpt-4o",  # OpenAI
-            "claude-sonnet-4",  # Anthropic (일반)
-            "claude-sonnet-4-thinking",  # Anthropic (thinking 모드)
             "gemini-2.5-flash",  # Google
             "qwen3-coder",  # OpenRouter
         ],

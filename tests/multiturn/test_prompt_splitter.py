@@ -56,14 +56,12 @@ class TestPromptSplitter:
         # Given: 4개 파일, actual_tokens=150000, max_tokens=100000
         actual_tokens = 150000
         max_tokens = 100000
-        overlap = 1
 
         # When: 토큰 기반 분할 실행
         result = prompt_splitter.split_user_prompts(
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
-            overlap=overlap,
         )
 
         # Then: 2개 청크로 분할되어야 함
@@ -86,14 +84,12 @@ class TestPromptSplitter:
         # Given: 4개 파일, 토큰 정보 없음
         actual_tokens = None
         max_tokens = None
-        overlap = 1
 
         # When: 기본 분할 실행
         result = prompt_splitter.split_user_prompts(
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
-            overlap=overlap,
         )
 
         # Then: 2개 청크로 분할되어야 함 (반으로 분할)
@@ -115,14 +111,12 @@ class TestPromptSplitter:
         # Given: 4개 파일, overlap=0
         actual_tokens = 150000
         max_tokens = 100000
-        overlap = 0
 
         # When: overlap=0으로 분할
         result = prompt_splitter.split_user_prompts(
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
-            overlap=overlap,
         )
 
         # Then: 겹치는 파일이 없어야 함
@@ -142,14 +136,12 @@ class TestPromptSplitter:
         # Given: 4개 파일, overlap=1
         actual_tokens = 150000
         max_tokens = 100000
-        overlap = 1
 
         # When: overlap=1로 분할
         result = prompt_splitter.split_user_prompts(
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
-            overlap=overlap,
         )
 
         # Then: overlap 비적용, 2개 청크로 분할되며 겹치는 파일 없음
@@ -167,14 +159,12 @@ class TestPromptSplitter:
         # Given: 4개 파일, overlap=2
         actual_tokens = 200000
         max_tokens = 100000
-        overlap = 2
 
         # When: overlap=2로 분할
         result = prompt_splitter.split_user_prompts(
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
-            overlap=overlap,
         )
 
         # Then: overlap 비적용, 최소 2개 청크이며 겹치는 파일 없음
