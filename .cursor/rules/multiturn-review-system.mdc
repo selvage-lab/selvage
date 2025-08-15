@@ -1,0 +1,450 @@
+---
+description: Multiturn Review System - Context limit 초과 시 프롬프트 분할 및 결과 합성 시스템
+globs:
+alwaysApply: false
+---
+
+# 멀티턴 리뷰 시스템 (Multiturn Review System)
+
+## 시스템 개요
+
+멀티턴 리뷰 시스템은 LLM API의 컨텍스트 제한(context limit)을 초과하는 대용량 코드 리뷰 요청을 자동으로 처리하는 시스템입니다. 컨텍스트 제한 초과 에러가 감지되면 자동으로 작동하여 프롬프트를 여러 청크로 분할하고, 각 청크를 순차적으로 처리한 후 결과를 지능적으로 합성하여 하나의 통합된 리뷰 결과를 제공합니다.
+
+### 주요 특징
+
+- **자동 감지**: error_patterns.yml 기반 컨텍스트 제한 초과 에러 자동 감지
+- **지능적 분할**: 토큰 정보와 텍스트 길이를 고려한 최적 프롬프트 분할
+- **순차 처리**: OpenRouter 동시성 문제 해결을 위한 안정적인 순차 API 호출
+- **LLM 합성**: Summary는 LLM을 활용한 지능적 합성, fallback 로직 제공
+- **비용 투명성**: 전체 청크 처리 비용과 합성 비용의 정확한 계산 및 표시
+
+## 핵심 컴포넌트 및 아키텍처
+
+```
+CLI Error Handler
+    ↓
+MultiturnReviewExecutor (메인 조정자)
+    ├── PromptSplitter (프롬프트 분할)
+    └── ReviewSynthesizer (결과 합성)
+            ├── SynthesisAPIClient (API 호출)
+            └── SynthesisPromptManager (프롬프트 관리)
+```
+
+### 1. MultiturnReviewExecutor
+
+**역할**: 멀티턴 리뷰 프로세스의 메인 조정자
+**위치**: `selvage/src/multiturn/multiturn_review_executor.py`
+
+```python
+class MultiturnReviewExecutor:
+    def execute_multiturn_review(
+        self,
+        review_prompt: ReviewPromptWithFileContent,
+        token_info: TokenInfo,
+        llm_gateway: BaseGateway,
+    ) -> ReviewResult:
+        # 1. 프롬프트 분할
+        # 2. 순차 API 호출
+        # 3. 결과 합성
+```
+
+**주요 기능**:
+- PromptSplitter를 통한 user_prompts 분할
+- 분할된 청크들의 순차적 LLM API 호출
+- ReviewSynthesizer를 통한 결과 합성 조정
+
+### 2. PromptSplitter
+
+**역할**: 토큰 제한에 맞춰 프롬프트를 최적으로 분할
+**위치**: `selvage/src/multiturn/prompt_splitter.py`
+
+**분할 전략**:
+1. **토큰 정보 기반 분할**: actual_tokens와 max_tokens 비율로 청크 수 계산
+2. **텍스트 길이 기반 균등 분배**: 그리디 알고리즘으로 각 청크의 크기 균등화
+3. **안전 여유분 확보**: max_tokens의 80%를 안전 기준으로 설정
+
+```python
+# 분할 비율 계산 예시
+safe_max_tokens = max_tokens * 0.8
+raw_split_ratio = actual_tokens / safe_max_tokens
+split_ratio = max(2, math.ceil(raw_split_ratio))
+```
+
+### 3. ReviewSynthesizer
+
+**역할**: 여러 리뷰 결과를 하나의 통합된 결과로 합성
+**위치**: `selvage/src/multiturn/review_synthesizer.py`
+
+**합성 전략**:
+- **Issues**: 단순 합산 (정보 손실 방지)
+- **Summary**: LLM 합성 시도 → 실패 시 fallback (가장 긴 summary 선택)
+- **Recommendations**: 단순 합산 + 완전 동일 항목만 중복 제거
+- **Score**: 첫 번째 결과의 점수 사용
+
+### 4. SynthesisAPIClient
+
+**역할**: 모든 LLM 프로바이더에 대한 통합 합성 API 호출
+**위치**: `selvage/src/multiturn/synthesis_api_client.py`
+
+**지원 프로바이더**:
+- OpenAI (Instructor 사용)
+- Anthropic Claude (일반/thinking 모드 지원)
+- Google Gemini (직접 SDK 사용)
+- OpenRouter (JSON Schema 지원)
+
+### 5. SynthesisPromptManager
+
+**역할**: 합성 작업별 프롬프트 관리
+**위치**: `selvage/src/multiturn/synthesis_prompt_manager.py`
+
+**지원 작업**:
+- summary_synthesis: Summary 합성 전용 프롬프트
+- recommendation_synthesis: Recommendations 합성 전용 프롬프트
+
+## 상세 워크플로우
+
+### 1. 에러 감지 및 분석
+```python
+# cli.py:L354-356
+if error_response.is_context_limit_error():
+    return _handle_context_limit_error(
+        review_prompt, error_response, llm_gateway
+    )
+```
+
+**에러 패턴 매칭**: `selvage/resources/error_patterns.yml`에 정의된 패턴으로 context_limit_exceeded 에러 감지
+
+**프로바이더별 에러 패턴**:
+- **OpenAI**: "context_length_exceeded"
+- **Anthropic**: "prompt is too long", "input length"
+- **OpenRouter**: "maximum context length"
+
+### 2. 토큰 정보 추출
+```python
+token_info = TokenInfo.from_error_response(error_response)
+```
+
+**추출 정보**:
+- `actual_tokens`: 실제 사용한 토큰 수
+- `max_tokens`: 최대 허용 토큰 수
+
+### 3. 프롬프트 분할 실행
+```python
+user_prompt_chunks = self.prompt_splitter.split_user_prompts(
+    user_prompts=review_prompt.user_prompts,
+    actual_tokens=token_info.actual_tokens,
+    max_tokens=token_info.max_tokens,
+)
+```
+
+**분할 과정**:
+1. 분할 비율 계산 (안전 여유분 20% 확보)
+2. 각 UserPromptWithFileContent의 추정 크기 계산
+3. 크기순 정렬 후 그리디 알고리즘으로 균등 분배
+
+### 4. 순차 API 호출
+```python
+review_results = self._execute_sequential_reviews(
+    user_prompt_chunks, review_prompt.system_prompt, llm_gateway
+)
+```
+
+**순차 처리 이유**: OpenRouter의 동시성 문제로 인해 병렬 처리에서 순차 처리로 전환 (병렬 버전은 deprecated)
+
+### 5. 결과 합성
+```python
+synthesizer = ReviewSynthesizer(llm_gateway.get_model_name())
+merged_result = synthesizer.synthesize_review_results(review_results)
+```
+
+**합성 과정**:
+1. 성공한 결과들만 추출
+2. Issues 단순 합산
+3. Summary LLM 합성 (실패 시 fallback)
+4. Recommendations 합산 및 중복 제거
+5. 비용 계산 (기존 + 합성 비용)
+
+### 6. Summary LLM 합성 상세
+```python
+# ReviewSynthesizer._synthesize_summary_with_llm()
+synthesis_data = {
+    "task": "summary_synthesis",
+    "summaries": summaries,
+}
+system_prompt = self.prompt_manager.get_system_prompt_for_task("summary_synthesis")
+structured_response, estimated_cost = self.api_client.execute_synthesis(
+    synthesis_data, SummarySynthesisResponse, system_prompt
+)
+```
+
+### 7. 비용 계산
+```python
+total_cost = self._calculate_total_cost(
+    successful_results, summary_synthesis_cost, None
+)
+```
+
+**비용 구성**:
+- 각 청크 처리 비용의 합산
+- Summary 합성 비용 (LLM 호출 시)
+- Recommendations 합성 비용 (구현되어 있으나 현재 미사용)
+
+## 에러 처리 및 토큰 추출 메커니즘
+
+### error_patterns.yml 구조
+```yaml
+providers:
+  openai:
+    patterns:
+      context_limit_exceeded:
+        keywords: ["context_length_exceeded"]
+        message_patterns:
+          - regex: "This model's maximum context length is (\\d+(?:,\\d+)*) tokens\\. However, your messages resulted in (\\d+(?:,\\d+)*) tokens"
+            extract_tokens:
+              max_tokens: 1 # 첫 번째 캡처 그룹
+              actual_tokens: 2 # 두 번째 캡처 그룹
+```
+
+### TokenInfo 모델
+```python
+@dataclass
+class TokenInfo:
+    actual_tokens: int | None
+    max_tokens: int | None
+    
+    @classmethod
+    def from_error_response(cls, error_response: ErrorResponse) -> "TokenInfo":
+        actual_tokens = error_response.raw_error.get("actual_tokens")
+        max_tokens = error_response.raw_error.get("max_tokens")
+        return cls(
+            actual_tokens=int(actual_tokens) if actual_tokens else None,
+            max_tokens=int(max_tokens) if max_tokens else None,
+        )
+```
+
+## 프롬프트 분할 전략 상세
+
+### 1. 분할 비율 계산
+```python
+def _calculate_split_ratio(self, actual_tokens: int, max_tokens: int) -> int:
+    # 여유분 20% 확보
+    safe_max_tokens = max_tokens * 0.8
+    
+    # safe 범위 이하면 분할 없이 단일 처리
+    if actual_tokens <= safe_max_tokens:
+        return 1
+    
+    raw_split_ratio = actual_tokens / safe_max_tokens
+    split_ratio = math.ceil(raw_split_ratio)
+    return max(2, split_ratio)  # 최소 2개로 분할
+```
+
+### 2. 텍스트 길이 기반 균등 분배
+```python
+def _distribute_by_text_length(
+    self, user_prompts: list[UserPromptWithFileContent], target_chunks: int
+) -> tuple[list[list[UserPromptWithFileContent]], list[int]]:
+    # 1. 각 프롬프트의 추정 크기 계산
+    for prompt in user_prompts:
+        context_size = len(str(prompt.file_context.context)) if prompt.file_context.context else 0
+        hunks_size = len(prompt.formatted_hunks) * 500  # 평균 500자로 추정
+        estimated_size = context_size + hunks_size
+    
+    # 2. 크기 순 정렬 (큰 것부터)
+    prompt_with_sizes.sort(key=lambda x: x[1], reverse=True)
+    
+    # 3. 각 프롬프트를 가장 작은 청크에 배치 (그리디 알고리즘)
+    for prompt, text_length in prompt_with_sizes:
+        min_chunk_idx = chunk_text_lengths.index(min(chunk_text_lengths))
+        chunks[min_chunk_idx].append(prompt)
+        chunk_text_lengths[min_chunk_idx] += text_length
+```
+
+### 3. Overlap 기능 (현재 미사용)
+```python
+def _apply_overlap(
+    self,
+    chunks: list[list[UserPromptWithFileContent]],
+    overlap: int,
+) -> list[list[UserPromptWithFileContent]]:
+    # 각 청크에 이전 청크의 마지막 overlap 개수만큼 파일들을 포함
+    # 현재 구현되어 있으나 사용하지 않음 (overlap=0)
+```
+
+## 결과 합성 로직 상세
+
+### 1. Issues 합성 (단순 합산)
+```python
+all_issues = []
+for result in successful_results:
+    all_issues.extend(result.review_response.issues)
+```
+**전략**: 정보 손실 방지를 위해 모든 이슈를 단순 합산
+
+### 2. Summary 합성 (LLM + Fallback)
+```python
+try:
+    summary_result = self._synthesize_summary_with_llm(successful_results)
+    if summary_result and summary_result.summary:
+        synthesized_summary = summary_result.summary
+    else:
+        synthesized_summary = self._fallback_summary(successful_results)
+except Exception as e:
+    synthesized_summary = self._fallback_summary(successful_results)
+```
+
+**LLM 합성 프로세스**:
+1. 각 청크의 summary 추출
+2. SynthesisAPIClient를 통한 LLM 호출
+3. 구조화된 응답 (SummarySynthesisResponse) 파싱
+4. 실패 시 fallback으로 가장 긴 summary 선택
+
+### 3. Recommendations 합성 (합산 + 중복 제거)
+```python
+def _combine_recommendations_simple(
+    self, successful_results: list[ReviewResult]
+) -> list[str]:
+    all_recs = []
+    for result in successful_results:
+        all_recs.extend(result.review_response.recommendations)
+    
+    # 완전 동일한 권장사항만 제거 (단순하고 안전)
+    unique_recs = list(dict.fromkeys(all_recs))
+    return unique_recs
+```
+
+## 비용 계산 및 관리
+
+### 1. 전체 비용 구성
+```python
+def _calculate_total_cost(
+    self,
+    successful_results: list[ReviewResult],
+    summary_synthesis_cost: EstimatedCost | None = None,
+    recommendations_synthesis_cost: EstimatedCost | None = None,
+) -> EstimatedCost:
+    total_cost = EstimatedCost.get_zero_cost(self.model_name)
+    
+    # 기존 리뷰 결과들의 비용 합산
+    for result in successful_results:
+        total_cost = EstimatedCost(
+            # 모든 비용 필드 합산
+        )
+    
+    # 합성 비용 추가
+    if summary_synthesis_cost:
+        total_cost = EstimatedCost(
+            # Summary 합성 비용 추가
+        )
+```
+
+### 2. 프로바이더별 합성 비용 계산
+```python
+def _calculate_synthesis_cost(
+    self,
+    provider: ModelProvider,
+    raw_api_response: ApiResponseType,
+    model_name: str,
+) -> EstimatedCost:
+    if provider == ModelProvider.OPENAI:
+        return self._calculate_openai_synthesis_cost(raw_api_response, model_name)
+    elif provider == ModelProvider.ANTHROPIC:
+        return self._calculate_anthropic_synthesis_cost(raw_api_response, model_name)
+    # ... 기타 프로바이더
+```
+
+## 성능 최적화 및 제한사항
+
+### 1. 순차 처리 전환
+**이유**: OpenRouter의 동시성 문제
+**영향**: 처리 시간 증가, 안정성 향상
+```python
+@deprecated(reason="Use _execute_sequential_reviews instead. Parallel execution causes concurrency issues with OpenRouter.")
+def _execute_parallel_reviews(...)
+```
+
+### 2. 안전 여유분 확보
+**토큰 계산**: max_tokens의 80%를 안전 기준으로 사용
+**목적**: API 호출 시 예상치 못한 토큰 증가 대비
+
+### 3. Overlap 미적용
+**현재 상태**: 구현되어 있으나 사용하지 않음 (overlap=0)
+**이유**: 정보 중복으로 인한 토큰 낭비 우려
+
+### 4. Fallback 로직
+**Summary 합성 실패 시**: 가장 긴 summary를 대표로 선택
+**토큰 정보 없을 시**: 프롬프트 개수 기반 동적 분할
+
+## 사용 예시 및 코드 스니펫
+
+### 1. CLI에서의 자동 작동
+```python
+# cli.py
+try:
+    review_result = llm_gateway.review_code(review_prompt)
+    if not review_result.success:
+        error_response = review_result.error_response
+        if error_response.is_context_limit_error():
+            return _handle_context_limit_error(
+                review_prompt, error_response, llm_gateway
+            )
+except Exception as e:
+    # 에러 처리
+```
+
+### 2. 직접 사용 예시
+```python
+from selvage.src.multiturn import MultiturnReviewExecutor, TokenInfo
+
+# 토큰 정보 생성
+token_info = TokenInfo(actual_tokens=150000, max_tokens=128000)
+
+# 멀티턴 실행기 생성 및 실행
+executor = MultiturnReviewExecutor()
+result = executor.execute_multiturn_review(
+    review_prompt=review_prompt,
+    token_info=token_info,
+    llm_gateway=llm_gateway
+)
+```
+
+### 3. 결과 구조
+```python
+# 최종 결과는 ReviewResult 객체
+result = ReviewResult(
+    success=True,
+    review_response=ReviewResponse(
+        summary="합성된 종합 요약",
+        issues=[...],  # 모든 청크의 이슈 합산
+        recommendations=[...],  # 중복 제거된 권장사항
+        score=8.5
+    ),
+    estimated_cost=EstimatedCost(
+        model="gpt-4o",
+        total_cost_usd=0.0456,  # 전체 청크 + 합성 비용
+        input_tokens=12500,
+        output_tokens=3200
+    ),
+    error_response=None
+)
+```
+
+## 향후 개선 방향
+
+### 1. Overlap 기능 활용
+- 청크 간 컨텍스트 연속성 향상을 위한 overlap 적용 고려
+- 토큰 비용과 품질 향상의 균형점 찾기
+
+### 2. 병렬 처리 재도입
+- OpenRouter 동시성 문제 해결 후 병렬 처리 재활성화
+- 프로바이더별 동시성 정책 세분화
+
+### 3. 지능적 분할 개선
+- AST 기반 의미적 분할 고려
+- 파일 의존성을 고려한 분할 전략
+
+### 4. 합성 로직 고도화
+- Recommendations의 LLM 합성 활성화
+- 의미적 중복 제거 알고리즘 도입
+
+이 멀티턴 리뷰 시스템은 대용량 코드 리뷰 요청을 안정적이고 효율적으로 처리할 수 있는 강력한 솔루션을 제공합니다.

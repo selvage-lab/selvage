@@ -202,6 +202,7 @@ For comprehensive development information, refer to these detailed guides in `.c
 - **[Code Conventions](file://.cursor/rules/code-conventions.mdc)** - Detailed Python style guide, type hints, file organization, docstring standards, and code review checklist
 - **[Models and Gateways](file://.cursor/rules/models-and-gateways.mdc)** - LLM model information, gateway architecture, factory patterns, and API integration details
 - **[App Architecture Workflow](file://.cursor/rules/app-architecture-workflow.mdc)** - Complete data flow, Git diff processing, prompt generation, and cost estimation systems
+- **[Multiturn Review System](file://.cursor/rules/multiturn-review-system.mdc)** - 컨텍스트 제한 초과 시 프롬프트 분할 및 결과 합성 시스템
 - **[Project Structure](file://.cursor/rules/project-structure.mdc)** - Directory organization and module dependencies
 - **[Linting Setup](file://.cursor/rules/linting-setup.mdc)** - Ruff configuration and code quality tools
 - **[GitHub PR Workflow](file://.cursor/rules/github-pr-create-workflow.mdc)** - Pull request creation and review processes
