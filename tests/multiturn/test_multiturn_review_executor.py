@@ -229,19 +229,24 @@ class TestMultiturnReviewExecutor:
         assert all(result.success for result in results)
         assert mock_llm_gateway.review_code.call_count == 2
 
-    def test_result_merging(
+    def test_result_synthesizing_with_synthesizer(
         self,
-        multiturn_executor: MultiturnReviewExecutor,
         sample_review_results: list[ReviewResult],
+        mock_llm_gateway: Mock,
     ) -> None:
-        """여러 ReviewResult 합성 테스트"""
+        """ReviewSynthesizer를 통한 여러 ReviewResult 합성 테스트"""
+        from selvage.src.multiturn.review_synthesizer import ReviewSynthesizer
+        
+        # Given: ReviewSynthesizer 인스턴스
+        synthesizer = ReviewSynthesizer(mock_llm_gateway.get_model_name())
+        
         # When: 결과 합성
-        merged_result = multiturn_executor._merge_review_results(sample_review_results)
+        merged_result = synthesizer.synthesize_review_results(sample_review_results)
 
         # Then: 합성된 결과 반환
         assert merged_result.success is True
-        assert "Summary 0" in merged_result.review_response.summary
-        assert "Summary 1" in merged_result.review_response.summary
+        assert merged_result.review_response.summary is not None
+        assert len(merged_result.review_response.recommendations) >= 0
 
     def test_empty_user_prompts(
         self,

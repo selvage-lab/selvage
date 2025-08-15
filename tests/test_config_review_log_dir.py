@@ -293,16 +293,16 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
     @patch("selvage.cli.get_model_info")
     def test_save_review_log_with_custom_dir(self, mock_get_model_info) -> None:
         """save_review_log 함수가 사용자 지정 디렉토리를 올바르게 처리하는지 테스트."""
-        from selvage.src.utils.logging.review_log_manager import ReviewLogManager
         from selvage.src.diff_parser.models.diff_result import DiffResult
         from selvage.src.models.model_provider import ModelProvider
         from selvage.src.models.review_status import ReviewStatus
+        from selvage.src.utils.logging.review_log_manager import ReviewLogManager
         from selvage.src.utils.token.models import ReviewRequest
 
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": ModelProvider.OPENAI,
-            "full_name": "gpt-4",
+            "full_name": "gpt-4o",
         }
 
         # ReviewRequest Mock 생성
@@ -311,7 +311,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
             diff_content="test diff",
             processed_diff=diff_result,
             file_paths=["test.py"],
-            model="gpt-4",
+            model="gpt-4o",
             repo_path="/test/repo",
         )
 
@@ -333,23 +333,23 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
         with open(log_path, encoding="utf-8") as f:
             log_data = json.load(f)
 
-        self.assertEqual(log_data["model"]["name"], "gpt-4")
+        self.assertEqual(log_data["model"]["name"], "gpt-4o")
         self.assertEqual(log_data["status"], "SUCCESS")
 
     @patch("selvage.cli.get_model_info")
     def test_save_review_log_with_default_dir(self, mock_get_model_info) -> None:
         """save_review_log 함수가 기본 디렉토리를 올바르게 사용하는지 테스트."""
-        from selvage.src.utils.logging.review_log_manager import ReviewLogManager
         from selvage.src.config import get_default_review_log_dir
         from selvage.src.diff_parser.models.diff_result import DiffResult
         from selvage.src.models.model_provider import ModelProvider
         from selvage.src.models.review_status import ReviewStatus
+        from selvage.src.utils.logging.review_log_manager import ReviewLogManager
         from selvage.src.utils.token.models import ReviewRequest
 
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": ModelProvider.OPENAI,
-            "full_name": "gpt-4",
+            "full_name": "gpt-4o",
         }
 
         # ReviewRequest Mock 생성
@@ -358,7 +358,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
             diff_content="test diff",
             processed_diff=diff_result,
             file_paths=["test.py"],
-            model="gpt-4",
+            model="gpt-4o",
             repo_path="/test/repo",
         )
 
