@@ -1,5 +1,7 @@
 <h1 align="center">Selvage: AI 기반 코드 리뷰 자동화 도구</h1>
 
+<p align="center">🌐 <a href="README_EN.md"><strong>English</strong></a></p>
+
 <p align="center"><strong>Git diff를 AI가 분석하여 코드 품질 향상, 버그 발견, 보안 취약점 식별을 도와주는 현대적인 CLI 도구입니다.</strong></p>
 
 <p align="center">
