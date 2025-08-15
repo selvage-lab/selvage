@@ -23,7 +23,6 @@ class PromptSplitter:
             user_prompts: 분할할 사용자 프롬프트 목록
             actual_tokens: 실제 사용한 토큰 수 (error_response에서 추출)
             max_tokens: 최대 허용 토큰 수 (error_response에서 추출)
-            overlap: 분할된 청크간 겹치는 파일 개수 (기본값: 1)
 
         Returns:
             분할된 user_prompts 그룹들의 목록
