@@ -40,12 +40,12 @@ class LLMClientFactory:
             return instructor.from_openai(OpenAI(api_key=api_key))
         elif provider == ModelProvider.ANTHROPIC:
             # thinking 모드인 경우 instructor 사용 안 함
+            # thinking 모드는 일반 호출보다 오래 걸릴 수 있어 넉넉한 타임아웃 적용
             if model_info.get("thinking_mode", False):
                 return Anthropic(
                     api_key=api_key,
                     timeout=ANTHROPIC_THINKING_MODE_TIMEOUT_SECONDS,
                 )
-                # thinking 모드는 일반 호출보다 오래 걸릴 수 있어 넉넉한 타임아웃 적용
             else:
                 return instructor.from_anthropic(Anthropic(api_key=api_key))
         elif provider == ModelProvider.GOOGLE:
