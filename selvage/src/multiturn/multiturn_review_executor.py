@@ -131,6 +131,3 @@ class MultiturnReviewExecutor:
                 review_results.append(error_result)
 
         return review_results
-
-    # NOTE: _merge_review_results는 ReviewSynthesizer로 완전히 교체됨 (CR-19)
-    # 기존 단순 합성 방식 대신 LLM 기반 지능적 합성 사용
