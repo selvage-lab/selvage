@@ -210,3 +210,6 @@ llm_eval/results/
 /multiturn_results
 /tests/results/multiturn_integration
 /tests/results/multiturn_integration_v2
+
+# 개인 환경별 스크립트 파일들
+scripts/
