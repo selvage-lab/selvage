@@ -127,6 +127,15 @@ class TestErrorPatternParser:
             "However, you requested about 2315418 tokens (2315418 of text input)."
         )
         mock_error.__str__ = MagicMock(return_value=error_message)
+        
+        # OpenRouter JSON 응답 구조 시뮬레이션
+        mock_response = MagicMock()
+        mock_response.text = json.dumps({
+            "error": {
+                "message": error_message
+            }
+        })
+        mock_error.response = mock_response
 
         result = parser.parse_error("openrouter", mock_error)
 
@@ -238,6 +247,14 @@ class TestErrorPatternParser:
             if "http_status_code" in result_data:
                 mock_error.response = MagicMock()
                 mock_error.response.status_code = result_data["http_status_code"]
+                
+                # OpenRouter의 경우 JSON 응답 구조 추가
+                if provider == "openrouter":
+                    mock_error.response.text = json.dumps({
+                        "error": {
+                            "message": error_message
+                        }
+                    })
 
             parsing_result = parser.parse_error(provider, mock_error)
 

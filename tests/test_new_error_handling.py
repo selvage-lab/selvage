@@ -23,7 +23,7 @@ class TestNewErrorHandling:
     def test_context_limit_error_detection_openai(self):
         """OpenAI context limit 에러 감지 테스트"""
         error = Exception(
-            "This request would result in a token count that exceeds the context_length_exceeded limit"
+            "This model's maximum context length is 128000 tokens. However, your messages resulted in 150000 tokens. Please reduce the length of the messages."
         )
         error_response = ErrorResponse.from_exception(error, "openai")
 
@@ -34,7 +34,7 @@ class TestNewErrorHandling:
     def test_context_limit_error_detection_anthropic(self):
         """Anthropic context limit 에러 감지 테스트"""
         error = Exception(
-            "The prompt is too long and exceeds the maximum allowed length"
+            "prompt is too long: 209924 tokens > 200000 maximum"
         )
         error_response = ErrorResponse.from_exception(error, "anthropic")
 
@@ -43,7 +43,7 @@ class TestNewErrorHandling:
 
     def test_context_limit_error_detection_openrouter(self):
         """OpenRouter context limit 에러 감지 테스트"""
-        error = Exception("400 Bad Request: Context length exceeded")
+        error = Exception("This endpoint's maximum context length is 1000000 tokens. However, you requested about 2315418 tokens (2315418 of text input).")
         error_response = ErrorResponse.from_exception(error, "openrouter")
 
         assert error_response.error_type == "context_limit_exceeded"
@@ -63,7 +63,7 @@ class TestNewErrorHandling:
     def test_review_result_context_limit_error(self):
         """ReviewResult context limit 에러 테스트"""
         error = Exception(
-            "context_length_exceeded: This request would exceed the context limit"
+            "This model's maximum context length is 128000 tokens. However, your messages resulted in 200000 tokens. Please reduce the length of the messages."
         )
         review_result = ReviewResult.get_error_result(error, "gpt-4", "openai")
 

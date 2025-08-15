@@ -52,7 +52,6 @@ class MultiturnReviewExecutor:
             user_prompts=review_prompt.user_prompts,
             actual_tokens=token_info.actual_tokens,
             max_tokens=token_info.max_tokens,
-            overlap=0,
         )
 
         # 2. 순차 API 호출 (OpenRouter 동시성 문제 해결)
