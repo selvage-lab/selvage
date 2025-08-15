@@ -1,6 +1,5 @@
 """SynthesisAPIClient 테스트"""
 
-from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -69,7 +68,7 @@ class TestSynthesisAPIClient:
         mock_raw_response.usage = Mock()
         mock_raw_response.usage.prompt_tokens = 100
         mock_raw_response.usage.completion_tokens = 50
-        
+
         mock_instructor_client.chat.completions.create_with_completion.return_value = (
             mock_structured_response,
             mock_raw_response,
@@ -78,7 +77,7 @@ class TestSynthesisAPIClient:
         # When: 합성 실행
         synthesis_data = {"task": "summary_synthesis", "summaries": ["요약1", "요약2"]}
         system_prompt = "테스트 시스템 프롬프트"
-        
+
         result, cost = api_client.execute_synthesis(
             synthesis_data, SummarySynthesisResponse, system_prompt
         )
@@ -102,7 +101,7 @@ class TestSynthesisAPIClient:
         # When: 합성 실행
         synthesis_data = {"task": "summary_synthesis", "summaries": ["요약1"]}
         system_prompt = "테스트 시스템 프롬프트"
-        
+
         result, cost = api_client.execute_synthesis(
             synthesis_data, SummarySynthesisResponse, system_prompt
         )
@@ -132,7 +131,9 @@ class TestSynthesisAPIClient:
         assert params["max_tokens"] == 5000
         assert params["temperature"] == 0.1
 
-    def test_create_request_params_anthropic(self, api_client: SynthesisAPIClient) -> None:
+    def test_create_request_params_anthropic(
+        self, api_client: SynthesisAPIClient
+    ) -> None:
         """Anthropic 요청 파라미터 생성 테스트"""
         # Given: Anthropic 모델 정보
         anthropic_model_info = {
@@ -180,7 +181,9 @@ class TestSynthesisAPIClient:
         assert params["contents"][0]["role"] == "user"
         assert "System:" in params["contents"][0]["parts"][0]["text"]
 
-    def test_create_request_params_openrouter(self, api_client: SynthesisAPIClient) -> None:
+    def test_create_request_params_openrouter(
+        self, api_client: SynthesisAPIClient
+    ) -> None:
         """OpenRouter 요청 파라미터 생성 테스트"""
         # Given: OpenRouter 모델 정보
         openrouter_model_info = {
@@ -204,10 +207,15 @@ class TestSynthesisAPIClient:
         assert params["max_tokens"] == 5000
         assert params["temperature"] == 0.1
         assert params["response_format"]["type"] == "json_schema"
-        assert params["response_format"]["json_schema"]["name"] == "summary_synthesis_response"
+        assert (
+            params["response_format"]["json_schema"]["name"]
+            == "summary_synthesis_response"
+        )
         assert params["usage"]["include_usage"] is True
 
-    def test_create_request_params_unsupported_provider(self, api_client: SynthesisAPIClient) -> None:
+    def test_create_request_params_unsupported_provider(
+        self, api_client: SynthesisAPIClient
+    ) -> None:
         """지원하지 않는 프로바이더 테스트"""
         # Given: 지원하지 않는 프로바이더
         unsupported_model_info = {
@@ -222,7 +230,9 @@ class TestSynthesisAPIClient:
                 messages, unsupported_model_info, SummarySynthesisResponse
             )
 
-    @patch("selvage.src.multiturn.synthesis_api_client.CostEstimator.estimate_cost_from_openai_usage")
+    @patch(
+        "selvage.src.multiturn.synthesis_api_client.CostEstimator.estimate_cost_from_openai_usage"
+    )
     def test_calculate_synthesis_cost_openai(
         self, mock_cost_estimator: Mock, api_client: SynthesisAPIClient
     ) -> None:
@@ -241,7 +251,9 @@ class TestSynthesisAPIClient:
         assert cost is not None
         mock_cost_estimator.assert_called_once()
 
-    def test_calculate_synthesis_cost_no_usage(self, api_client: SynthesisAPIClient) -> None:
+    def test_calculate_synthesis_cost_no_usage(
+        self, api_client: SynthesisAPIClient
+    ) -> None:
         """usage 정보 없을 때 비용 계산 테스트"""
         # Given: usage 정보가 없는 응답
         mock_response = Mock()
@@ -256,7 +268,9 @@ class TestSynthesisAPIClient:
         assert cost.total_cost_usd == 0.0
         assert cost.model == "test-model"
 
-    def test_call_provider_api_unsupported(self, api_client: SynthesisAPIClient) -> None:
+    def test_call_provider_api_unsupported(
+        self, api_client: SynthesisAPIClient
+    ) -> None:
         """지원하지 않는 프로바이더 API 호출 테스트"""
         # Given: 지원하지 않는 프로바이더
         mock_client = Mock()
@@ -265,5 +279,8 @@ class TestSynthesisAPIClient:
         # When & Then: 예외 발생
         with pytest.raises(ValueError, match="지원하지 않는 프로바이더"):
             api_client._call_provider_api(
-                "UNSUPPORTED", mock_client, params, SummarySynthesisResponse  # type: ignore
+                "UNSUPPORTED",
+                mock_client,
+                params,
+                SummarySynthesisResponse,  # type: ignore
             )
