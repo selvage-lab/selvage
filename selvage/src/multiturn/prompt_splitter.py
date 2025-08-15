@@ -49,8 +49,8 @@ class PromptSplitter:
             # 토큰 정보 기반 분할
             split_ratio = self._calculate_split_ratio(actual_tokens, max_tokens)
         else:
-            # 토큰 정보 없음 - 기본적으로 반으로 분할
-            split_ratio = 2
+            # 토큰 정보 없음 - 프롬프트 개수를 기반으로 동적 분할
+            split_ratio = max(2, min(len(user_prompts) // 10, 4))
 
         logger.debug(f"분할 비율: {split_ratio}")
 
