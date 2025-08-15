@@ -129,7 +129,6 @@ class OpenRouterGateway(BaseGateway):
             "usage": {
                 "include": True,
             },
-            "max_tokens": 10000,
         }
 
         # 모델별 파라미터 설정
@@ -200,6 +199,9 @@ class OpenRouterGateway(BaseGateway):
             Exception: API 호출 중 오류가 발생한 경우
         """
         messages = review_prompt.to_messages()
+
+        # estimated_cost 변수를 미리 초기화하여 예외 발생 시에도 안전하게 사용
+        estimated_cost = EstimatedCost.get_zero_cost(self.get_model_name())
 
         try:
             # 클라이언트 초기화 및 컨텍스트 매니저 사용

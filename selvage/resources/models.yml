@@ -101,7 +101,7 @@ models:
       temperature: 1 # thinking 모드에서 더 다양한 사고 과정 생성을 위해 설정
       thinking:
         type: "enabled"
-        budget_tokens: 10000
+        budget_tokens: 20000
     thinking_mode: true
     pricing:
       input: 3.0
