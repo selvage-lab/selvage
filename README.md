@@ -18,7 +18,7 @@
   <img src="assets/demo.gif" width="100%" alt="Selvage Demo"/>
 </p>
 
-**Selvage : 코드 마감까지 탄탄하게!**
+**Selvage: 코드 리뷰도 엣지있게!**
 
 동료의 리뷰를 기다리며 작업이 늦어지거나, 퇴근 무렵 쌓인 리뷰 요청에 발목 잡힌 경험이 있으신가요?  
 Selvage는 이런 코드 리뷰 병목 현상을 해결하는 AI 기반 도구입니다.

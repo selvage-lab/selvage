@@ -18,7 +18,7 @@
   <img src="assets/demo.gif" width="100%" alt="Selvage Demo"/>
 </p>
 
-**Selvage: Solid code reviews until the deadline!**
+**Selvage: Code reviews with an edge!**
 
 Have you ever experienced delays waiting for peer reviews, or been held up by a pile of review requests at the end of the day?  
 Selvage is an AI-powered tool that solves these code review bottlenecks.
