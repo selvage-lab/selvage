@@ -450,6 +450,9 @@ def review_code(
                 # 캐시 적중: 저장된 결과 사용
                 review_response, cached_cost = cached_result
 
+                # 캐시 적중 비용 표시 (0 USD)
+                estimated_cost = EstimatedCost.get_zero_cost(model)
+
                 # 캐시된 결과에 대해서도 log_id 생성
                 log_id = ReviewLogManager.generate_log_id(model)
                 review_prompt = PromptGenerator().create_code_review_prompt(
@@ -464,9 +467,6 @@ def review_code(
                     review_log_dir=review_log_dir,
                     estimated_cost=estimated_cost,
                 )
-
-                # 캐시 적중 비용 표시 (0 USD)
-                estimated_cost = EstimatedCost.get_zero_cost(model)
 
                 console.success("캐시된 리뷰 결과를 사용했습니다! (API 비용 절약)")
             else:
