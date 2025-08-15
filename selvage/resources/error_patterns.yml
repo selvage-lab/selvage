@@ -28,12 +28,17 @@ providers:
     patterns:
       context_limit_exceeded:
         # Anthropic의 prompt too long 에러 패턴
-        keywords: ["prompt is too long"]
+        keywords: ["prompt is too long", "input length", "max_tokens", "exceed context limit"]
         message_patterns:
           - regex: "prompt is too long: (\\d+(?:,\\d+)*) tokens > (\\d+(?:,\\d+)*) maximum"
             extract_tokens:
               actual_tokens: 1 # 첫 번째 캡처 그룹
               max_tokens: 2 # 두 번째 캡처 그룹
+          - regex: "input length and `max_tokens` exceed context limit: (\\d+(?:,\\d+)*) \\+ (\\d+(?:,\\d+)*) > (\\d+(?:,\\d+)*)"
+            extract_tokens:
+              actual_tokens: 1 # input length (첫 번째 캡처 그룹)
+              max_tokens_param: 2 # max_tokens parameter (두 번째 캡처 그룹)
+              total_limit: 3 # context limit (세 번째 캡처 그룹)
         error_codes: ["invalid_request_error"]
         http_status_codes: [400]
         error_type: "context_limit_exceeded"

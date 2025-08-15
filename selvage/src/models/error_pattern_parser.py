@@ -28,6 +28,7 @@ class ErrorParsingResult(NamedTuple):
     http_status_code: int | None = None
     token_info: TokenInfo | None = None
     matched_pattern: str | None = None
+    additional_token_info: dict[str, Any] = {}
 
 
 class ErrorPatternParser:
@@ -100,7 +101,7 @@ class ErrorPatternParser:
                 return result
 
         # 매칭되는 패턴이 없는 경우 기본값 반환
-        return ErrorParsingResult(error_type="api_error")
+        return ErrorParsingResult(error_type="api_error", additional_token_info={})
 
     def _extract_error_attributes(self, error: Exception) -> dict[str, Any]:
         """에러 객체에서 속성들을 추출합니다."""
@@ -234,7 +235,9 @@ class ErrorPatternParser:
             return None
 
         # 메시지 패턴에서 토큰 정보 추출
-        token_info = self._extract_token_info(pattern_config, error_message)
+        token_info, additional_token_info = self._extract_token_info(
+            pattern_config, error_message
+        )
 
         return ErrorParsingResult(
             error_type=pattern_config.get("error_type", "api_error"),
@@ -242,13 +245,15 @@ class ErrorPatternParser:
             http_status_code=error_attrs.get("http_status_code"),
             token_info=token_info,
             matched_pattern=pattern_name,
+            additional_token_info=additional_token_info,
         )
 
     def _extract_token_info(
         self, pattern_config: dict[str, Any], error_message: str
-    ) -> TokenInfo | None:
+    ) -> tuple[TokenInfo | None, dict[str, Any]]:
         """메시지 패턴에서 토큰 정보를 추출합니다."""
         message_patterns = pattern_config.get("message_patterns", [])
+        additional_token_info = {}
 
         for pattern_info in message_patterns:
             if isinstance(pattern_info, dict) and "regex" in pattern_info:
@@ -257,16 +262,21 @@ class ErrorPatternParser:
 
                 match = re.search(regex, error_message)
                 if match:
-                    return self._parse_token_groups(match, extract_config)
+                    token_info, additional = self._parse_token_groups(
+                        match, extract_config
+                    )
+                    additional_token_info.update(additional)
+                    return token_info, additional_token_info
 
-        return None
+        return None, additional_token_info
 
     def _parse_token_groups(
         self, match: re.Match, extract_config: dict[str, int]
-    ) -> TokenInfo:
+    ) -> tuple[TokenInfo, dict[str, Any]]:
         """정규표현식 매치에서 토큰 수를 추출합니다."""
         actual_tokens = None
         max_tokens = None
+        additional_info = {}
 
         # 실제 토큰 수 추출
         if "actual_tokens" in extract_config:
@@ -286,7 +296,20 @@ class ErrorPatternParser:
             except (IndexError, ValueError):
                 pass
 
-        return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
+        # 추가 토큰 정보 추출 (max_tokens_param, total_limit 등)
+        for field_name, group_idx in extract_config.items():
+            if field_name not in ["actual_tokens", "max_tokens"]:
+                try:
+                    token_str = match.group(group_idx)
+                    additional_info[field_name] = self._clean_and_parse_number(
+                        token_str
+                    )
+                except (IndexError, ValueError):
+                    pass
+
+        return TokenInfo(
+            actual_tokens=actual_tokens, max_tokens=max_tokens
+        ), additional_info
 
     def _clean_and_parse_number(self, number_str: str) -> int:
         """숫자 문자열에서 쉼표를 제거하고 정수로 변환합니다."""

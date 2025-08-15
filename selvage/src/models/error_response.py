@@ -56,6 +56,10 @@ class ErrorResponse(BaseModel):
                 if parsing_result.token_info.max_tokens is not None:
                     raw_error["max_tokens"] = parsing_result.token_info.max_tokens
 
+            # 추가 토큰 정보가 있는 경우 raw_error에 추가
+            if parsing_result.additional_token_info:
+                raw_error.update(parsing_result.additional_token_info)
+
             # 매칭된 패턴 정보 추가
             if parsing_result.matched_pattern:
                 raw_error["matched_pattern"] = parsing_result.matched_pattern

@@ -81,7 +81,7 @@ class ClaudeGateway(BaseGateway):
             params = {
                 "model": self.get_model_name(),
                 "messages": user_messages,
-                "max_tokens": 20000,
+                "max_tokens": 64000,
             }
 
             # system 메시지가 있으면 별도 파라미터로 추가

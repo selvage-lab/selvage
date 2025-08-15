@@ -210,6 +210,43 @@ class TestErrorPatternParser:
         assert error_response.raw_error["actual_tokens"] == 150000
         assert error_response.raw_error["max_tokens"] == 128000
 
+    def test_anthropic_new_context_limit_error_pattern(self, parser: ErrorPatternParser):
+        """Anthropic의 새로운 context limit 에러 패턴 테스트 - input length and max_tokens exceed context limit"""
+        # 실제 발생한 에러 메시지 형태
+        error_message = (
+            "Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', "
+            "'message': 'input length and `max_tokens` exceed context limit: 155345 + 64000 > 200000, "
+            "decrease input length or `max_tokens` and try again'}}"
+        )
+        
+        # Mock exception with proper attributes for Anthropic error
+        mock_error = Exception(error_message)
+        mock_error.status_code = 400
+        mock_error.body = {
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error",
+                "message": "input length and `max_tokens` exceed context limit: 155345 + 64000 > 200000, decrease input length or `max_tokens` and try again"
+            }
+        }
+
+        # 에러 응답 생성
+        error_response = ErrorResponse.from_exception(mock_error, "anthropic")
+
+        # 검증: context_limit_exceeded로 분류되어야 함
+        assert error_response.error_type == "context_limit_exceeded"
+        assert error_response.error_code == "invalid_request_error"
+        assert error_response.provider == "anthropic"
+        assert error_response.is_context_limit_error() is True
+
+        # 토큰 정보가 추출되어야 함
+        assert "actual_tokens" in error_response.raw_error
+        assert "max_tokens_param" in error_response.raw_error
+        assert "total_limit" in error_response.raw_error
+        assert error_response.raw_error["actual_tokens"] == 155345
+        assert error_response.raw_error["max_tokens_param"] == 64000
+        assert error_response.raw_error["total_limit"] == 200000
+
     @pytest.mark.parametrize(
         "provider,pattern_name",
         [
