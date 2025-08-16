@@ -117,7 +117,7 @@ def _detect_language_from_filename(filename: str) -> str:
     return language_map.get(ext, "text")
 
 
-def _create_syntax_block(code: str, filename: str = "", title: str = "코드") -> Syntax:
+def _create_syntax_block(code: str, filename: str = "") -> Syntax:
     """코드 블록을 구문 강조와 함께 생성합니다."""
     language = _detect_language_from_filename(filename)
 
@@ -191,19 +191,25 @@ class ReviewDisplay:
     ) -> None:
         """리뷰 완료 결과를 통합된 Panel로 출력합니다."""
         # 토큰 정보를 축약된 형태로 표시
-        token_info = f"{_format_token_count(estimated_cost.input_tokens)} → {_format_token_count(estimated_cost.output_tokens)} tokens"
+        token_info = (
+            f"{_format_token_count(estimated_cost.input_tokens)} → "
+            f"{_format_token_count(estimated_cost.output_tokens)} tokens"
+        )
 
         # 경로를 간단하게 표시
         simplified_path = _shorten_path(log_path)
 
         # 통합 Panel 내용 구성
-        content = f"""[bold cyan]모델:[/bold cyan] [white]{model_info["full_name"]}[/white]
-[dim]{model_info["description"]}[/dim]
-
-[bold yellow]비용:[/bold yellow] [white]{estimated_cost.total_cost_usd}[/white] [dim]({token_info})[/dim]
-[dim]※ 추정 비용이므로 각 AI 서비스에서 정확한 비용을 확인하세요.[/dim]
-
-[bold green]저장:[/bold green] [white]{simplified_path}[/white]"""
+        content = (
+            f"[bold cyan]모델:[/bold cyan] [white]{model_info['full_name']}[/white]\n"
+            f"[dim]{model_info['description']}[/dim]\n\n"
+            f"[bold yellow]비용:[/bold yellow] "
+            f"[white]{estimated_cost.total_cost_usd}[/white] "
+            f"[dim]({token_info})[/dim]\n"
+            f"[dim]※ 추정 비용이므로 각 AI 서비스에서 정확한 비용을 "
+            f"확인하세요.[/dim]\n\n"
+            f"[bold green]저장:[/bold green] [white]{simplified_path}[/white]"
+        )
 
         panel = Panel(
             Align.center(content),
@@ -257,7 +263,7 @@ class ReviewDisplay:
         )
 
         # 출력 함수 정의
-        def _print_content():
+        def _print_content() -> None:
             # 요약 패널 출력
             self.console.print(summary_panel)
             self.console.print()
@@ -387,18 +393,17 @@ class ReviewDisplay:
         # Live 표시로 실시간 업데이트
         with Live(
             make_panel(), refresh_per_second=10, console=self.console, transient=True
-        ) as live:
+        ) as _:
             # 백그라운드에서 물결치는 진행률 업데이트
             stop_progress = threading.Event()
 
-            def update_progress():
+            def update_progress() -> None:
                 step = 0
                 while not stop_progress.is_set():
                     # 톱니파 패턴: 0에서 100까지 갔다가 다시 0에서 시작
                     cycle_length = 50  # 한 사이클의 길이 (조절 가능)
                     progress_value = (step % cycle_length) * (100 / cycle_length)
                     progress.update(task, completed=progress_value)
-                    live.update(make_panel())
 
                     step += 1
                     time.sleep(0.1)
@@ -413,9 +418,8 @@ class ReviewDisplay:
                 progress_thread.join()
                 # 완료 시에는 100%로 설정하고 잠시 보여준 후 사라지게 함
                 progress.update(task, completed=100)
-                live.update(make_panel())
                 time.sleep(0.5)  # 완료 상태를 잠시 보여줌
-                # Live가 종료되면서 Panel이 자동으로 사라짐
+                # Live가 종료된 후에도 Panel이 잠시 유지됩니다.
 
     def show_available_models(self) -> None:
         """사용 가능한 모든 AI 모델을 가독성 있게 표시합니다."""
@@ -481,7 +485,8 @@ class ReviewDisplay:
 
             # 사용법 안내
             self.console.print(
-                "[dim]사용법: [/dim][bold]selvage review --model <모델명 또는 별칭>[/bold]"
+                "[dim]사용법: [/dim][bold]selvage review --model "
+                "<모델명 또는 별칭>[/bold]"
             )
             self.console.print(
                 "[dim]기본 모델 설정: [/dim][bold]selvage config model <모델명>[/bold]"
