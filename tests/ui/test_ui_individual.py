@@ -28,8 +28,9 @@ except ImportError:
     from selvage.src.utils.token.models import EstimatedCost
 
 # ModelInfoDict 타입 힌팅을 위한 간단한 타입 정의 (yaml 의존성 없이)
-from typing import Any, Dict
-ModelInfoDict = Dict[str, Any]
+from typing import Any
+
+ModelInfoDict = dict[str, Any]
 
 
 def create_mock_data():
