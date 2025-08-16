@@ -1,7 +1,6 @@
 """프롬프트 분할 담당 클래스"""
 
 import logging
-import math
 
 import tiktoken
 
@@ -88,7 +87,7 @@ class PromptSplitter:
             return 1
 
         raw_split_ratio = actual_tokens / safe_max_tokens
-        split_ratio = math.ceil(raw_split_ratio)
+        split_ratio = max(3, int(raw_split_ratio))
 
         return split_ratio
 

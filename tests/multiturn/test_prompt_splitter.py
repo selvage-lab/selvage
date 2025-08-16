@@ -65,16 +65,17 @@ class TestPromptSplitter:
             max_output_tokens=0,
         )
 
-        # Then: 2개 청크로 분할되어야 함
-        # (150000 / (100000 * 0.8) = 1.875 -> ceil(1.875) = 2)
-        assert len(result) == 2
+        # Then: 3개 청크로 분할되어야 함
+        # (150000 / (100000 * 0.8) = 1.875 -> max(3, int(1.875)) = max(3, 1) = 3)
+        assert len(result) == 3
         # 각 청크가 비어있지 않아야 함
-        assert len(result[0]) > 0
-        assert len(result[1]) > 0
-        # overlap 비적용: 두 청크 간 파일이 겹치지 않아야 함
-        left_files = [p.file_name for p in result[0]]
-        right_files = [p.file_name for p in result[1]]
-        assert set(left_files).isdisjoint(set(right_files))
+        for chunk in result:
+            assert len(chunk) > 0
+        # overlap 비적용: 모든 청크 간 파일이 겹치지 않아야 함
+        all_files = []
+        for chunk in result:
+            all_files.extend([p.file_name for p in chunk])
+        assert len(all_files) == len(set(all_files))
 
     def test_split_without_token_info(
         self,
@@ -94,15 +95,16 @@ class TestPromptSplitter:
             max_output_tokens=0,
         )
 
-        # Then: 2개 청크로 분할되어야 함 (반으로 분할)
-        assert len(result) == 2
+        # Then: 3개 청크로 분할되어야 함 (최소 3개 보장)
+        assert len(result) == 3
         # 각 청크가 비어있지 않아야 함
-        assert len(result[0]) > 0
-        assert len(result[1]) > 0
-        # overlap 비적용: 두 청크 간 파일이 겹치지 않아야 함
-        left_files = [p.file_name for p in result[0]]
-        right_files = [p.file_name for p in result[1]]
-        assert set(left_files).isdisjoint(set(right_files))
+        for chunk in result:
+            assert len(chunk) > 0
+        # overlap 비적용: 모든 청크 간 파일이 겹치지 않아야 함
+        all_files = []
+        for chunk in result:
+            all_files.extend([p.file_name for p in chunk])
+        assert len(all_files) == len(set(all_files))
 
     def test_overlap_zero(
         self,
@@ -123,7 +125,7 @@ class TestPromptSplitter:
         )
 
         # Then: 겹치는 파일이 없어야 함
-        assert len(result) == 2
+        assert len(result) == 3
         all_files = []
         for chunk in result:
             all_files.extend([prompt.file_name for prompt in chunk])
@@ -148,11 +150,12 @@ class TestPromptSplitter:
             max_output_tokens=0,
         )
 
-        # Then: overlap 비적용, 2개 청크로 분할되며 겹치는 파일 없음
-        assert len(result) == 2
-        left_files = [p.file_name for p in result[0]]
-        right_files = [p.file_name for p in result[1]]
-        assert set(left_files).isdisjoint(set(right_files))
+        # Then: overlap 비적용, 3개 청크로 분할되며 겹치는 파일 없음
+        assert len(result) == 3
+        all_files = []
+        for chunk in result:
+            all_files.extend([p.file_name for p in chunk])
+        assert len(all_files) == len(set(all_files))
 
     def test_overlap_two(
         self,
@@ -190,10 +193,12 @@ class TestPromptSplitter:
             actual_tokens, max_tokens, max_output_tokens=0
         )
 
-        # Then: ceil(150000 / (100000 * 0.8)) = ceil(1.875) = 2
-        expected_ratio = math.ceil(actual_tokens / (max_tokens * 0.8))
+        # Then: max(3, int(150000 / (100000 * 0.8))) = max(3, int(1.875)) = max(3, 1) = 3
+        safe_max_tokens = (max_tokens - 5000) * 0.8  # system_prompt_tokens=5000 고려
+        raw_split_ratio = actual_tokens / safe_max_tokens
+        expected_ratio = max(3, int(raw_split_ratio))
         assert split_ratio == expected_ratio
-        assert split_ratio == 2
+        assert split_ratio == 3
 
     def test_apply_overlap(
         self,
