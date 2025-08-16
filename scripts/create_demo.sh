@@ -178,7 +178,7 @@ if [ -f "demo.cast" ]; then
     # agg 설치 확인 및 변환
     if command -v agg &> /dev/null; then
         echo "🎨 GIF로 변환 중..."
-        agg --theme=dracula --font-family "D2Coding" --font-size 23 --speed 3 demo.cast demo.gif
+        agg --theme=dracula --font-family "D2Coding" --font-size 23 --speed 1.5 demo.cast demo.gif
         echo "✨ GIF 변환 완료: $(pwd)/demo.gif"
         
         # GIF도 assets 디렉토리로 복사
@@ -186,7 +186,7 @@ if [ -f "demo.cast" ]; then
         echo "📂 GIF 파일도 assets 디렉토리로 복사되었습니다."
     else
         echo "📝 수동으로 GIF 변환하세요:"
-        echo "   agg --theme=dracula --font-family \"D2Coding\" --font-size 23 --speed 3 demo.cast demo.gif"
+        echo "   agg --theme=dracula --font-family \"D2Coding\" --font-size 23 --speed 1.5 demo.cast demo.gif"
     fi
     
     echo "📊 파일 크기:"
