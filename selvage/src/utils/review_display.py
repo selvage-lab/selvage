@@ -149,6 +149,115 @@ def _create_recommendations_panel(recommendations: list) -> Panel:
     )
 
 
+class ProgressController:
+    """진행 상황 표시를 제어하는 클래스 (컨텍스트 매니저용)."""
+
+    def __init__(self, model: str, console: Console) -> None:
+        """진행 상황 표시 컨트롤러를 초기화합니다."""
+        self.model = model
+        self.console = console
+        self.progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            transient=False,
+        )
+        self.task = self.progress.add_task("코드 분석 및 리뷰 생성 중...", total=100)
+        self.live = None
+        self.stop_progress = threading.Event()
+        self.progress_thread = None
+        self.current_message = "코드 분석 및 리뷰 생성 중..."
+        self._panel = None
+
+    def _create_panel(self) -> Panel:
+        """현재 모드에 맞는 패널을 생성합니다."""
+        title = Text("Selvage : 코드 리뷰도 엣지있게!", style="bold cyan")
+        model_info = Text(f"모델: {self.model}", style="dim")
+
+        content = Group(
+            Align.center(title),
+            Text(""),
+            Align.center(model_info),
+            Text(""),
+            self.progress,
+        )
+
+        return Panel(
+            content,
+            title="[bold]코드 리뷰 진행 중[/bold]",
+            border_style="blue",
+            width=70,
+            padding=(1, 2),
+        )
+
+    def _update_progress(self) -> None:
+        """백그라운드에서 물결치는 진행률을 업데이트합니다."""
+        step = 0
+        while not self.stop_progress.is_set():
+            cycle_length = 50
+            progress_value = (step % cycle_length) * (100 / cycle_length)
+            self.progress.update(self.task, completed=progress_value)
+            # 수동 제어로 변경했으므로 명시적으로 refresh
+            if self.live:
+                self.live.refresh()
+            step += 1
+            time.sleep(0.1)
+
+    def start(self) -> None:
+        """진행 상황 표시를 시작합니다."""
+        self._panel = self._create_panel()
+        self.live = Live(
+            self._panel,
+            refresh_per_second=10,
+            console=self.console,
+            transient=True,
+            auto_refresh=False,  # 수동 제어로 변경
+        )
+        self.live.start()
+
+        self.progress_thread = threading.Thread(target=self._update_progress)
+        self.progress_thread.start()
+
+    def update_message(self, message: str) -> None:
+        """진행 상황 메시지를 업데이트합니다."""
+        self.current_message = message
+        self.progress.update(self.task, description=message)
+        # 강제 refresh로 즉시 업데이트
+        if self.live:
+            self.live.refresh()
+
+    def transition_to_multiturn(self, message: str) -> None:
+        """멀티턴 처리 모드로 부드럽게 전환합니다."""
+        self.update_message(message)
+        # Live display를 강제로 재시작하여 UI 정리
+        if self.live:
+            self.live.stop()
+            self.live.start()
+
+    def stop(self) -> None:
+        """진행 상황 표시를 즉시 종료합니다."""
+        if self.stop_progress:
+            self.stop_progress.set()
+        if self.progress_thread:
+            self.progress_thread.join()
+
+        if self.live:
+            self.live.stop()
+
+    def complete(self) -> None:
+        """정상 완료 시 진행 상황 표시를 종료합니다."""
+        if self.stop_progress:
+            self.stop_progress.set()
+        if self.progress_thread:
+            self.progress_thread.join()
+
+        # 완료 시 100%로 설정
+        self.progress.update(self.task, completed=100)
+        if self.live:
+            time.sleep(0.5)  # 완료 상태를 잠시 보여줌
+            self.live.stop()
+
+
 class UpdatableProgressReview:
     """업데이트 가능한 진행 상황 표시를 관리하는 클래스."""
 
@@ -254,7 +363,11 @@ class ReviewDisplay:
         self.console = Console()
 
     def create_updatable_progress(self, model: str) -> UpdatableProgressReview:
-        """업데이트 가능한 진행 상황 표시 객체를 생성합니다."""
+        """업데이트 가능한 진행 상황 표시 객체를 생성합니다.
+
+        [DEPRECATED] 이 메서드는 곧 제거될 예정입니다.
+        새로운 코드에서는 enhanced_progress_review() 컨텍스트 매니저를 사용하세요.
+        """
         return UpdatableProgressReview(model, self.console)
 
     def model_info(self, model_name: str, description: str) -> None:
@@ -454,6 +567,18 @@ class ReviewDisplay:
         else:
             # 직접 출력 (테스트용)
             _print_content()
+
+    @contextmanager
+    def enhanced_progress_review(
+        self, model: str
+    ) -> Generator[ProgressController, None, None]:
+        """메시지 업데이트 기능이 있는 진행 상황 표시를 제공합니다."""
+        progress_controller = ProgressController(model, self.console)
+        try:
+            progress_controller.start()
+            yield progress_controller
+        finally:
+            progress_controller.stop()
 
     @contextmanager
     def progress_review(self, model: str) -> Generator[None, None, None]:

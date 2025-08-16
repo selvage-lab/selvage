@@ -337,50 +337,32 @@ def _perform_new_review(
     # LLM 게이트웨이 가져오기
     llm_gateway = GatewayFactory.create(model=review_request.model)
 
-    # 업데이트 가능한 진행 상황 표시 시작
-    progress = review_display.create_updatable_progress(review_request.model)
-    progress.start()
-
-    try:
+    # 새로운 enhanced_progress_review 컨텍스트 매니저 사용
+    with review_display.enhanced_progress_review(review_request.model) as progress:
         review_prompt = PromptGenerator().create_code_review_prompt(review_request)
         review_result = llm_gateway.review_code(review_prompt)
 
         # 에러 처리
         if not review_result.success:
             if not review_result.error_response:
-                progress.stop()  # 알 수 없는 에러
                 _handle_unknown_error()
 
             error_response = review_result.error_response
             if error_response.is_context_limit_error():
-                progress.stop()
-
-                multiturn_progress = review_display.create_updatable_progress(
-                    review_request.model
-                )
-                multiturn_progress.start()
-                multiturn_progress.update_message(
+                # UI 연속성을 유지하면서 멀티턴 모드로 전환
+                progress.transition_to_multiturn(
                     "Context 한계 도달! Long context mode로 처리 중..."
                 )
-
-                try:
-                    result = _handle_context_limit_error(
-                        review_prompt, error_response, llm_gateway
-                    )
-                    multiturn_progress.complete()  # 정상 완료
-                    return result
-                except Exception:
-                    multiturn_progress.stop()  # 에러 발생 시
-                    raise
+                result = _handle_context_limit_error(
+                    review_prompt, error_response, llm_gateway
+                )
+                progress.complete()
+                return result
             else:
-                progress.stop()  # API 에러
                 _handle_api_error(error_response)
 
-        progress.complete()  # 정상 완료
+        progress.complete()
         return review_result.review_response, review_result.estimated_cost
-    except Exception:
-        progress.stop()  # 예상치 못한 에러
-        raise
 
 
 def review_code(

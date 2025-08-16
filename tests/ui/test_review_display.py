@@ -190,10 +190,46 @@ def test_show_available_models():
     display.show_available_models()
 
 
-def test_updatable_progress_review():
-    """업데이트 가능한 리뷰 진행 상황 UI 테스트 - 실제 CLI 동작 완전 재현."""
+def test_enhanced_progress_review():
+    """새로운 enhanced_progress_review 컨텍스트 매니저 테스트."""
     print("\n" + "=" * 60)
-    print("6. Long Context Review 전환 시뮬레이션 테스트 (CLI와 동일한 흐름)")
+    print("6. Enhanced Progress Review 테스트 (새로운 패턴)")
+    print("=" * 60)
+
+    display = ReviewDisplay()
+
+    print("새로운 enhanced_progress_review 시나리오를 시뮬레이션합니다.")
+    print("단계별 진행 상황:")
+
+    # 새로운 컨텍스트 매니저 패턴 사용
+    with display.enhanced_progress_review("Claude Sonnet-4") as progress:
+        # 1단계: 일반 리뷰 시뮬레이션
+        print("  1️⃣ 일반 코드 리뷰 진행 중...")
+        time.sleep(3)
+
+        # 2단계: 컨텍스트 제한 감지 시뮬레이션
+        print("  ⚠️ 컨텍스트 제한 초과 감지!")
+
+        # 3단계: UI 연속성을 유지하면서 멀티턴 모드로 전환
+        print("  🔄 멀티턴 모드로 부드럽게 전환 (UI 연속성 유지)")
+        progress.transition_to_multiturn(
+            "Context 한계 도달! Long context mode로 처리 중..."
+        )
+
+        # 4단계: Multiturn review 처리 시뮬레이션
+        time.sleep(4)
+
+        # 5단계: 정상 완료
+        print("  ✅ 리뷰 완료")
+        progress.complete()
+
+    print("  🎯 테스트 완료: 새로운 패턴으로 UI 연속성을 유지하며 동작했습니다!")
+
+
+def test_updatable_progress_review():
+    """기존 UpdatableProgressReview의 동작 테스트 (하위 호환성)."""
+    print("\n" + "=" * 60)
+    print("7. Long Context Review 전환 시뮬레이션 테스트 (기존 패턴)")
     print("=" * 60)
 
     display = ReviewDisplay()
@@ -302,6 +338,9 @@ def main():
         input("\n다음 테스트로 계속하려면 Enter를 누르세요...")
 
         test_show_available_models()
+        input("\n다음 테스트로 계속하려면 Enter를 누르세요...")
+
+        test_enhanced_progress_review()
         input("\n다음 테스트로 계속하려면 Enter를 누르세요...")
 
         test_updatable_progress_review()
