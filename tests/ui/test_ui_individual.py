@@ -15,17 +15,21 @@ from pathlib import Path
 
 # 패키지가 설치되지 않은 경우에만 경로 추가 (후순위 방법)
 try:
-    from selvage.src.model_config import ModelInfoDict
+    from selvage.src.models.model_provider import ModelProvider
+    from selvage.src.utils.review_display import ReviewDisplay
+    from selvage.src.utils.token.models import EstimatedCost
 except ImportError:
     # 개발 환경에서 패키지가 설치되지 않은 경우에만 사용
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).parent.parent.parent
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
-    from selvage.src.model_config import ModelInfoDict
+    from selvage.src.models.model_provider import ModelProvider
+    from selvage.src.utils.review_display import ReviewDisplay
+    from selvage.src.utils.token.models import EstimatedCost
 
-from selvage.src.models.model_provider import ModelProvider
-from selvage.src.utils.review_display import ReviewDisplay
-from selvage.src.utils.token.models import EstimatedCost
+# ModelInfoDict 타입 힌팅을 위한 간단한 타입 정의 (yaml 의존성 없이)
+from typing import Any, Dict
+ModelInfoDict = Dict[str, Any]
 
 
 def create_mock_data():
@@ -34,7 +38,7 @@ def create_mock_data():
         "full_name": "Claude 3.5 Sonnet",
         "aliases": ["claude-3.5-sonnet", "claude"],
         "description": "코드 분석과 리뷰에 특화된 고성능 AI 모델",
-        "provider": ModelProvider.CLAUDE,
+        "provider": ModelProvider.ANTHROPIC,
         "params": {
             "temperature": 0.1,
             "max_tokens": 4096,
