@@ -305,8 +305,6 @@ def _handle_context_limit_error(
     llm_gateway: BaseGateway,
 ) -> tuple[ReviewResponse, EstimatedCost]:
     """Context limit 에러 시 multiturn review 실행"""
-    console.info("컨텍스트 제한 초과 감지, Multiturn 리뷰로 재시도합니다...")
-
     token_info = TokenInfo.from_error_response(error_response)
     executor = MultiturnReviewExecutor()
     multiturn_result = executor.execute_multiturn_review(
@@ -339,25 +337,50 @@ def _perform_new_review(
     # LLM 게이트웨이 가져오기
     llm_gateway = GatewayFactory.create(model=review_request.model)
 
-    # 코드 리뷰 수행
-    with review_display.progress_review(review_request.model):
+    # 업데이트 가능한 진행 상황 표시 시작
+    progress = review_display.create_updatable_progress(review_request.model)
+    progress.start()
+
+    try:
         review_prompt = PromptGenerator().create_code_review_prompt(review_request)
         review_result = llm_gateway.review_code(review_prompt)
 
         # 에러 처리
         if not review_result.success:
             if not review_result.error_response:
+                progress.stop()  # 알 수 없는 에러
                 _handle_unknown_error()
 
             error_response = review_result.error_response
             if error_response.is_context_limit_error():
-                return _handle_context_limit_error(
-                    review_prompt, error_response, llm_gateway
+                progress.stop()
+
+                multiturn_progress = review_display.create_updatable_progress(
+                    review_request.model
                 )
+                multiturn_progress.start()
+                multiturn_progress.update_message(
+                    "Context 한계 도달! Long context mode로 처리 중..."
+                )
+
+                try:
+                    result = _handle_context_limit_error(
+                        review_prompt, error_response, llm_gateway
+                    )
+                    multiturn_progress.complete()  # 정상 완료
+                    return result
+                except Exception:
+                    multiturn_progress.stop()  # 에러 발생 시
+                    raise
             else:
+                progress.stop()  # API 에러
                 _handle_api_error(error_response)
 
+        progress.complete()  # 정상 완료
         return review_result.review_response, review_result.estimated_cost
+    except Exception:
+        progress.stop()  # 예상치 못한 에러
+        raise
 
 
 def review_code(

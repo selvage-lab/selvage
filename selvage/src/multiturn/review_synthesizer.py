@@ -51,8 +51,6 @@ class ReviewSynthesizer:
         if not successful_results:
             return ReviewResult.get_empty_result(self.model_name)
 
-        console.info("리뷰 결과 합성 시작")
-
         # 1. Issues는 단순 합산 (기존 방식 유지)
         all_issues = []
         for result in successful_results:
@@ -67,10 +65,9 @@ class ReviewSynthesizer:
             if summary_result and summary_result.summary:
                 synthesized_summary = summary_result.summary
                 summary_synthesis_cost = summary_result.estimated_cost
-                console.info("Summary LLM 합성 성공")
             else:
+                console.warning("Summary LLM 합성 실패. fallback으로 처리됩니다.")
                 synthesized_summary = self._fallback_summary(successful_results)
-                console.info("Summary fallback 적용")
         except Exception as e:
             console.warning(f"Summary LLM 합성 실패: {e}. fallback으로 처리됩니다.")
             synthesized_summary = self._fallback_summary(successful_results)
@@ -95,7 +92,6 @@ class ReviewSynthesizer:
             ].review_response.score,  # 첫 번째 결과의 점수 사용
         )
 
-        console.info("리뷰 결과 합성 완료")
         return ReviewResult.get_success_result(
             review_response=synthesized_review_response, estimated_cost=total_cost
         )

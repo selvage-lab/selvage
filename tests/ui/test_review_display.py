@@ -190,10 +190,64 @@ def test_show_available_models():
     display.show_available_models()
 
 
+def test_updatable_progress_review():
+    """업데이트 가능한 리뷰 진행 상황 UI 테스트 - 실제 CLI 동작 완전 재현."""
+    print("\n" + "=" * 60)
+    print("6. Long Context Review 전환 시뮬레이션 테스트 (CLI와 동일한 흐름)")
+    print("=" * 60)
+
+    display = ReviewDisplay()
+
+    print("실제 CLI _perform_new_review() 함수와 동일한 시나리오를 시뮬레이션합니다.")
+    print("단계별 진행 상황:")
+
+    # 1단계: 초기 progress 시작 (CLI와 동일)
+    print("  1️⃣ 일반 코드 리뷰 진행 중...")
+    progress = display.create_updatable_progress("Claude Sonnet-4")
+    progress.start()
+
+    try:
+        # 2단계: 일반 리뷰 시뮬레이션
+        time.sleep(3)
+
+        # 3단계: 컨텍스트 제한 감지 시뮬레이션
+        print("  ⚠️ 컨텍스트 제한 초과 감지!")
+
+        # 4단계: CLI와 동일한 전환 처리
+        print("  🔄 전환용 종료 - 화면 clear하여 깔끔하게 정리")
+        progress.stop()  # CLI L357과 동일
+
+        # 5단계: 새로운 progress 인스턴스 생성 (CLI L360-366과 동일)
+        print("  🆕 새로운 progress 인스턴스 생성 (깨끗한 화면에서 시작)")
+        multiturn_progress = display.create_updatable_progress("Claude Sonnet-4")
+        multiturn_progress.start()
+        multiturn_progress.update_message(
+            "Context 한계 도달! Long context mode로 처리 중..."
+        )
+
+        # 6단계: Multiturn review 처리 시뮬레이션
+        time.sleep(4)
+
+        # 7단계: 정상 완료 (CLI L372와 동일)
+        print("  ✅ 리뷰 완료")
+        multiturn_progress.complete()  # 정상 완료
+
+    except Exception:
+        # 에러 상황 처리 (CLI L375와 동일)
+        try:
+            if "multiturn_progress" in locals():
+                multiturn_progress.stop()
+            else:
+                progress.stop()
+        except:
+            pass
+        raise
+
+
 def test_print_review_result():
     """리뷰 결과 출력 UI 테스트."""
     print("\n" + "=" * 60)
-    print("6. 리뷰 결과 출력 UI 테스트")
+    print("7. 리뷰 결과 출력 UI 테스트")
     print("=" * 60)
 
     display = ReviewDisplay()
@@ -248,6 +302,9 @@ def main():
         input("\n다음 테스트로 계속하려면 Enter를 누르세요...")
 
         test_show_available_models()
+        input("\n다음 테스트로 계속하려면 Enter를 누르세요...")
+
+        test_updatable_progress_review()
         input("\n다음 테스트로 계속하려면 Enter를 누르세요...")
 
         test_print_review_result()

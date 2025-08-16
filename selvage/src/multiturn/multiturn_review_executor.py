@@ -6,7 +6,6 @@ from deprecated import deprecated
 
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.models.review_result import ReviewResult
-from selvage.src.utils.base_console import console
 from selvage.src.utils.prompts.models import (
     ReviewPromptWithFileContent,
     SystemPrompt,
@@ -45,8 +44,6 @@ class MultiturnReviewExecutor:
         if not review_prompt.user_prompts:
             return ReviewResult.get_empty_result(llm_gateway.get_model_name())
 
-        console.info("Large context 처리 시작")
-
         # 1. user_prompts 분할 (system_prompt는 공통 사용)
         user_prompt_chunks = self.prompt_splitter.split_user_prompts(
             user_prompts=review_prompt.user_prompts,
@@ -63,7 +60,6 @@ class MultiturnReviewExecutor:
         synthesizer = ReviewSynthesizer(llm_gateway.get_model_name())
         merged_result = synthesizer.synthesize_review_results(review_results)
 
-        console.info("Large context 처리 완료")
         return merged_result
 
     @deprecated(

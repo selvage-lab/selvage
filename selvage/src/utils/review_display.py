@@ -149,12 +149,113 @@ def _create_recommendations_panel(recommendations: list) -> Panel:
     )
 
 
+class UpdatableProgressReview:
+    """업데이트 가능한 진행 상황 표시를 관리하는 클래스."""
+
+    def __init__(self, model: str, console: Console) -> None:
+        """진행 상황 표시 인스턴스를 초기화합니다."""
+        self.model = model
+        self.console = console
+        self.progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            transient=False,
+        )
+        self.task = self.progress.add_task("코드 분석 및 리뷰 생성 중...", total=100)
+        self.live = None
+        self.stop_progress = threading.Event()
+        self.progress_thread = None
+        self.current_message = "코드 분석 및 리뷰 생성 중..."
+
+        # Panel을 미리 생성하고 고정된 구조로 유지
+        self._create_panel()
+
+    def _create_panel(self) -> None:
+        """현재 모드에 맞는 패널을 생성합니다."""
+        title = Text("Selvage : 코드 리뷰도 엣지있게!", style="bold cyan")
+        model_info = Text(f"모델: {self.model}", style="dim")
+
+        content = Group(
+            Align.center(title),
+            Text(""),
+            Align.center(model_info),
+            Text(""),
+            self.progress,  # Progress 객체는 내부적으로 업데이트됨
+        )
+
+        # 일관된 UI 스타일 유지 (색상 변경 안함)
+        self.panel = Panel(
+            content,
+            title="[bold]코드 리뷰 진행 중[/bold]",
+            border_style="blue",
+            width=70,
+            padding=(1, 2),
+        )
+
+    def _update_progress(self) -> None:
+        """백그라운드에서 물결치는 진행률을 업데이트합니다."""
+        step = 0
+        while not self.stop_progress.is_set():
+            cycle_length = 50
+            progress_value = (step % cycle_length) * (100 / cycle_length)
+            self.progress.update(self.task, completed=progress_value)
+            step += 1
+            time.sleep(0.1)
+
+    def start(self) -> None:
+        """진행 상황 표시를 시작합니다."""
+
+        # 고정된 Panel 객체를 Live에 전달
+        self.live = Live(
+            self.panel, refresh_per_second=10, console=self.console, transient=True
+        )
+        self.live.start()
+
+        self.progress_thread = threading.Thread(target=self._update_progress)
+        self.progress_thread.start()
+
+    def update_message(self, message: str) -> None:
+        """진행 상황 메시지를 업데이트합니다."""
+        self.current_message = message
+        # Progress 객체만 업데이트하면 Live가 자동으로 화면을 갱신
+        self.progress.update(self.task, description=message)
+
+    def complete(self) -> None:
+        """정상 완료 시 진행 상황 표시를 종료합니다."""
+        if self.stop_progress:
+            self.stop_progress.set()
+        if self.progress_thread:
+            self.progress_thread.join()
+
+        # 완료 시 100%로 설정
+        self.progress.update(self.task, completed=100)
+        if self.live:
+            time.sleep(0.5)  # 완료 상태를 잠시 보여줌
+            self.live.stop()
+
+    def stop(self) -> None:
+        """진행 상황 표시를 즉시 종료합니다 (전환 또는 에러 시 사용)."""
+        if self.stop_progress:
+            self.stop_progress.set()
+        if self.progress_thread:
+            self.progress_thread.join()
+
+        # 즉시 종료 (완료 표시 없음)
+        if self.live:
+            self.live.stop()
+
+
 class ReviewDisplay:
     """리뷰 프로세스 관련 UI 표시를 관리하는 클래스."""
 
     def __init__(self) -> None:
         """디스플레이 인스턴스를 초기화합니다."""
         self.console = Console()
+
+    def create_updatable_progress(self, model: str) -> UpdatableProgressReview:
+        """업데이트 가능한 진행 상황 표시 객체를 생성합니다."""
+        return UpdatableProgressReview(model, self.console)
 
     def model_info(self, model_name: str, description: str) -> None:
         """모델 정보를 Panel로 출력합니다."""
@@ -367,32 +468,29 @@ class ReviewDisplay:
 
         task = progress.add_task("코드 분석 및 리뷰 생성 중...", total=100)
 
-        # Panel 내용 구성
-        def make_panel() -> Panel:
-            # 텍스트 컴포넌트들
-            title = Text("Selvage : 코드 마감까지 탄탄하게!", style="bold cyan")
-            model_info = Text(f"모델: {model}", style="dim")
+        # Panel을 한 번만 생성하여 고정 - UpdatableProgressReview와 동일한 방식
+        title = Text("Selvage : 코드 리뷰도 엣지있게!", style="bold cyan")
+        model_info = Text(f"모델: {model}", style="dim")
 
-            # Group으로 컴포넌트들 조합
-            content = Group(
-                Align.center(title),
-                Text(""),  # 빈 줄
-                Align.center(model_info),
-                Text(""),  # 빈 줄
-                progress,
-            )
+        content = Group(
+            Align.center(title),
+            Text(""),  # 빈 줄
+            Align.center(model_info),
+            Text(""),  # 빈 줄
+            progress,  # Progress 객체는 내부적으로 업데이트됨
+        )
 
-            return Panel(
-                content,
-                title="[bold]코드 리뷰 진행 중[/bold]",
-                border_style="blue",
-                width=70,
-                padding=(1, 2),
-            )
+        panel = Panel(
+            content,
+            title="[bold]코드 리뷰 진행 중[/bold]",
+            border_style="blue",
+            width=70,
+            padding=(1, 2),
+        )
 
-        # Live 표시로 실시간 업데이트
+        # 고정된 Panel 객체를 Live에 전달
         with Live(
-            make_panel(), refresh_per_second=10, console=self.console, transient=True
+            panel, refresh_per_second=10, console=self.console, transient=True
         ) as _:
             # 백그라운드에서 물결치는 진행률 업데이트
             stop_progress = threading.Event()
@@ -419,7 +517,6 @@ class ReviewDisplay:
                 # 완료 시에는 100%로 설정하고 잠시 보여준 후 사라지게 함
                 progress.update(task, completed=100)
                 time.sleep(0.5)  # 완료 상태를 잠시 보여줌
-                # Live가 종료된 후에도 Panel이 잠시 유지됩니다.
 
     def show_available_models(self) -> None:
         """사용 가능한 모든 AI 모델을 가독성 있게 표시합니다."""
