@@ -30,7 +30,7 @@ class MultiturnReviewExecutor:
         llm_gateway: BaseGateway,
     ) -> ReviewResult:
         """
-        Context limit 초과 시 프롬프트를 분할하여 병렬 처리 후 결과 합성
+        Context limit 초과 시 프롬프트를 분할하여 순차 처리 후 결과 합성
 
         Args:
             review_prompt: 이미 생성된 리뷰 프롬프트 (cli.py:L383에서 생성)
@@ -45,10 +45,14 @@ class MultiturnReviewExecutor:
             return ReviewResult.get_empty_result(llm_gateway.get_model_name())
 
         # 1. user_prompts 분할 (system_prompt는 공통 사용)
+        # 모델에서 max_output_tokens 값 가져오기
+        max_output_tokens = llm_gateway.model.get("max_output_tokens", 0)
+
         user_prompt_chunks = self.prompt_splitter.split_user_prompts(
             user_prompts=review_prompt.user_prompts,
             actual_tokens=token_info.actual_tokens,
             max_tokens=token_info.max_tokens,
+            max_output_tokens=max_output_tokens,
         )
 
         # 2. 순차 API 호출 (OpenRouter 동시성 문제 해결)

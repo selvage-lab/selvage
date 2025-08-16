@@ -65,6 +65,8 @@ BINARY_EXTENSIONS = {
     ".db",
     ".sqlite",
     ".dat",
+    # 패키지 관리자 파일
+    ".cask",
 }
 
 # 바이너리 파일 이름 목록

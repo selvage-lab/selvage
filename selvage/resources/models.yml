@@ -85,6 +85,7 @@ models:
     params:
       temperature: 0.0
     thinking_mode: false
+    max_output_tokens: 8192
     pricing:
       input: 3.0
       output: 15.0
@@ -103,6 +104,7 @@ models:
         type: "enabled"
         budget_tokens: 20000
     thinking_mode: true
+    max_output_tokens: 48000
     pricing:
       input: 3.0
       output: 15.0

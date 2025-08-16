@@ -34,7 +34,7 @@ providers:
             extract_tokens:
               actual_tokens: 1 # 첫 번째 캡처 그룹
               max_tokens: 2 # 두 번째 캡처 그룹
-          - regex: "input length and `max_tokens` exceed context limit: (\\d+(?:,\\d+)*) \\+ (\\d+(?:,\\d+)*) > (\\d+(?:,\\d+)*)"
+          - regex: "input length and `?max_tokens`? exceed context limit: (\\d+(?:,\\d+)*) \\+ (\\d+(?:,\\d+)*) > (\\d+(?:,\\d+)*)"
             extract_tokens:
               actual_tokens: 1 # input length (첫 번째 캡처 그룹)
               max_tokens_param: 2 # max_tokens parameter (두 번째 캡처 그룹)

@@ -62,6 +62,7 @@ class TestPromptSplitter:
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
+            max_output_tokens=0,
         )
 
         # Then: 2개 청크로 분할되어야 함
@@ -90,6 +91,7 @@ class TestPromptSplitter:
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
+            max_output_tokens=0,
         )
 
         # Then: 2개 청크로 분할되어야 함 (반으로 분할)
@@ -117,6 +119,7 @@ class TestPromptSplitter:
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
+            max_output_tokens=0,
         )
 
         # Then: 겹치는 파일이 없어야 함
@@ -142,6 +145,7 @@ class TestPromptSplitter:
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
+            max_output_tokens=0,
         )
 
         # Then: overlap 비적용, 2개 청크로 분할되며 겹치는 파일 없음
@@ -165,6 +169,7 @@ class TestPromptSplitter:
             user_prompts=sample_user_prompts,
             actual_tokens=actual_tokens,
             max_tokens=max_tokens,
+            max_output_tokens=0,
         )
 
         # Then: overlap 비적용, 최소 2개 청크이며 겹치는 파일 없음
@@ -181,7 +186,9 @@ class TestPromptSplitter:
         max_tokens = 100000
 
         # When: 분할 비율 계산
-        split_ratio = prompt_splitter._calculate_split_ratio(actual_tokens, max_tokens)
+        split_ratio = prompt_splitter._calculate_split_ratio(
+            actual_tokens, max_tokens, max_output_tokens=0
+        )
 
         # Then: ceil(150000 / (100000 * 0.8)) = ceil(1.875) = 2
         expected_ratio = math.ceil(actual_tokens / (max_tokens * 0.8))
