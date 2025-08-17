@@ -247,6 +247,9 @@ class SynthesisAPIClient:
             return {
                 "model": model_info["full_name"],
                 "contents": contents,
+                "generation_config": {
+                    "temperature": SynthesisConfig.TEMPERATURE,
+                },
             }
         elif provider == ModelProvider.ANTHROPIC:
             # system 메시지 분리

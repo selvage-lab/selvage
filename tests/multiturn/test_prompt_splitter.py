@@ -1,7 +1,5 @@
 """PromptSplitter 테스트"""
 
-import math
-
 import pytest
 
 from selvage.src.context_extractor.line_range import LineRange

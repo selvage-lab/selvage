@@ -101,6 +101,8 @@ class TestMultiturnReviewExecutor:
         gateway = Mock()
         gateway.get_model_name.return_value = "mock-model"
         gateway.get_provider.return_value = Mock(value="mock-provider")
+        # model 속성에 빈 딕셔너리 설정 (max_output_tokens는 Claude에서만 사용)
+        gateway.model = {}
         # 성공적인 ReviewResult 반환 설정
         gateway.review_code.return_value = ReviewResult.get_success_result(
             review_response=ReviewResponse(
