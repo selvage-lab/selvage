@@ -2,7 +2,6 @@
 CLI 인터페이스를 제공하는 모듈입니다.
 """
 
-import getpass
 import os
 import sys
 from pathlib import Path
@@ -18,7 +17,6 @@ from selvage.src.config import (
     get_default_language,
     get_default_model,
     get_default_review_log_dir,
-    set_api_key,
     set_claude_provider,
     set_default_debug_mode,
     set_default_language,
@@ -55,28 +53,10 @@ from selvage.src.utils.token.models import EstimatedCost, ReviewRequest, ReviewR
     is_flag=True,
     help="버전 정보를 출력합니다.",
 )
-@click.option(
-    "--set-openai-key",
-    is_flag=True,
-    help="OpenAI API 키 설정.",
-)
-@click.option(
-    "--set-claude-key",
-    is_flag=True,
-    help="Anthropic API 키 설정.",
-)
-@click.option(
-    "--set-gemini-key",
-    is_flag=True,
-    help="Gemini API 키 설정.",
-)
 @click.pass_context
 def cli(
     ctx: click.Context,
     version: bool,
-    set_openai_key: bool,
-    set_claude_key: bool,
-    set_gemini_key: bool,
 ) -> None:
     """LLM 기반 코드 리뷰 도구"""
     # Context 객체 초기화
@@ -88,22 +68,6 @@ def cli(
         click.echo(f"selvage {__version__}")
         return
 
-    # API 키 설정 플래그 처리
-    if set_openai_key:
-        _process_single_api_key(
-            ModelProvider.OPENAI.get_display_name(), ModelProvider.OPENAI
-        )
-        return
-    elif set_claude_key:
-        _process_single_api_key(
-            ModelProvider.ANTHROPIC.get_display_name(), ModelProvider.ANTHROPIC
-        )
-        return
-    elif set_gemini_key:
-        _process_single_api_key(
-            ModelProvider.GOOGLE.get_display_name(), ModelProvider.GOOGLE
-        )
-        return
 
     # 명령어가 지정되지 않은 경우 기본으로 review 명령어 호출
     if ctx.invoked_subcommand is None:
@@ -255,7 +219,7 @@ def config_list() -> None:
 
             if env_value:
                 console.print(
-                    f"{provider_display} API 키: 환경변수 {env_var_name}에서 설정됨",
+                    f"{provider_display} API 키: [bold green]환경변수[/bold green] {env_var_name}에서 설정됨 ✓",
                     style="green",
                 )
             else:
@@ -264,17 +228,9 @@ def config_list() -> None:
                 )
         except APIKeyNotFoundError:
             console.print(f"{provider_display} API 키: 설정되지 않음", style="red")
-            if provider == ModelProvider.OPENROUTER:
-                console.print(
-                    f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
-                )
-            else:
-                console.print(
-                    f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
-                )
-                console.print(
-                    f"  또는: [green]selvage --set-{provider.value}-key[/green]"
-                )
+            console.print(
+                f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
+            )
 
     console.print("")
     # Claude 제공자 설정 표시
@@ -394,13 +350,9 @@ def review_code(
     api_key = get_api_key(provider)
     if not api_key:
         console.error(f"{provider.get_display_name()} API 키가 설정되지 않았습니다.")
-        console.info("다음 명령어로 API 키를 설정하세요:")
+        console.info("환경변수로 API 키를 설정해주세요:")
         console.print(
-            f"  1. 환경변수(권장): "
-            f"[green]export {provider.get_env_var_name()}=YOUR_API_KEY[/green]"
-        )
-        console.print(
-            f"  2. CLI 명령어: [green]selvage --set-{provider.value}-key[/green]"
+            f"  [green]export {provider.get_env_var_name()}=YOUR_API_KEY[/green]"
         )
         return
 
@@ -549,31 +501,6 @@ def handle_view_command(port: int) -> None:
         return
 
 
-def _process_single_api_key(display_name: str, provider: ModelProvider) -> bool:
-    """단일 API 키 설정을 처리하는 공통 함수.
-
-    Args:
-        display_name: 사용자에게 표시할 프로바이더 이름 (예: "OpenAI")
-        provider: 내부 프로바이더 식별자 (예: "openai")
-
-    Returns:
-        bool: 항상 True (API 키 설정이 시도되었음을 의미)
-    """
-    try:
-        api_key = getpass.getpass(f"{display_name} API 키를 입력하세요: ")
-        api_key = api_key.strip()
-        if not api_key:
-            console.error("API 키가 입력되지 않았습니다.")
-            return True
-    except KeyboardInterrupt:
-        console.info("\n입력이 취소되었습니다.")
-        return True
-
-    if set_api_key(api_key, provider):
-        console.success(f"{display_name} API 키가 성공적으로 설정되었습니다.")
-    else:
-        console.error(f"{display_name} API 키 설정에 실패했습니다.")
-    return True
 
 
 @cli.command()

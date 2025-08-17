@@ -6,9 +6,8 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-from selvage.src.config import get_api_key, set_api_key
+from selvage.src.config import get_api_key
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
-from selvage.src.exceptions.invalid_api_key_error import InvalidAPIKeyError
 from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
 from selvage.src.models.model_provider import ModelProvider
 
@@ -85,109 +84,14 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
             api_key = get_api_key(ModelProvider.OPENAI)
             self.assertEqual(api_key, env_key)
 
-    @patch("selvage.src.config.load_config")
-    def test_get_api_key_fallback_to_file(self, mock_load_config) -> None:
-        """환경변수가 없을 때 파일에서 가져오기 테스트."""
-        file_key = "file_key_12345678"
-        mock_config = MagicMock()
-        mock_config.__contains__.return_value = True
-        mock_config.__getitem__.return_value = {ModelProvider.OPENAI.value: file_key}
-        mock_load_config.return_value = mock_config
 
-        api_key = get_api_key(ModelProvider.OPENAI)
-        self.assertEqual(api_key, file_key)
-
-    @patch("selvage.src.config.load_config")
-    def test_get_api_key_not_found(self, mock_load_config) -> None:
+    def test_get_api_key_not_found(self) -> None:
         """API 키가 없을 때 적절한 예외가 발생하는지 테스트"""
-        # 빈 설정 파일을 mock
-        mock_config = MagicMock()
-        mock_config.__getitem__.return_value = {}
-        mock_load_config.return_value = mock_config
-
         with self.assertRaises(APIKeyNotFoundError) as context:
             get_api_key(ModelProvider.OPENAI)
 
-        self.assertIn("API 키가 제공되지 않았습니다", str(context.exception))
         self.assertEqual(context.exception.provider, ModelProvider.OPENAI)
 
-    @patch("selvage.src.config.load_config")
-    def test_api_key_not_found_error_messages(self, mock_load_config) -> None:
-        """각 provider별로 APIKeyNotFoundError 메시지가 올바른 명령어를 포함하는지 테스트"""
-        # 빈 설정 파일을 mock
-        mock_config = MagicMock()
-        mock_config.__getitem__.return_value = {}
-        mock_load_config.return_value = mock_config
-
-        # OpenAI
-        with self.assertRaises(APIKeyNotFoundError) as context:
-            get_api_key(ModelProvider.OPENAI)
-        self.assertIn("selvage --set-openai-key", str(context.exception))
-
-        # Anthropic (Claude)
-        with self.assertRaises(APIKeyNotFoundError) as context:
-            get_api_key(ModelProvider.ANTHROPIC)
-        self.assertIn("selvage --set-claude-key", str(context.exception))
-
-        # Google
-        with self.assertRaises(APIKeyNotFoundError) as context:
-            get_api_key(ModelProvider.GOOGLE)
-        self.assertIn("selvage --set-google-key", str(context.exception))
-
-    def test_get_api_key_invalid_short_key(self) -> None:
-        """너무 짧은 API 키 검증 테스트."""
-        short_key = "1234567"  # 8자 미만
-        os.environ[ModelProvider.OPENAI.get_env_var_name()] = short_key
-
-        with self.assertRaises(InvalidAPIKeyError):
-            get_api_key(ModelProvider.OPENAI)
-
-    @patch("selvage.src.config.load_config")
-    def test_get_api_key_invalid_empty_key(self, mock_load_config) -> None:
-        """빈 API 키 검증 테스트."""
-        os.environ[ModelProvider.OPENAI.get_env_var_name()] = ""
-        mock_config = MagicMock()
-        mock_config.__contains__.return_value = False
-        mock_config.__getitem__.return_value = {
-            ModelProvider.OPENAI.value: "",
-        }
-        mock_load_config.return_value = mock_config
-
-        with self.assertRaises(InvalidAPIKeyError):
-            get_api_key(ModelProvider.OPENAI)
-
-    @patch("selvage.src.config.save_config")
-    @patch("selvage.src.config.load_config")
-    def test_set_api_key_valid(self, mock_load_config, mock_save_config) -> None:
-        """유효한 API 키 설정 테스트."""
-        test_key = "valid_key_12345678"
-        mock_config = MagicMock()
-        mock_load_config.return_value = mock_config
-
-        result = set_api_key(test_key, ModelProvider.OPENAI)
-        self.assertTrue(result)
-        mock_save_config.assert_called_once()
-
-    def test_set_api_key_invalid_short(self) -> None:
-        """너무 짧은 API 키 설정 테스트."""
-        short_key = "1234567"  # 8자 미만
-
-        result = set_api_key(short_key, ModelProvider.OPENAI)
-        self.assertFalse(result)
-
-    def test_set_api_key_invalid_empty(self) -> None:
-        """빈 API 키 설정 테스트."""
-        empty_key = ""
-
-        result = set_api_key(empty_key, ModelProvider.OPENAI)
-        self.assertFalse(result)
-
-    def test_set_api_key_invalid_provider(self) -> None:
-        """지원하지 않는 provider로 API 키 설정 테스트."""
-        test_key = "valid_key_12345678"
-
-        with self.assertRaises(UnsupportedProviderError):
-            set_api_key(test_key, ModelProvider.from_string("invalid_provider"))
 
     def test_all_providers_mapping(self) -> None:
         """모든 지원 provider의 환경변수 매핑 테스트."""

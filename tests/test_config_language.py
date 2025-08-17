@@ -129,7 +129,7 @@ class TestLanguageConfig:
         config = load_config()
 
         # 필수 섹션들이 모두 존재하는지 확인
-        expected_sections = ["credentials", "paths", "default", "debug", "language"]
+        expected_sections = ["paths", "default", "debug", "language"]
         for section in expected_sections:
             assert section in config
 
