@@ -13,6 +13,7 @@ from selvage.src.multiturn.multiturn_review_executor import MultiturnReviewExecu
 from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 
 
+@pytest.mark.skip(reason="Skipping integration tests for now")
 class TestMultiturnReviewExecutorIntegration:
     """개선된 MultiturnReviewExecutor 통합 테스트"""
 

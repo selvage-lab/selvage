@@ -150,19 +150,38 @@ def assert_context_limit_error(error: Exception, provider: str) -> None:
     """Context limit 에러가 올바른지 검증합니다."""
     error_message = str(error).lower()
 
-    # 공통 키워드 검증
-    context_keywords = ["context", "token", "limit", "exceed", "maximum"]
-    assert any(keyword in error_message for keyword in context_keywords), (
-        f"에러 메시지에 context limit 관련 키워드가 없습니다: {error}"
-    )
+    # OpenRouter는 다른 검증 방식 사용 (HTTP 400 에러로만 나타남)
+    if provider != "openrouter":
+        # 공통 키워드 검증 (OpenRouter 제외)
+        context_keywords = ["context", "token", "limit", "exceed", "maximum"]
+        assert any(keyword in error_message for keyword in context_keywords), (
+            f"에러 메시지에 context limit 관련 키워드가 없습니다: {error}"
+        )
 
     # Provider별 특화 검증
     if provider == "openai":
         assert hasattr(error, "response"), "OpenAI 에러에 response 속성이 없습니다"
+
+        # HTTP 상태코드 검증
         if hasattr(error, "response") and hasattr(error.response, "status_code"):
             assert error.response.status_code == 400, (
                 f"예상 HTTP 상태코드 400, 실제: {error.response.status_code}"
             )
+
+        # 에러 코드 검증 - OpenAI는 response.json()에서 확인
+        if hasattr(error, "response"):
+            try:
+                error_data = error.response.json()
+                if "error" in error_data and "code" in error_data["error"]:
+                    error_code = error_data["error"]["code"]
+                    assert error_code == "context_length_exceeded", (
+                        f"예상 에러 코드 'context_length_exceeded', 실제: {error_code}"
+                    )
+            except Exception:
+                # JSON 파싱 실패 시 메시지에서 확인
+                assert "context_length_exceeded" in error_message, (
+                    "에러 메시지에 'context_length_exceeded'가 없습니다"
+                )
 
     elif provider == "anthropic":
         # Anthropic 특화 검증
@@ -172,12 +191,33 @@ def assert_context_limit_error(error: Exception, provider: str) -> None:
             or "token" in error_message
         )
 
+        # Anthropic 에러 타입 검증
+        if hasattr(error, "type"):
+            expected_types = ["invalid_request_error", "overloaded_error"]
+            assert error.type in expected_types, (
+                f"예상 에러 타입 {expected_types}, 실제: {error.type}"
+            )
+
     elif provider == "google":
         # Google 특화 검증 - quota 또는 context 관련
         assert (
             "quota" in error_message
             or "context" in error_message
             or "token" in error_message
+        )
+
+        # Google 에러 검증 - quota exceeded 또는 resource exhausted
+        quota_keywords = ["quota", "exhausted", "resource", "limit"]
+        assert any(keyword in error_message for keyword in quota_keywords), (
+            f"Google 에러에 quota/limit 관련 키워드가 없습니다: {error}"
+        )
+
+    elif provider == "openrouter":
+        # OpenRouter는 HTTP 400 에러로 context limit을 처리
+        # 간단한 키워드 검증만 수행
+        openrouter_keywords = ["400", "bad request", "client error"]
+        assert any(keyword in error_message for keyword in openrouter_keywords), (
+            f"OpenRouter 에러에 예상 키워드가 없습니다: {error}"
         )
 
 
