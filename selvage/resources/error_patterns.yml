@@ -1,0 +1,102 @@
+# LLM Provider별 에러 패턴 정의
+# 실제 수집된 에러 데이터를 기반으로 구성됨
+# 참조: tests/results/context_limit_errors_20250807_020818.json
+
+providers:
+  openai:
+    patterns:
+      context_limit_exceeded:
+        # OpenAI의 context length exceeded 에러 패턴
+        keywords: ["context_length_exceeded"]
+        message_patterns:
+          - regex: "This model's maximum context length is (\\d+(?:,\\d+)*) tokens\\. However, your messages resulted in (\\d+(?:,\\d+)*) tokens"
+            extract_tokens:
+              max_tokens: 1 # 첫 번째 캡처 그룹
+              actual_tokens: 2 # 두 번째 캡처 그룹
+        error_codes: ["context_length_exceeded"]
+        http_status_codes: [400]
+        error_type: "context_limit_exceeded"
+
+      api_error:
+        # 일반적인 OpenAI API 에러
+        keywords: ["invalid_request_error", "BadRequestError"]
+        error_codes: ["invalid_request_error"]
+        http_status_codes: [400, 401, 403, 429, 500]
+        error_type: "api_error"
+
+  anthropic:
+    patterns:
+      context_limit_exceeded:
+        # Anthropic의 prompt too long 에러 패턴
+        keywords: ["prompt is too long", "input length", "max_tokens", "exceed context limit"]
+        message_patterns:
+          - regex: "prompt is too long: (\\d+(?:,\\d+)*) tokens > (\\d+(?:,\\d+)*) maximum"
+            extract_tokens:
+              actual_tokens: 1 # 첫 번째 캡처 그룹
+              max_tokens: 2 # 두 번째 캡처 그룹
+          - regex: "input length and `?max_tokens`? exceed context limit: (\\d+(?:,\\d+)*) \\+ (\\d+(?:,\\d+)*) > (\\d+(?:,\\d+)*)"
+            extract_tokens:
+              actual_tokens: 1 # input length (첫 번째 캡처 그룹)
+              max_tokens_param: 2 # max_tokens parameter (두 번째 캡처 그룹)
+              total_limit: 3 # context limit (세 번째 캡처 그룹)
+        error_codes: ["invalid_request_error"]
+        http_status_codes: [400]
+        error_type: "context_limit_exceeded"
+
+      api_error:
+        # 일반적인 Anthropic API 에러
+        keywords: ["invalid_request_error", "BadRequestError"]
+        error_codes: ["invalid_request_error"]
+        http_status_codes: [400, 401, 403, 429, 500]
+        error_type: "api_error"
+
+  google:
+    patterns:
+      quota_exceeded:
+        # Google의 quota 관련 에러 (실제 context limit과는 다름)
+        keywords: ["RESOURCE_EXHAUSTED", "quota"]
+        message_patterns:
+          - regex: "You exceeded your current quota"
+        error_codes: ["RESOURCE_EXHAUSTED"]
+        http_status_codes: [429]
+        error_type: "quota_exceeded"
+
+      api_error:
+        # 일반적인 Google API 에러
+        keywords: ["ClientError", "INVALID_ARGUMENT"]
+        http_status_codes: [400, 401, 403, 500]
+        error_type: "api_error"
+
+  openrouter:
+    patterns:
+      context_limit_exceeded:
+        # OpenRouter의 context limit 에러 패턴 (모든 모델 공통)
+        keywords: ["400 Bad Request"]
+        message_patterns:
+          - regex: "This endpoint's maximum context length is (\\d+(?:,\\d+)*) tokens\\. However, you requested about (\\d+(?:,\\d+)*) tokens"
+            extract_tokens:
+              max_tokens: 1 # 첫 번째 캡처 그룹
+              actual_tokens: 2 # 두 번째 캡처 그룹
+          - regex: "middle-out.*transform.*compress.*prompt" # 추가 힌트 메시지
+        error_codes: ["400"]
+        http_status_codes: [400]
+        error_type: "context_limit_exceeded"
+
+      api_error:
+        # 일반적인 OpenRouter API 에러
+        keywords: ["HTTPStatusError", "Bad Request"]
+        http_status_codes: [400, 401, 403, 429, 500]
+        error_type: "api_error"
+
+# 패턴 매칭 우선순위 (높을수록 먼저 매칭)
+pattern_priorities:
+  context_limit_exceeded: 100
+  quota_exceeded: 90
+  api_error: 10 # 가장 낮은 우선순위 (catch-all)
+
+# 토큰 수 추출 시 사용할 정규표현식 설정
+token_extraction:
+  # 숫자에서 쉼표 제거
+  clean_numbers: true
+  # 토큰 수 추출 실패 시 기본값
+  default_tokens: null

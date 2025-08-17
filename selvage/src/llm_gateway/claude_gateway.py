@@ -81,7 +81,7 @@ class ClaudeGateway(BaseGateway):
             params = {
                 "model": self.get_model_name(),
                 "messages": user_messages,
-                "max_tokens": 48000,  # thinking 모드에서 더 긴 응답을 위한 토큰 제한 증가
+                "max_tokens": 48000,
             }
 
             # system 메시지가 있으면 별도 파라미터로 추가
@@ -93,7 +93,8 @@ class ClaudeGateway(BaseGateway):
             if thinking_config:
                 params["thinking"] = thinking_config
                 console.log_info(
-                    f"확장 사고 모드 활성화: budget_tokens={thinking_config.get('budget_tokens', 'N/A')}"
+                    f"확장 사고 모드 활성화: "
+                    f"budget_tokens={thinking_config.get('budget_tokens', 'N/A')}"
                 )
         else:
             # 일반 모드 (instructor 사용)

@@ -3,6 +3,7 @@
 import json
 import threading
 import time
+import types
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -117,7 +118,7 @@ def _detect_language_from_filename(filename: str) -> str:
     return language_map.get(ext, "text")
 
 
-def _create_syntax_block(code: str, filename: str = "", title: str = "코드") -> Syntax:
+def _create_syntax_block(code: str, filename: str = "") -> Syntax:
     """코드 블록을 구문 강조와 함께 생성합니다."""
     language = _detect_language_from_filename(filename)
 
@@ -147,6 +148,144 @@ def _create_recommendations_panel(recommendations: list) -> Panel:
         border_style="green",
         padding=(1, 2),
     )
+
+
+class ProgressDisplay:
+    """통합된 진행 상황 표시 클래스 (컨텍스트 매니저 + 직접 사용 모두 지원)."""
+
+    def __init__(
+        self, model: str, console: Console, manual_refresh: bool = True
+    ) -> None:
+        """통합 진행 상황 표시를 초기화합니다.
+
+        Args:
+            model: 모델명
+            console: Rich Console 인스턴스
+            manual_refresh: True면 수동 refresh (새 패턴),
+                False면 자동 refresh (레거시 호환)
+        """
+        self.model = model
+        self.console = console
+        self.manual_refresh = manual_refresh
+        self.progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            transient=False,
+        )
+        self.task = self.progress.add_task("코드 분석 및 리뷰 생성 중...", total=100)
+        self.live = None
+        self.stop_progress = threading.Event()
+        self.progress_thread = None
+        self.current_message = "코드 분석 및 리뷰 생성 중..."
+        self._panel = None
+
+    def _create_panel(self) -> Panel:
+        """현재 모드에 맞는 패널을 생성합니다."""
+        title = Text("Selvage : 코드 리뷰도 엣지있게!", style="bold cyan")
+        model_info = Text(f"모델: {self.model}", style="dim")
+
+        content = Group(
+            Align.center(title),
+            Text(""),
+            Align.center(model_info),
+            Text(""),
+            self.progress,
+        )
+
+        return Panel(
+            content,
+            title="[bold]코드 리뷰 진행 중[/bold]",
+            border_style="blue",
+            width=70,
+            padding=(1, 2),
+        )
+
+    def _update_progress(self) -> None:
+        """백그라운드에서 물결치는 진행률을 업데이트합니다."""
+        step = 0
+        while not self.stop_progress.is_set():
+            cycle_length = 50
+            progress_value = (step % cycle_length) * (100 / cycle_length)
+            self.progress.update(self.task, completed=progress_value)
+            self._on_progress_update()
+            step += 1
+            time.sleep(0.1)
+
+    def _on_progress_update(self) -> None:
+        """Progress 업데이트 시 필요에 따라 명시적 refresh."""
+        if self.manual_refresh and self.live:
+            self.live.refresh()
+
+    def update_message(self, message: str) -> None:
+        """진행 상황 메시지를 업데이트합니다."""
+        self.current_message = message
+        self.progress.update(self.task, description=message)
+        # manual_refresh 모드일 때만 강제 refresh
+        if self.manual_refresh and self.live:
+            self.live.refresh()
+
+    def transition_to_multiturn(self, message: str) -> None:
+        """멀티턴 처리 모드로 부드럽게 전환합니다."""
+        self.update_message(message)
+        # Live display를 강제로 재시작하여 UI 정리
+        if self.live:
+            self.live.stop()
+            self.live.start()
+
+    def complete(self) -> None:
+        """정상 완료 시 진행 상황 표시를 종료합니다."""
+        if self.stop_progress:
+            self.stop_progress.set()
+        if self.progress_thread:
+            self.progress_thread.join()
+
+        # 완료 시 100%로 설정
+        self.progress.update(self.task, completed=100)
+        if self.live:
+            time.sleep(0.5)  # 완료 상태를 잠시 보여줌
+            self.live.stop()
+
+    # === 컨텍스트 매니저 지원 ===
+    def __enter__(self) -> "ProgressDisplay":
+        """컨텍스트 매니저 시작."""
+        self.start()
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None:
+        """컨텍스트 매니저 종료."""
+        self.stop()
+
+    # === 진행 상황 제어 메서드 ===
+    def start(self) -> None:
+        """진행 상황 표시를 시작합니다."""
+        self._panel = self._create_panel()
+        self.live = Live(
+            self._panel,
+            refresh_per_second=10,
+            console=self.console,
+            transient=True,
+            auto_refresh=not self.manual_refresh,  # manual_refresh에 따라 결정
+        )
+        self.live.start()
+
+        self.progress_thread = threading.Thread(target=self._update_progress)
+        self.progress_thread.start()
+
+    def stop(self) -> None:
+        """진행 상황 표시를 즉시 종료합니다."""
+        if self.stop_progress:
+            self.stop_progress.set()
+        if self.progress_thread:
+            self.progress_thread.join()
+
+        if self.live:
+            self.live.stop()
 
 
 class ReviewDisplay:
@@ -191,19 +330,25 @@ class ReviewDisplay:
     ) -> None:
         """리뷰 완료 결과를 통합된 Panel로 출력합니다."""
         # 토큰 정보를 축약된 형태로 표시
-        token_info = f"{_format_token_count(estimated_cost.input_tokens)} → {_format_token_count(estimated_cost.output_tokens)} tokens"
+        token_info = (
+            f"{_format_token_count(estimated_cost.input_tokens)} → "
+            f"{_format_token_count(estimated_cost.output_tokens)} tokens"
+        )
 
         # 경로를 간단하게 표시
         simplified_path = _shorten_path(log_path)
 
         # 통합 Panel 내용 구성
-        content = f"""[bold cyan]모델:[/bold cyan] [white]{model_info["full_name"]}[/white]
-[dim]{model_info["description"]}[/dim]
-
-[bold yellow]비용:[/bold yellow] [white]{estimated_cost.total_cost_usd}[/white] [dim]({token_info})[/dim]
-[dim]※ 추정 비용이므로 각 AI 서비스에서 정확한 비용을 확인하세요.[/dim]
-
-[bold green]저장:[/bold green] [white]{simplified_path}[/white]"""
+        content = (
+            f"[bold cyan]모델:[/bold cyan] [white]{model_info['full_name']}[/white]\n"
+            f"[dim]{model_info['description']}[/dim]\n\n"
+            f"[bold yellow]비용:[/bold yellow] "
+            f"[white]{estimated_cost.total_cost_usd}[/white] "
+            f"[dim]({token_info})[/dim]\n"
+            f"[dim]※ 추정 비용이므로 각 AI 서비스에서 정확한 비용을 "
+            f"확인하세요.[/dim]\n\n"
+            f"[bold green]저장:[/bold green] [white]{simplified_path}[/white]"
+        )
 
         panel = Panel(
             Align.center(content),
@@ -257,7 +402,7 @@ class ReviewDisplay:
         )
 
         # 출력 함수 정의
-        def _print_content():
+        def _print_content() -> None:
             # 요약 패널 출력
             self.console.print(summary_panel)
             self.console.print()
@@ -349,6 +494,19 @@ class ReviewDisplay:
             _print_content()
 
     @contextmanager
+    def enhanced_progress_review(
+        self, model: str
+    ) -> Generator[ProgressDisplay, None, None]:
+        """메시지 업데이트 기능이 있는 진행 상황 표시를 제공합니다."""
+        # ProgressDisplay는 자체적으로 컨텍스트 매니저이므로 더 간단해짐
+        with ProgressDisplay(model, self.console, manual_refresh=True) as progress:
+            yield progress
+
+    def create_updatable_progress(self, model: str) -> ProgressDisplay:
+        """업데이트 가능한 진행 상황 표시를 생성합니다."""
+        return ProgressDisplay(model, self.console, manual_refresh=True)
+
+    @contextmanager
     def progress_review(self, model: str) -> Generator[None, None, None]:
         """코드 리뷰 진행 상황을 통합된 Panel로 표시합니다."""
         # Progress 설정 (퍼센트 표시 제거)
@@ -361,44 +519,40 @@ class ReviewDisplay:
 
         task = progress.add_task("코드 분석 및 리뷰 생성 중...", total=100)
 
-        # Panel 내용 구성
-        def make_panel() -> Panel:
-            # 텍스트 컴포넌트들
-            title = Text("Selvage : 코드 마감까지 탄탄하게!", style="bold cyan")
-            model_info = Text(f"모델: {model}", style="dim")
+        # Panel을 한 번만 생성하여 고정
+        title = Text("Selvage : 코드 리뷰도 엣지있게!", style="bold cyan")
+        model_info = Text(f"모델: {model}", style="dim")
 
-            # Group으로 컴포넌트들 조합
-            content = Group(
-                Align.center(title),
-                Text(""),  # 빈 줄
-                Align.center(model_info),
-                Text(""),  # 빈 줄
-                progress,
-            )
+        content = Group(
+            Align.center(title),
+            Text(""),  # 빈 줄
+            Align.center(model_info),
+            Text(""),  # 빈 줄
+            progress,  # Progress 객체는 내부적으로 업데이트됨
+        )
 
-            return Panel(
-                content,
-                title="[bold]코드 리뷰 진행 중[/bold]",
-                border_style="blue",
-                width=70,
-                padding=(1, 2),
-            )
+        panel = Panel(
+            content,
+            title="[bold]코드 리뷰 진행 중[/bold]",
+            border_style="blue",
+            width=70,
+            padding=(1, 2),
+        )
 
-        # Live 표시로 실시간 업데이트
+        # 고정된 Panel 객체를 Live에 전달
         with Live(
-            make_panel(), refresh_per_second=10, console=self.console, transient=True
-        ) as live:
+            panel, refresh_per_second=10, console=self.console, transient=True
+        ) as _:
             # 백그라운드에서 물결치는 진행률 업데이트
             stop_progress = threading.Event()
 
-            def update_progress():
+            def update_progress() -> None:
                 step = 0
                 while not stop_progress.is_set():
                     # 톱니파 패턴: 0에서 100까지 갔다가 다시 0에서 시작
                     cycle_length = 50  # 한 사이클의 길이 (조절 가능)
                     progress_value = (step % cycle_length) * (100 / cycle_length)
                     progress.update(task, completed=progress_value)
-                    live.update(make_panel())
 
                     step += 1
                     time.sleep(0.1)
@@ -413,9 +567,7 @@ class ReviewDisplay:
                 progress_thread.join()
                 # 완료 시에는 100%로 설정하고 잠시 보여준 후 사라지게 함
                 progress.update(task, completed=100)
-                live.update(make_panel())
                 time.sleep(0.5)  # 완료 상태를 잠시 보여줌
-                # Live가 종료되면서 Panel이 자동으로 사라짐
 
     def show_available_models(self) -> None:
         """사용 가능한 모든 AI 모델을 가독성 있게 표시합니다."""
@@ -481,7 +633,8 @@ class ReviewDisplay:
 
             # 사용법 안내
             self.console.print(
-                "[dim]사용법: [/dim][bold]selvage review --model <모델명 또는 별칭>[/bold]"
+                "[dim]사용법: [/dim][bold]selvage review --model "
+                "<모델명 또는 별칭>[/bold]"
             )
             self.console.print(
                 "[dim]기본 모델 설정: [/dim][bold]selvage config model <모델명>[/bold]"

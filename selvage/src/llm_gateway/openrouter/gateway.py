@@ -7,9 +7,6 @@ import os
 from typing import Any
 
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
-from selvage.src.exceptions.context_limit_exceeded_error import (
-    ContextLimitExceededError,
-)
 from selvage.src.exceptions.invalid_model_provider_error import (
     InvalidModelProviderError,
 )
@@ -59,7 +56,8 @@ class OpenRouterGateway(BaseGateway):
 
         Raises:
             InvalidModelProviderError: OpenRouter에서 지원하지 않는 모델인 경우
-            UnsupportedModelError: OpenRouter에서 지원하지 않는 기능을 사용하는 모델인 경우
+            UnsupportedModelError:
+                OpenRouter에서 지원하지 않는 기능을 사용하는 모델인 경우
         """
         # OpenRouter를 통해 사용 가능한 모델인지 확인
         # 1. provider가 openrouter이거나 anthropic(Claude 모델)인 경우 허용
@@ -200,14 +198,10 @@ class OpenRouterGateway(BaseGateway):
         Raises:
             Exception: API 호출 중 오류가 발생한 경우
         """
-        # 요청 준비
-        try:
-            self.validate_review_request(review_prompt)
-        except ContextLimitExceededError as e:
-            console.error(f"컨텍스트 제한 초과: {str(e)}", exception=e)
-            return ReviewResult.get_error_result(e, self.get_model_name())
-
         messages = review_prompt.to_messages()
+
+        # estimated_cost 변수를 미리 초기화하여 예외 발생 시에도 안전하게 사용
+        estimated_cost = EstimatedCost.get_zero_cost(self.get_model_name())
 
         try:
             # 클라이언트 초기화 및 컨텍스트 매니저 사용
@@ -275,4 +269,6 @@ class OpenRouterGateway(BaseGateway):
 
         except Exception as e:
             console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
-            return ReviewResult.get_error_result(e, self.get_model_name())
+            return ReviewResult.get_error_result(
+                e, self.get_model_name(), self.get_provider().value
+            )

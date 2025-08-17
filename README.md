@@ -1,5 +1,7 @@
 <h1 align="center">Selvage: AI 기반 코드 리뷰 자동화 도구</h1>
 
+<p align="center">🌐 <a href="README_EN.md"><strong>English</strong></a></p>
+
 <p align="center"><strong>Git diff를 AI가 분석하여 코드 품질 향상, 버그 발견, 보안 취약점 식별을 도와주는 현대적인 CLI 도구입니다.</strong></p>
 
 <p align="center">
@@ -16,7 +18,7 @@
   <img src="assets/demo.gif" width="100%" alt="Selvage Demo"/>
 </p>
 
-**Selvage : 코드 마감까지 탄탄하게!**
+**Selvage: 코드 리뷰도 엣지있게!**
 
 동료의 리뷰를 기다리며 작업이 늦어지거나, 퇴근 무렵 쌓인 리뷰 요청에 발목 잡힌 경험이 있으신가요?  
 Selvage는 이런 코드 리뷰 병목 현상을 해결하는 AI 기반 도구입니다.
@@ -54,6 +56,7 @@ Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드
 - **🔍 Git 워크플로우와 통합**: staged, unstaged, 특정 커밋/브랜치 간 변경사항 분석 지원
 - **🐛 포괄적 코드 검토**: 버그 및 논리 오류 탐지, 코드 품질 및 가독성 향상 제안
 - **🎯 최적화된 컨텍스트 분석**: Tree-sitter 기반 AST 분석을 통해 변경 라인이 속하는 가장 작은 코드 블록과 dependency statement를 자동 추출하여 상황에 따라 최적화된 컨텍스트 제공
+- **🔄 자동 멀티턴 처리**: 컨텍스트 제한 초과 시 프롬프트를 자동 분할하여 안정적인 대용량 코드 리뷰 지원
 - **📖 오픈소스**: MIT 라이선스로 자유롭게 사용 및 수정 가능
 
 ## 🚀 빠른 시작
@@ -311,6 +314,15 @@ selvage review --staged --open-ui
 # 특정 기능 브랜치 전체 리뷰
 selvage review --target-branch develop
 ```
+
+### 대용량 코드 리뷰
+
+```bash
+# 대용량 코드베이스도 자동으로 처리
+selvage review --model claude-sonnet-4  # 사용 방법은 동일, 자동 감지 후 멀티턴 처리 적용
+```
+
+Selvage는 LLM model의 컨텍스트 제한을 초과하는 대용량 코드 변경사항도 자동으로 처리합니다. 프롬프트를 지능적으로 분할하여 순차 처리 후 결과를 합성해 제공합니다.
 
 ### 비용 최적화
 

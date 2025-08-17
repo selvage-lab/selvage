@@ -58,9 +58,7 @@ class TestLineNumberCalculator:
         target_code = "class TestClass:"
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then - 첫 번째 정확한 매치인 라인 5를 반환해야 함
         assert line_number == 5
@@ -77,9 +75,7 @@ class TestLineNumberCalculator:
         target_code = "class TestClass"
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then - 정확히 일치하지 않으므로 None을 반환해야 함
         assert line_number is None
@@ -96,9 +92,7 @@ class TestLineNumberCalculator:
         target_code = "def method(self):"
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then - 정확한 매치인 라인 6을 반환해야 함
         assert line_number == 6
@@ -115,9 +109,7 @@ class TestLineNumberCalculator:
         target_code = "class TestClass:"
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then - 주석(라인 8)이 아닌 실제 클래스 정의(라인 5)를 반환해야 함
         assert line_number == 5
@@ -132,9 +124,7 @@ class TestLineNumberCalculator:
         target_code = "non_existent_code"
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then
         assert line_number is None
@@ -153,9 +143,7 @@ class TestLineNumberCalculator:
     y = 2"""
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then - 첫 번째 라인의 위치 반환 (라인 17)
         assert line_number == 17
@@ -175,9 +163,7 @@ class TestLineNumberCalculator:
     return x + y"""
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then - 첫 번째 라인의 위치 반환 (라인 17)
         assert line_number == 17
@@ -195,9 +181,7 @@ class TestLineNumberCalculator:
     x = 999"""
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then - 전체가 일치하지 않으므로 None 반환
         assert line_number is None
@@ -214,9 +198,7 @@ class TestLineNumberCalculator:
         target_code = "return x + y"
 
         # When
-        line_number = calculate_line_number(
-            sample_python_file, target_code
-        )
+        line_number = calculate_line_number(sample_python_file, target_code)
 
         # Then - 속하는 라인 20을 반환
         assert line_number == 20
@@ -251,9 +233,7 @@ class TestLineNumberCalculator:
 
         # When - 성능 측정
         start_time = time.time()
-        line_number = calculate_line_number(
-            str(large_file), target_code
-        )
+        line_number = calculate_line_number(str(large_file), target_code)
         elapsed_time = time.time() - start_time
 
         # Then - 올바른 결과와 단시간 내 수행
@@ -285,9 +265,7 @@ def duplicate_first_line():
     return "found"""
 
         # When
-        line_number = calculate_line_number(
-            str(test_file), target_code
-        )
+        line_number = calculate_line_number(str(test_file), target_code)
 
         # Then - 첫 번째 완전한 매칭의 시작 라인 반환
         assert line_number == 7  # 세 번째 def duplicate_first_line() 시작
@@ -308,18 +286,18 @@ class TestClass:
         test_file.write(sample_content)
 
         # When & Then - 다양한 공백 패턴 테스트
-        
+
         # 공백 문자들만 있는 경우
         assert calculate_line_number(str(test_file), "   ") is None
-        assert calculate_line_number(str(test_file), "\t\t\t") is None  
+        assert calculate_line_number(str(test_file), "\t\t\t") is None
         assert calculate_line_number(str(test_file), "\n\n\n") is None
         assert calculate_line_number(str(test_file), "   \n   ") is None
         assert calculate_line_number(str(test_file), "\t\n\t\n\t") is None
-        
+
         # 더 복잡한 공백 조합
         assert calculate_line_number(str(test_file), "  \t  \n  \t  ") is None
         assert calculate_line_number(str(test_file), "\r\n\t   \r\n") is None
-        
+
         # 정상적인 코드는 여전히 잘 찾아야 함
         assert calculate_line_number(str(test_file), "def hello():") == 1
         assert calculate_line_number(str(test_file), "class TestClass:") == 7
