@@ -9,6 +9,9 @@ import httpx
 
 from selvage.src.utils.base_console import console
 
+# OpenRouter API 요청 파라미터 타입
+RequestParams = dict[str, Any]
+
 
 class OpenRouterHTTPClient:
     """OpenRouter API를 위한 사용자 정의 HTTP 클라이언트"""
@@ -24,8 +27,15 @@ class OpenRouterHTTPClient:
             },
         )
 
-    def create_completion(self, **params: Any) -> dict[str, Any]:
-        """OpenRouter API에 요청을 보내고 응답을 반환합니다."""
+    def create_completion(self, **params: RequestParams) -> dict[str, Any]:
+        """OpenRouter API에 요청을 보내고 응답을 반환합니다.
+
+        Args:
+            **params: OpenRouter API 요청 파라미터 (RequestParams 타입)
+
+        Returns:
+            dict[str, Any]: API 응답 데이터
+        """
         url = f"{self.base_url}/chat/completions"
 
         try:
@@ -33,7 +43,15 @@ class OpenRouterHTTPClient:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
+            error_detail = "응답 내용 없음"
+            try:
+                if hasattr(e.response, "text"):
+                    error_detail = e.response.text
+            except Exception as inner_e:
+                console.debug(f"응답 텍스트 추출 실패: {inner_e}")
+
             console.error(f"OpenRouter API 호출 오류: {e}")
+            console.error(f"응답 내용: {error_detail}")
             raise
         except httpx.RequestError as e:
             console.error(f"OpenRouter API 네트워크 오류: {e}")
