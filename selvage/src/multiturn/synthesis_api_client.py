@@ -139,7 +139,14 @@ class SynthesisAPIClient:
     ) -> tuple[T | None, ApiResponseType | None]:
         """Google Gemini API 호출 전략"""
         try:
-            raw_response = client.models.generate_content(**params)
+            # Google API에서는 generation_config를 별도로 설정
+            generation_config = {
+                "temperature": SynthesisConfig.TEMPERATURE,
+            }
+
+            raw_response = client.models.generate_content(
+                generation_config=generation_config, **params
+            )
             response_text = raw_response.text
             if response_text is None:
                 return None, None
@@ -247,9 +254,6 @@ class SynthesisAPIClient:
             return {
                 "model": model_info["full_name"],
                 "contents": contents,
-                "generation_config": {
-                    "temperature": SynthesisConfig.TEMPERATURE,
-                },
             }
         elif provider == ModelProvider.ANTHROPIC:
             # system 메시지 분리
