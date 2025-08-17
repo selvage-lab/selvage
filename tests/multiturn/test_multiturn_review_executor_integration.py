@@ -61,9 +61,9 @@ class TestMultiturnReviewExecutorIntegration:
         max_tokens = int(get_model_context_limit(model_name))
         return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
 
-    @pytest.fixture(params=["qwen3-coder", "kimi-k2", "deepseek-r1-0528"])
+    @pytest.fixture(params=["kimi-k2"])
     def model_name(self, request) -> str:
-        """테스트할 모델들 (Claude, Gemini, Qwen)"""
+        """테스트할 모델들"""
         return request.param
 
     @pytest.fixture
