@@ -66,7 +66,7 @@ This significantly improves code quality, enables early detection of potential b
 #### Basic Installation (Production Environment)
 
 ```bash
-# Install from PyPI (planned after official release)
+# Install from PyPI
 pip install selvage
 
 # Or install development version
@@ -97,6 +97,7 @@ For terminal session:
 export OPENAI_API_KEY="your_openai_api_key_here"
 export ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 export GEMINI_API_KEY="your_gemini_api_key_here"
+export OPENROUTER_API_KEY="your_openrouter_api_key_here"
 ```
 
 Permanent setup (zsh users):
@@ -105,20 +106,8 @@ Permanent setup (zsh users):
 echo 'export OPENAI_API_KEY="your_api_key_here"' >> ~/.zshrc
 echo 'export ANTHROPIC_API_KEY="your_api_key_here"' >> ~/.zshrc
 echo 'export GEMINI_API_KEY="your_api_key_here"' >> ~/.zshrc
+echo 'export OPENROUTER_API_KEY="your_api_key_here"' >> ~/.zshrc
 source ~/.zshrc
-```
-
-**CLI Command Setup**
-
-```bash
-# Set OpenAI API key
-selvage --set-openai-key
-
-# Set Anthropic API key
-selvage --set-claude-key
-
-# Set Gemini API key
-selvage --set-gemini-key
 ```
 
 #### 2. Default Model Configuration (Optional)
