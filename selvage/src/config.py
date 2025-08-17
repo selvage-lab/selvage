@@ -11,8 +11,6 @@ import sys
 from pathlib import Path
 
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
-from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
-from selvage.src.models.claude_provider import ClaudeProvider
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.base_console import console
 from selvage.src.utils.platform_utils import get_platform_config_dir
@@ -182,42 +180,13 @@ def set_default_debug_mode(debug_mode: bool) -> bool:
         return False
 
 
-def get_claude_provider() -> ClaudeProvider:
-    """Claude 제공자 설정을 반환합니다."""
-    try:
-        config = load_config()
-        if "claude" in config and "provider" in config["claude"]:
-            provider_str = config["claude"]["provider"]
-        else:
-            provider_str = "anthropic"  # 기본값
-        return ClaudeProvider.from_string(provider_str)
-    except (KeyError, ValueError, UnsupportedProviderError):
-        # 설정이 없거나 잘못된 경우 기본값 반환
-        return ClaudeProvider.ANTHROPIC
-
-
-def set_claude_provider(provider: ClaudeProvider) -> bool:
-    """Claude 제공자를 설정합니다.
-
-    Args:
-        provider: 설정할 Claude 제공자
+def has_openrouter_api_key() -> bool:
+    """OpenRouter API key가 설정되어 있는지 확인합니다.
 
     Returns:
-        bool: 성공 여부
+        bool: OPENROUTER_API_KEY 환경변수 존재 여부
     """
-    try:
-        config = load_config()
-        if "claude" not in config:
-            config["claude"] = {}
-        config["claude"]["provider"] = provider.value
-        save_config(config)
-        console.success(
-            f"Claude 제공자가 {provider.get_display_name()}로 설정되었습니다."
-        )
-        return True
-    except Exception as e:
-        console.error(f"Claude 제공자 설정 중 오류 발생: {str(e)}", exception=e)
-        return False
+    return bool(os.getenv("OPENROUTER_API_KEY"))
 
 
 def get_default_language() -> str:

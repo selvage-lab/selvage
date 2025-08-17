@@ -263,17 +263,10 @@ class TestLanguageCLI:
             with patch("selvage.cli.get_default_model", return_value=None):
                 with patch("selvage.cli.get_default_debug_mode", return_value=False):
                     with patch(
-                        "selvage.cli.get_claude_provider"
-                    ) as mock_claude_provider:
-                        from selvage.src.models.claude_provider import ClaudeProvider
-
-                        mock_claude_provider.return_value = ClaudeProvider.ANTHROPIC
-
-                        with patch(
-                            "selvage.cli.get_default_review_log_dir",
-                            return_value="/test/log",
-                        ):
-                            result = self.runner.invoke(cli, ["config", "list"])
+                        "selvage.cli.get_default_review_log_dir",
+                        return_value="/test/log",
+                    ):
+                        result = self.runner.invoke(cli, ["config", "list"])
 
         assert result.exit_code == 0
         assert "Japanese" in result.output

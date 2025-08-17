@@ -271,7 +271,7 @@ class TestCLIConfigReviewLogDir(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0)
         self.assertIn(test_path, result.output)
-        self.assertIn("리뷰 로그 저장 디렉토리", result.output)
+        self.assertIn("리뷰 로그 디렉토리", result.output)
 
 
 class TestCLIReviewLogDirOption(unittest.TestCase):

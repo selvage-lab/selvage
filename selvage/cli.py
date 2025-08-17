@@ -12,12 +12,11 @@ from selvage.__version__ import __version__
 from selvage.src.cache import CacheManager
 from selvage.src.config import (
     get_api_key,
-    get_claude_provider,
     get_default_debug_mode,
     get_default_language,
     get_default_model,
     get_default_review_log_dir,
-    set_claude_provider,
+    has_openrouter_api_key,
     set_default_debug_mode,
     set_default_language,
     set_default_model,
@@ -26,12 +25,10 @@ from selvage.src.config import (
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.exceptions.unsupported_model_error import UnsupportedModelError
-from selvage.src.exceptions.unsupported_provider_error import UnsupportedProviderError
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.llm_gateway.gateway_factory import GatewayFactory
 from selvage.src.model_config import ModelProvider, get_model_info
 from selvage.src.models import ModelChoice, ReviewStatus
-from selvage.src.models.claude_provider import ClaudeProvider
 from selvage.src.models.error_response import ErrorResponse
 from selvage.src.multiturn.models import TokenInfo
 from selvage.src.multiturn.multiturn_review_executor import MultiturnReviewExecutor
@@ -67,7 +64,6 @@ def cli(
     if version:
         click.echo(f"selvage {__version__}")
         return
-
 
     # 명령어가 지정되지 않은 경우 기본으로 review 명령어 호출
     if ctx.invoked_subcommand is None:
@@ -174,37 +170,26 @@ def config_review_log_dir(log_dir: str | None = None) -> None:
             console.info("리뷰 로그 디렉토리가 설정되지 않았습니다.")
 
 
-def config_claude_provider(provider: str | None = None) -> None:
-    """Claude Provider 설정을 처리합니다."""
-    if provider is not None:
-        try:
-            claude_provider = ClaudeProvider.from_string(provider)
-            set_claude_provider(
-                claude_provider
-            )  # 성공/실패 메시지는 config.py에서 처리
-        except UnsupportedProviderError:
-            console.error(
-                f"지원되지 않는 Provider입니다: {provider}. "
-                f"지원되는 Provider: {', '.join([p.value for p in ClaudeProvider])}"
-            )
-    else:
-        # 값이 지정되지 않은 경우 현재 설정을 표시
-        current_provider = get_claude_provider()
-        console.info(f"현재 Claude Provider: {current_provider.get_display_name()}")
-        console.info(
-            f"지원되는 Provider: {', '.join([p.value for p in ClaudeProvider])}"
-        )
-        console.info(
-            "새로운 Provider를 설정하려면 'selvage config claude-provider <provider>' "
-            "명령어를 사용하세요."
-        )
-
-
 def config_list() -> None:
     """모든 설정을 표시합니다."""
     console.print("==== selvage 설정 ====", style="bold cyan")
     console.print("")
 
+    # OpenRouter First 방식 안내
+
+    if has_openrouter_api_key():
+        console.print(
+            "🚀 [bold green]OpenRouter First 모드[/bold green]: 모든 모델이 OpenRouter를 통해 작동합니다",
+            style="green",
+        )
+    else:
+        console.print(
+            "💡 [bold yellow]OpenRouter First[/bold yellow]: OPENROUTER_API_KEY를 설정하면 모든 모델을 OpenRouter를 통해 사용할 수 있습니다",
+            style="yellow",
+        )
+    console.print("")
+
+    # 기존 API key 표시 로직은 유지...
     for provider in ModelProvider:
         provider_display = provider.get_display_name()
         env_var_name = provider.get_env_var_name()
@@ -233,26 +218,26 @@ def config_list() -> None:
             )
 
     console.print("")
-    # Claude 제공자 설정 표시
-    claude_provider = get_claude_provider()
-    console.info(f"Claude 제공자: {claude_provider.get_display_name()}")
 
-    # 리뷰 로그 저장 디렉토리
-    console.info(f"리뷰 로그 저장 디렉토리: {get_default_review_log_dir()}")
-
-    # 기본 모델
+    # 기본 설정들 표시
+    console.print("[bold]기본 설정[/bold]", style="cyan")
     default_model = get_default_model()
     if default_model:
-        console.info(f"기본 모델: {default_model}")
+        console.print(f"기본 모델: {default_model}", style="green")
     else:
-        console.info("기본 모델이 설정되지 않았습니다.")
+        console.print("기본 모델: 설정되지 않음", style="red")
 
-    # 기본 debug-mode 설정
-    debug_status = "활성화" if get_default_debug_mode() else "비활성화"
-    console.info(f"디버그 모드: {debug_status}")
+    default_language = get_default_language()
+    if default_language:
+        console.print(f"기본 언어: {default_language}", style="green")
+    else:
+        console.print("기본 언어: 설정되지 않음", style="red")
 
-    # 기본 언어 설정
-    console.info(f"기본 언어: {get_default_language()}")
+    default_debug_mode = get_default_debug_mode()
+    console.print(f"디버그 모드: {default_debug_mode}", style="green")
+
+    review_log_dir = get_default_review_log_dir()
+    console.print(f"리뷰 로그 디렉토리: {review_log_dir}", style="green")
 
 
 def _handle_context_limit_error(
@@ -335,17 +320,14 @@ def review_code(
     review_log_dir: str | None = None,
 ) -> None:
     """코드 리뷰를 수행합니다."""
-    # API 키 확인
+    # API 키 확인 - OpenRouter First 방식
     model_info = get_model_info(model)
     provider = model_info.get("provider", "unknown")
 
-    # Claude 모델인 경우 claude-provider 설정에 따라 실제 provider 결정
-    if provider == ModelProvider.ANTHROPIC:
-        from selvage.src.models.claude_provider import ClaudeProvider
+    # OpenRouter First: OpenRouter key가 있으면 OpenRouter를 사용
 
-        claude_provider = get_claude_provider()
-        if claude_provider == ClaudeProvider.OPENROUTER:
-            provider = ModelProvider.OPENROUTER
+    if has_openrouter_api_key():
+        provider = ModelProvider.OPENROUTER
 
     api_key = get_api_key(provider)
     if not api_key:
@@ -501,8 +483,6 @@ def handle_view_command(port: int) -> None:
         return
 
 
-
-
 @cli.command()
 @click.option(
     "--repo-path", default=".", help="Git 저장소 경로 (기본값: 현재 디렉토리)", type=str
@@ -625,15 +605,6 @@ def debug_mode(value: str | None) -> None:
 def review_log_dir(directory_path: str | None) -> None:
     """리뷰 로그 저장 디렉토리 설정"""
     config_review_log_dir(directory_path)
-
-
-@config.command(name="claude-provider")
-@click.argument(
-    "provider", type=click.Choice(["anthropic", "openrouter"]), required=False
-)
-def claude_provider(provider: str | None) -> None:
-    """Claude Provider 설정"""
-    config_claude_provider(provider)
 
 
 @config.command(name="language")
