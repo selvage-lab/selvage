@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from selvage.src.diff_parser.models.diff_result import DiffResult
 from selvage.src.utils.base_console import console
@@ -19,6 +19,8 @@ class IssueSeverityEnum(str, Enum):
 class StructuredReviewIssue(BaseModel):
     """Structured Outputs용 코드 리뷰 이슈 모델"""
 
+    model_config = ConfigDict(extra="forbid")
+
     type: str
     file: str | None
     description: str
@@ -30,6 +32,8 @@ class StructuredReviewIssue(BaseModel):
 
 class StructuredReviewResponse(BaseModel):
     """Structured Outputs용 코드 리뷰 응답 모델"""
+
+    model_config = ConfigDict(extra="forbid")
 
     issues: list[StructuredReviewIssue]
     summary: str

@@ -129,7 +129,7 @@ class TestLanguageConfig:
         config = load_config()
 
         # 필수 섹션들이 모두 존재하는지 확인
-        expected_sections = ["credentials", "paths", "default", "debug", "language"]
+        expected_sections = ["paths", "default", "debug", "language"]
         for section in expected_sections:
             assert section in config
 
@@ -263,17 +263,10 @@ class TestLanguageCLI:
             with patch("selvage.cli.get_default_model", return_value=None):
                 with patch("selvage.cli.get_default_debug_mode", return_value=False):
                     with patch(
-                        "selvage.cli.get_claude_provider"
-                    ) as mock_claude_provider:
-                        from selvage.src.models.claude_provider import ClaudeProvider
-
-                        mock_claude_provider.return_value = ClaudeProvider.ANTHROPIC
-
-                        with patch(
-                            "selvage.cli.get_default_review_log_dir",
-                            return_value="/test/log",
-                        ):
-                            result = self.runner.invoke(cli, ["config", "list"])
+                        "selvage.cli.get_default_review_log_dir",
+                        return_value="/test/log",
+                    ):
+                        result = self.runner.invoke(cli, ["config", "list"])
 
         assert result.exit_code == 0
         assert "Japanese" in result.output

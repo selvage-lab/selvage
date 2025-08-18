@@ -64,11 +64,11 @@ selvage review --model claude-sonnet-4
 # Launch UI to view results
 selvage view
 
-# Set API keys
-selvage --set-openai-key
-selvage --set-claude-key
-selvage --set-gemini-key
-selvage --set-openrouter-key
+# Set API keys (환경변수)
+export OPENAI_API_KEY=your_openai_key
+export ANTHROPIC_API_KEY=your_claude_key
+export GEMINI_API_KEY=your_gemini_key
+export OPENROUTER_API_KEY=your_openrouter_key
 
 # Configure default model and language
 selvage config model claude-sonnet-4

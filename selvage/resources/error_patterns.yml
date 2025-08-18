@@ -69,6 +69,18 @@ providers:
 
   openrouter:
     patterns:
+      byok_required:
+        # OpenRouter BYOK(Bring Your Own Key) 필수 모델 에러
+        keywords: ["OpenAI is requiring a key"]
+        message_patterns:
+          - regex: "OpenAI is requiring a key to access this model.*you can also switch to ([a-zA-Z0-9\\-]+) or ([a-zA-Z0-9\\-]+)"
+            extract_tokens:
+              alternative_model_1: 1 # 첫 번째 대안 모델
+              alternative_model_2: 2 # 두 번째 대안 모델
+          - regex: "OpenAI is requiring a key to access this model"
+        http_status_codes: [403]
+        error_type: "byok_required"
+
       context_limit_exceeded:
         # OpenRouter의 context limit 에러 패턴 (모든 모델 공통)
         keywords: ["400 Bad Request"]
@@ -91,6 +103,7 @@ providers:
 # 패턴 매칭 우선순위 (높을수록 먼저 매칭)
 pattern_priorities:
   context_limit_exceeded: 100
+  byok_required: 95
   quota_exceeded: 90
   api_error: 10 # 가장 낮은 우선순위 (catch-all)
 

@@ -27,6 +27,9 @@ from selvage.src.utils.token.models import (
 from .http_client import OpenRouterHTTPClient
 from .models import OpenRouterResponse
 
+# OpenRouter API 요청 파라미터 타입
+RequestParams = dict[str, Any]
+
 
 class OpenRouterGateway(BaseGateway):
     """OpenRouter API를 사용하는 LLM 게이트웨이"""
@@ -62,10 +65,7 @@ class OpenRouterGateway(BaseGateway):
         # OpenRouter를 통해 사용 가능한 모델인지 확인
         # 1. provider가 openrouter이거나 anthropic(Claude 모델)인 경우 허용
         # 2. openrouter_name 필드가 있는 모델은 허용
-        if model_info["provider"] not in [
-            ModelProvider.ANTHROPIC,
-            ModelProvider.OPENROUTER,
-        ] and not model_info.get("openrouter_name"):
+        if not model_info.get("openrouter_name"):
             console.warning(
                 f"{model_info['full_name']}은(는) OpenRouter에서 "
                 "지원하지 않는 모델입니다."
@@ -83,10 +83,8 @@ class OpenRouterGateway(BaseGateway):
                     "지원하지 않습니다"
                 )
                 console.info("해결 방법:")
-                console.print(
-                    "  1. Anthropic 직접 사용: selvage config claude-provider anthropic"
-                )
-                console.print("  2. 일반 Claude 모델 사용: --model claude-sonnet-4")
+                console.print("  1. claude-sonnet-4 사용")
+                console.print("  2. ANTHROPIC_API_KEY 환경 변수 설정")
                 raise UnsupportedModelError(
                     f"OpenRouter는 {model_info['full_name']}의 thinking 모드를 "
                     "지원하지 않습니다"
@@ -98,7 +96,7 @@ class OpenRouterGateway(BaseGateway):
         )
         self.model = model_info
 
-    def _create_request_params(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
+    def _create_request_params(self, messages: list[dict[str, Any]]) -> RequestParams:
         """OpenRouter API 요청 파라미터를 생성합니다.
 
         Args:
@@ -123,7 +121,7 @@ class OpenRouterGateway(BaseGateway):
                 "json_schema": {
                     "name": "structured_review_response",
                     "strict": True,
-                    "schema": StructuredReviewResponse.model_json_schema(),
+                    "schema": self._get_json_schema(),
                 },
             },
             "usage": {
@@ -163,6 +161,14 @@ class OpenRouterGateway(BaseGateway):
 
         # openrouter_name이 설정되지 않은 경우 원래 모델명 반환
         return selvage_model_name
+
+    def _get_json_schema(self) -> dict:
+        """OpenRouter에서 사용할 JSON Schema를 생성합니다.
+
+        Returns:
+            dict: JSON Schema (Pydantic ConfigDict로 additionalProperties 자동 처리)
+        """
+        return StructuredReviewResponse.model_json_schema()
 
     def _is_claude_model(self, model_name: str) -> bool:
         """OpenRouter 모델명이 Claude 모델인지 확인합니다.

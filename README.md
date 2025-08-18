@@ -66,7 +66,7 @@ Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드
 #### 기본 설치 (운영 환경)
 
 ```bash
-# PyPI에서 설치 (정식 출시 후 예정)
+# PyPI에서 설치
 pip install selvage
 
 # 또는 개발 버전 설치
@@ -89,7 +89,7 @@ pip install -e .[dev,e2e]
 
 #### 1. API 키 설정
 
-**환경 변수로 설정 (권장)**
+**환경 변수로 설정**
 
 터미널 세션용:
 
@@ -97,6 +97,7 @@ pip install -e .[dev,e2e]
 export OPENAI_API_KEY="your_openai_api_key_here"
 export ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 export GEMINI_API_KEY="your_gemini_api_key_here"
+export OPENROUTER_API_KEY="your_openrouter_api_key_here"
 ```
 
 영구 설정 (zsh 사용자):
@@ -105,20 +106,8 @@ export GEMINI_API_KEY="your_gemini_api_key_here"
 echo 'export OPENAI_API_KEY="your_api_key_here"' >> ~/.zshrc
 echo 'export ANTHROPIC_API_KEY="your_api_key_here"' >> ~/.zshrc
 echo 'export GEMINI_API_KEY="your_api_key_here"' >> ~/.zshrc
+echo 'export OPENROUTER_API_KEY="your_api_key_here"' >> ~/.zshrc
 source ~/.zshrc
-```
-
-**CLI 명령어로 설정**
-
-```bash
-# OpenAI API 키 설정
-selvage --set-openai-key
-
-# Anthropic API 키 설정
-selvage --set-claude-key
-
-# Gemini API 키 설정
-selvage --set-gemini-key
 ```
 
 #### 2. 기본 모델 설정 (선택사항)

@@ -13,9 +13,15 @@ if TYPE_CHECKING:
 class APIKeyNotFoundError(LLMGatewayError):
     """API 키가 없을 때 발생하는 예외"""
 
-    def __init__(self, provider: "ModelProvider") -> None:
+    def __init__(self, provider: "ModelProvider" = None, message: str = None) -> None:
         self.provider = provider
-        super().__init__(
-            f"API 키가 제공되지 않았습니다. 'selvage --set-{provider.get_api_key_command_name()}-key' 명령을 사용하여 "
-            f"API 키를 설정하세요."
-        )
+        if message:
+            super().__init__(message)
+        elif provider:
+            env_var = provider.get_env_var_name()
+            super().__init__(
+                f"{provider.value} API 키가 제공되지 않았습니다. "
+                f"{env_var} 환경변수를 설정하세요."
+            )
+        else:
+            super().__init__("API 키가 제공되지 않았습니다.")

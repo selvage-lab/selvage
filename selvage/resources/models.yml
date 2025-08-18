@@ -2,80 +2,53 @@
 # 새 모델 추가시 이 파일만 수정하면 됩니다.
 
 models:
-  gpt-4o:
-    full_name: "gpt-4o"
-    aliases: []
-    description: "고급 코드 분석 및 텍스트 처리 능력"
-    provider: "openai"
-    params:
-      temperature: 0.0
-    thinking_mode: false
-    pricing:
-      input: 2.5 # USD per 1M tokens
-      output: 10.0 # USD per 1M tokens
-      description: "$2.50/$10.00 per 1M tokens"
-    context_limit: 128000
-    openrouter_name: "openai/gpt-4o"
-
-  gpt-4.1:
-    full_name: "gpt-4.1"
-    aliases: []
-    description: "대용량 코드베이스 분석 및 100만 토큰 컨텍스트 처리"
-    provider: "openai"
-    params:
-      temperature: 0.0
-    thinking_mode: false
-    pricing:
-      input: 2.0
-      output: 8.0
-      description: "$2.00/$8.00 per 1M tokens"
-    context_limit: 1047576
-    openrouter_name: "openai/gpt-4.1"
-
-  o4-mini-high:
-    full_name: "o4-mini"
-    aliases: ["o4-mini-high"]
-    description: "추론 모델로 높은 정확도 코드 분석 수행 (high reasoning)"
-    provider: "openai"
-    params:
-      reasoning_effort: "high"
-    thinking_mode: false
-    pricing:
-      input: 1.1
-      output: 4.4
-      description: "$1.10/$4.40 per 1M tokens"
-    context_limit: 200000
-    openrouter_name: "openai/o4-mini-high"
-
-  o4-mini:
-    full_name: "o4-mini"
-    aliases: ["o4-mini", "o4-mini-medium"]
-    description: "추론 모델로 균형 잡힌 코드 분석 수행 (medium reasoning)"
+  gpt-5:
+    full_name: "gpt-5"
+    aliases: ["gpt-5-medium"]
+    description: "OpenAI의 최신 통합 모델로 고급 추론과 빠른 응답을 결합"
     provider: "openai"
     params:
       reasoning_effort: "medium"
     thinking_mode: false
     pricing:
-      input: 1.1
-      output: 4.4
-      description: "$1.10/$4.40 per 1M tokens"
-    context_limit: 200000
-    openrouter_name: "openai/o4-mini"
+      input: 1.25 # $1.25/1M tokens (공식)
+      output: 10.0 # $10.00/1M tokens (공식)
+      description: "$1.25/$10.00 per 1M tokens"
+    context_limit: 400000
+    openrouter_name: "openai/gpt-5"
+    requires_byok: true # OpenRouter에서 BYOK 필수
 
-  o3:
-    full_name: "o3"
-    aliases: ["o3"]
-    description: "모든 분야에 걸쳐 다재다능하고 강력한 모델입니다. 수학, 과학, 코딩, 그리고 시각적 추론 과제에도 탁월"
+  gpt-5-high:
+    full_name: "gpt-5"
+    aliases: ["gpt-5-high"]
+    description: "최고 수준의 추론 능력으로 복잡한 코드 분석 및 문제 해결 수행"
     provider: "openai"
     params:
       reasoning_effort: "high"
-    pricing:
-      input: 2.0
-      output: 8.0
-      description: "$2.00/$8.00 per 1M tokens"
-    context_limit: 200000
     thinking_mode: false
-    openrouter_name: "openai/o3"
+    pricing:
+      input: 1.25
+      output: 10.0
+      description: "$1.25/$10.00 per 1M tokens"
+    context_limit: 400000
+    openrouter_name: "openai/gpt-5"
+    requires_byok: true # OpenRouter에서 BYOK 필수
+
+  gpt-5-mini:
+    full_name: "gpt-5-mini"
+    aliases: ["gpt-5-mini"]
+    description: "경량화된 GPT-5 모델로 빠른 응답과 비용 효율성 제공"
+    provider: "openai"
+    params:
+      reasoning_effort: "medium"
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.25 # $0.25/1M tokens (공식)
+      output: 2.0 # $2.00/1M tokens (공식)
+      description: "$0.25/$2.00 per 1M tokens"
+    context_limit: 400000
+    openrouter_name: "openai/gpt-5-mini"
 
   claude-sonnet-4-20250514:
     full_name: "claude-sonnet-4-20250514"

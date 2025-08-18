@@ -1,12 +1,14 @@
 """완전한 testcontainers 기반 Linux 환경 E2E 테스트."""
 
 import json
+import os
 
 import pytest
 from testcontainers.core.generic import DockerContainer
 
 from e2e.helpers import verify_selvage_installation
 from selvage.src.config import get_api_key
+from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.json_extractor import JSONExtractor
 from selvage.src.utils.token.models import ReviewResponse
@@ -19,9 +21,15 @@ def testpypi_container():
     container.with_command("bash -c 'while true; do sleep 1; done'")
 
     # API 키 설정
-    gemini_api_key = get_api_key(ModelProvider.GOOGLE)
-    if gemini_api_key:
+    try:
+        gemini_api_key = get_api_key(ModelProvider.GOOGLE)
         container.with_env("GEMINI_API_KEY", gemini_api_key)
+    except APIKeyNotFoundError:
+        # API 키가 없으면 환경변수에서 가져오기 시도
+
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if gemini_api_key:
+            container.with_env("GEMINI_API_KEY", gemini_api_key)
 
     container.start()
 
