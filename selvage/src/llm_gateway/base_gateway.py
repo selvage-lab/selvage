@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import logging
 from collections.abc import Callable
 from typing import Any
 
@@ -22,6 +23,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from selvage.src.exceptions.json_parsing_error import JSONParsingError
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -182,10 +184,11 @@ class BaseGateway(abc.ABC):
                 ConnectionError,
                 TimeoutError,
                 ValueError,  # API 응답 구조 문제
+                JSONParsingError,  # JSON 파싱 오류
             )
         ),
-        before_sleep=before_sleep_log(console.logger, log_level="INFO"),
-        after=after_log(console.logger, log_level="DEBUG"),
+        before_sleep=before_sleep_log(console.logger, log_level=logging.INFO),
+        after=after_log(console.logger, log_level=logging.DEBUG),
     )
     def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
         """코드를 리뷰합니다.
@@ -230,9 +233,10 @@ class BaseGateway(abc.ABC):
                     console.error(
                         f"응답 파싱 오류: {str(parse_error)}", exception=parse_error
                     )
-                    return ReviewResult.get_error_result(
-                        parse_error, self.get_model_name(), self.get_provider().value
-                    )
+                    # 파싱 오류를 JSONParsingError로 변환하여 재시도 가능하도록 함
+                    raise JSONParsingError.from_parsing_exception(
+                        parse_error, "Google API", response_text
+                    ) from parse_error
             elif isinstance(client, anthropic.Anthropic):
                 try:
                     raw_api_response = client.messages.create(**params)
@@ -251,13 +255,17 @@ class BaseGateway(abc.ABC):
                     if structured_response is None:
                         return ReviewResult.get_empty_result(self.get_model_name())
 
+                except JSONParsingError:
+                    # JSONParsingError는 그대로 재전파
+                    raise
                 except Exception as parse_error:
                     console.error(
                         f"응답 파싱 오류: {str(parse_error)}", exception=parse_error
                     )
-                    return ReviewResult.get_error_result(
-                        parse_error, self.get_model_name(), self.get_provider().value
-                    )
+                    # 기타 파싱 오류를 JSONParsingError로 변환하여 재시도 가능하도록 함
+                    raise JSONParsingError.from_parsing_exception(
+                        parse_error, "Anthropic API", response_text
+                    ) from parse_error
 
             # 응답 처리
             if not structured_response:
@@ -270,6 +278,10 @@ class BaseGateway(abc.ABC):
                 estimated_cost=self.estimate_cost(raw_api_response),
             )
 
+        except (ConnectionError, TimeoutError, ValueError, JSONParsingError) as e:
+            console.error(f"리뷰 요청 중 오류 발생: {str(e)}", exception=e)
+            # 재시도 가능 예외는 재전파하여 tenacity가 처리하도록 함
+            raise
         except Exception as e:
             console.error(f"리뷰 요청 중 오류 발생: {str(e)}", exception=e)
             return ReviewResult.get_error_result(

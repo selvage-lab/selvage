@@ -3,6 +3,7 @@
 OpenRouter API를 통한 LLM 서비스 게이트웨이를 제공합니다.
 """
 
+import logging
 import os
 from typing import Any
 
@@ -19,6 +20,7 @@ from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.exceptions.invalid_model_provider_error import (
     InvalidModelProviderError,
 )
+from selvage.src.exceptions.json_parsing_error import JSONParsingError
 from selvage.src.exceptions.openrouter_api_error import (
     OpenRouterConnectionError,
     OpenRouterResponseError,
@@ -214,10 +216,11 @@ class OpenRouterGateway(BaseGateway):
                 OpenRouterConnectionError,
                 ConnectionError,
                 TimeoutError,
+                JSONParsingError,  # JSON 파싱 오류
             )
         ),
-        before_sleep=before_sleep_log(console.logger, log_level="INFO"),
-        after=after_log(console.logger, log_level="DEBUG"),
+        before_sleep=before_sleep_log(console.logger, log_level=logging.INFO),
+        after=after_log(console.logger, log_level=logging.DEBUG),
     )
     def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
         """OpenRouter API를 사용하여 코드를 리뷰합니다.
@@ -287,6 +290,15 @@ class OpenRouterGateway(BaseGateway):
                     estimated_cost=estimated_cost,
                 )
 
+        except (
+            OpenRouterResponseError,
+            OpenRouterConnectionError,
+            ConnectionError,
+            TimeoutError,
+            JSONParsingError,
+        ) as e:
+            console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
+            raise
         except Exception as e:
             console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
             return ReviewResult.get_error_result(
