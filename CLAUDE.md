@@ -66,8 +66,8 @@ selvage view
 
 # Set API keys (환경변수)
 export OPENAI_API_KEY=your_openai_key
-export ANTHROPIC_API_KEY=your_claude_key  
-export GOOGLE_API_KEY=your_gemini_key
+export ANTHROPIC_API_KEY=your_claude_key
+export GEMINI_API_KEY=your_gemini_key
 export OPENROUTER_API_KEY=your_openrouter_key
 
 # Configure default model and language

@@ -83,10 +83,8 @@ class OpenRouterGateway(BaseGateway):
                     "지원하지 않습니다"
                 )
                 console.info("해결 방법:")
-                console.print(
-                    "  1. Anthropic 직접 사용: selvage config claude-provider anthropic"
-                )
-                console.print("  2. 일반 Claude 모델 사용: --model claude-sonnet-4")
+                console.print("  1. claude-sonnet-4 사용")
+                console.print("  2. ANTHROPIC_API_KEY 환경 변수 설정")
                 raise UnsupportedModelError(
                     f"OpenRouter는 {model_info['full_name']}의 thinking 모드를 "
                     "지원하지 않습니다"
@@ -170,8 +168,6 @@ class OpenRouterGateway(BaseGateway):
         Returns:
             dict: JSON Schema (Pydantic ConfigDict로 additionalProperties 자동 처리)
         """
-        from selvage.src.utils.token.models import StructuredReviewResponse
-
         return StructuredReviewResponse.model_json_schema()
 
     def _is_claude_model(self, model_name: str) -> bool:

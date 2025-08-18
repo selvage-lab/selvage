@@ -1,5 +1,7 @@
 """selvage CLI 기본 기능 Container 기반 End-to-End 테스트."""
 
+import os
+
 import pytest
 from testcontainers.core.generic import DockerContainer
 
@@ -21,7 +23,6 @@ def testpypi_container():
         container.with_env("GEMINI_API_KEY", gemini_api_key)
     except APIKeyNotFoundError:
         # API 키가 없으면 환경변수에서 가져오기 시도
-        import os
         gemini_api_key = os.getenv("GEMINI_API_KEY")
         if gemini_api_key:
             container.with_env("GEMINI_API_KEY", gemini_api_key)
