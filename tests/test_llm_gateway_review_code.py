@@ -237,7 +237,7 @@ def test_review_code_success_with_genai(
             "type": expected_issues_raw_data[0]["type"],
             "description": expected_issues_raw_data[0]["description"],
             "severity": expected_issues_raw_data[0]["severity"],
-            "line_number": None,  # LineNumberCalculator에 의해 계산되므로 LLM은 None 반환
+            # line_number는 제외 - LineNumberCalculator가 나중에 계산
             "file": expected_issues_raw_data[0]["file"],
             "suggestion": expected_issues_raw_data[0]["suggestion"],
             "target_code": expected_issues_raw_data[0]["target_code"],
@@ -245,14 +245,14 @@ def test_review_code_success_with_genai(
         }
     ]
 
-    mock_genai_response.text = f"""
-    {{
-        "issues": {json.dumps(issues_list_for_json)},
-        "summary": "{expected_summary_genai}", 
-        "score": {expected_score_genai}, 
-        "recommendations": {json.dumps(expected_recommendations_genai)}
-    }}
-    """
+    # JSON 문자열을 깔끔하게 생성
+    response_json = {
+        "issues": issues_list_for_json,
+        "summary": expected_summary_genai,
+        "score": expected_score_genai,
+        "recommendations": expected_recommendations_genai
+    }
+    mock_genai_response.text = json.dumps(response_json)
     mock_genai_models.generate_content.return_value = mock_genai_response
     mock_create_client.return_value = mock_genai_client
 

@@ -121,19 +121,8 @@ class TokenUtils:
         Returns:
             int: 토큰 수
         """
-        from selvage.src.config import get_claude_provider
-        from selvage.src.models.claude_provider import ClaudeProvider
 
-        claude_provider_enum = get_claude_provider()
-
-        # OpenRouter 사용 시에도 정확한 토큰 계산을 위해 Anthropic API 사용
-        if claude_provider_enum == ClaudeProvider.OPENROUTER:
-            return TokenUtils._count_tokens_claude_with_anthropic_for_openrouter(
-                review_prompt, model
-            )
-        else:
-            # Anthropic 직접 사용
-            return TokenUtils._count_tokens_claude_anthropic(review_prompt, model)
+        return TokenUtils._count_tokens_claude_anthropic(review_prompt, model)
 
     @staticmethod
     def _count_tokens_claude_anthropic(
@@ -233,14 +222,17 @@ class TokenUtils:
             api_key = get_api_key(ModelProvider.ANTHROPIC)
             if not api_key:
                 console.warning(
-                    "OpenRouter를 사용하는 경우에도 정확한 토큰 계산을 위해 Anthropic API 키를 설정해주세요."
+                    "정확한 토큰 계산을 위해 ANTHROPIC_API_KEY가 필요합니다."
                 )
-                raise TokenCountError(model, "Anthropic API 키가 설정되지 않았습니다.")
+                console.info("환경 변수 설정 방법:")
+                console.info("  export ANTHROPIC_API_KEY='your_anthropic_api_key'")
+                raise TokenCountError(
+                    model,
+                    "ANTHROPIC_API_KEY가 설정되지 않았습니다.",
+                )
 
             # Anthropic API를 사용하여 정확한 토큰 계산
-            console.info(
-                "OpenRouter 사용 중 - 정확한 토큰 계산을 위해 Anthropic API 사용"
-            )
+
             return TokenUtils._count_tokens_claude_anthropic(review_prompt, model)
 
         except Exception as e:

@@ -23,7 +23,7 @@ class TestCostEstimator:
     def test_get_model_pricing_supported_model(self) -> None:
         """지원되는 모델의 가격 정보 조회 테스트"""
         # 모델 설정 파일에 있는 지원되는 모델 테스트
-        pricing = CostEstimator._get_model_pricing("gpt-4o")
+        pricing = CostEstimator._get_model_pricing("gpt-5")
         assert "input" in pricing
         assert "output" in pricing
         assert isinstance(pricing["input"], float)
@@ -44,7 +44,7 @@ class TestCostEstimator:
     @pytest.mark.parametrize(
         "model_name,prompt_tokens,completion_tokens,expected_input_cost,expected_output_cost",
         [
-            ("gpt-4o", 1000, 500, 2.5, 10.0),  # $2.50/$10.00 per 1M
+            ("gpt-5", 1000, 500, 1.25, 10.0),  # $1.25/$10.00 per 1M
             ("o4-mini", 2000, 800, 1.1, 4.4),  # $1.10/$4.40 per 1M
         ],
     )

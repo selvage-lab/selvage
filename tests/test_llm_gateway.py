@@ -24,14 +24,14 @@ class TestOpenAIGateway(unittest.TestCase):
         mock_get_api_key.return_value = "fake-api-key"
 
         # 테스트할 모델 가져오기
-        model_info = get_model_info("gpt-4o")
+        model_info = get_model_info("gpt-5")
         self.assertIsNotNone(model_info)
 
         # 게이트웨이 생성
         gateway = OpenAIGateway(model_info)
 
         # 검증
-        self.assertEqual(gateway.get_model_name(), "gpt-4o")
+        self.assertEqual(gateway.get_model_name(), "gpt-5")
         self.assertEqual(gateway.model, model_info)
         mock_get_api_key.assert_called_once_with(ModelProvider.OPENAI)
 
@@ -74,7 +74,7 @@ class TestOpenAIGateway(unittest.TestCase):
         mock_get_api_key.return_value = None
 
         # 테스트할 모델 가져오기
-        model_info = get_model_info("gpt-4o")
+        model_info = get_model_info("gpt-5")
         self.assertIsNotNone(model_info)
 
         # 예외 발생 확인
@@ -112,7 +112,7 @@ class TestClaudeGateway(unittest.TestCase):
 
         # 실제 존재하는 OpenAI 모델 정보를 반환하도록 모킹
         openai_model_info: ModelInfoDict = {
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
             "aliases": [],
             "description": "OpenAI 모델",
             "provider": ModelProvider.OPENAI,  # Claude가 아닌 다른 제공자
@@ -133,7 +133,7 @@ class TestClaudeGateway(unittest.TestCase):
             ClaudeGateway(openai_model_info)
 
         # 예외 속성 검증
-        self.assertEqual(context.exception.model_name, "gpt-4o")
+        self.assertEqual(context.exception.model_name, "gpt-5")
         self.assertEqual(context.exception.expected_provider, ModelProvider.ANTHROPIC)
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
@@ -180,7 +180,7 @@ class TestGoogleGateway(unittest.TestCase):
 
         # 실제 존재하는 OpenAI 모델 정보를 반환하도록 모킹 (Claude 테스트와 유사)
         openai_model_info: ModelInfoDict = {
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
             "aliases": [],
             "description": "OpenAI 모델",
             "provider": ModelProvider.OPENAI,  # Google이 아닌 다른 제공자
@@ -201,7 +201,7 @@ class TestGoogleGateway(unittest.TestCase):
             GoogleGateway(openai_model_info)
 
         # 예외 속성 검증
-        self.assertEqual(context.exception.model_name, "gpt-4o")
+        self.assertEqual(context.exception.model_name, "gpt-5")
         self.assertEqual(context.exception.expected_provider, ModelProvider.GOOGLE)
 
     @patch("selvage.src.llm_gateway.google_gateway.get_api_key")
@@ -304,22 +304,19 @@ class TestCreateLLMGateway(unittest.TestCase):
         """OpenAI 모델명으로 get_llm_gateway 호출 시 실제 OpenAIGateway 반환을 테스트합니다."""
         mock_get_api_key.return_value = "fake-api-key"
 
-        gateway = GatewayFactory.create("gpt-4o")
+        gateway = GatewayFactory.create("gpt-5")
 
         # 검증 - 실제 OpenAIGateway 인스턴스인지 확인
         self.assertIsInstance(gateway, OpenAIGateway)
-        self.assertEqual(gateway.get_model_name(), "gpt-4o")
+        self.assertEqual(gateway.get_model_name(), "gpt-5")
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
-    @patch("selvage.src.llm_gateway.gateway_factory.get_claude_provider")
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=True)  # OpenRouter 키 없음
     def test_create_claude_gateway_with_anthropic_provider(
-        self, mock_get_claude_provider, mock_get_api_key
+        self, mock_get_api_key
     ):
-        """Claude 모델, Anthropic provider 설정 시 ClaudeGateway 반환 테스트"""
-        from selvage.src.models.claude_provider import ClaudeProvider
-
+        """OpenRouter 키가 없을 때 Claude 모델이 ClaudeGateway로 처리되는지 테스트"""
         mock_get_api_key.return_value = "fake-claude-key"
-        mock_get_claude_provider.return_value = ClaudeProvider.ANTHROPIC
 
         gateway = GatewayFactory.create("claude-sonnet-4")
 
@@ -327,29 +324,35 @@ class TestCreateLLMGateway(unittest.TestCase):
         self.assertEqual(gateway.get_model_name(), "claude-sonnet-4-20250514")
 
     @patch.dict(os.environ, {"OPENROUTER_API_KEY": "fake-openrouter-key"})
-    @patch("selvage.src.llm_gateway.gateway_factory.get_claude_provider")
-    def test_create_openrouter_gateway_with_openrouter_provider(
-        self, mock_get_claude_provider
-    ):
-        """Claude 모델, OpenRouter provider 설정 시 OpenRouterGateway 반환 테스트"""
-        from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
-        from selvage.src.models.claude_provider import ClaudeProvider
-
-        mock_get_claude_provider.return_value = ClaudeProvider.OPENROUTER
+    def test_create_openrouter_gateway_with_openrouter_provider(self):
+        """OpenRouter 키가 있을 때 Claude 모델이 OpenRouterGateway로 처리되는지 테스트"""
+        from selvage.src.llm_gateway.openrouter.gateway import OpenRouterGateway
 
         gateway = GatewayFactory.create("claude-sonnet-4")
 
         self.assertIsInstance(gateway, OpenRouterGateway)
         self.assertEqual(gateway.get_model_name(), "claude-sonnet-4-20250514")
 
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": "fake-openrouter-key"})
+    def test_create_google_gateway_via_openrouter(self):
+        """OpenRouter First: Google 모델이 OpenRouterGateway로 처리되는지 테스트"""
+        from selvage.src.llm_gateway.openrouter.gateway import OpenRouterGateway
+
+        gateway = GatewayFactory.create("gemini-2.5-pro")
+
+        # 검증 - OpenRouter를 통해 처리됨
+        self.assertIsInstance(gateway, OpenRouterGateway)
+        self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro")
+
     @patch("selvage.src.llm_gateway.google_gateway.get_api_key")
-    def test_create_google_gateway(self, mock_get_api_key):
-        """Google 모델명으로 get_llm_gateway 호출 시 GoogleGateway 반환을 테스트합니다."""
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=True)  # OpenRouter 키 없음
+    def test_create_google_gateway_direct(self, mock_get_api_key):
+        """OpenRouter 키가 없을 때 Google 모델이 GoogleGateway로 처리되는지 테스트"""
         mock_get_api_key.return_value = "fake-api-key"
 
         gateway = GatewayFactory.create("gemini-2.5-pro")
 
-        # 검증
+        # 검증 - 직접 GoogleGateway 사용
         self.assertIsInstance(gateway, GoogleGateway)
         self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro")
 
