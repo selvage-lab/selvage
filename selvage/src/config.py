@@ -189,6 +189,15 @@ def has_openrouter_api_key() -> bool:
     return bool(os.getenv("OPENROUTER_API_KEY"))
 
 
+def has_openai_api_key() -> bool:
+    """OpenAI API key가 설정되어 있는지 확인합니다.
+
+    Returns:
+        bool: OPENAI_API_KEY 환경변수 존재 여부
+    """
+    return bool(os.getenv("OPENAI_API_KEY"))
+
+
 def get_default_language() -> str:
     """기본 언어를 반환합니다.
 

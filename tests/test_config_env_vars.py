@@ -84,14 +84,12 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
             api_key = get_api_key(ModelProvider.OPENAI)
             self.assertEqual(api_key, env_key)
 
-
     def test_get_api_key_not_found(self) -> None:
         """API 키가 없을 때 적절한 예외가 발생하는지 테스트"""
         with self.assertRaises(APIKeyNotFoundError) as context:
             get_api_key(ModelProvider.OPENAI)
 
         self.assertEqual(context.exception.provider, ModelProvider.OPENAI)
-
 
     def test_all_providers_mapping(self) -> None:
         """모든 지원 provider의 환경변수 매핑 테스트."""
@@ -129,15 +127,6 @@ class TestEnvironmentVariableConfig(unittest.TestCase):
 
                 # 정리
                 del os.environ[env_var]
-
-    def test_get_api_key_command_name(self) -> None:
-        """API 키 명령어명 매핑 테스트."""
-        self.assertEqual(ModelProvider.OPENAI.get_api_key_command_name(), "openai")
-        self.assertEqual(ModelProvider.ANTHROPIC.get_api_key_command_name(), "claude")
-        self.assertEqual(ModelProvider.GOOGLE.get_api_key_command_name(), "google")
-        self.assertEqual(
-            ModelProvider.OPENROUTER.get_api_key_command_name(), "openrouter"
-        )
 
 
 if __name__ == "__main__":

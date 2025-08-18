@@ -9,7 +9,6 @@ models:
     provider: "openai"
     params:
       reasoning_effort: "medium"
-      temperature: 0.0
     thinking_mode: false
     pricing:
       input: 1.25 # $1.25/1M tokens (공식)
@@ -17,6 +16,7 @@ models:
       description: "$1.25/$10.00 per 1M tokens"
     context_limit: 400000
     openrouter_name: "openai/gpt-5"
+    requires_byok: true # OpenRouter에서 BYOK 필수
 
   gpt-5-high:
     full_name: "gpt-5"
@@ -25,7 +25,6 @@ models:
     provider: "openai"
     params:
       reasoning_effort: "high"
-      temperature: 0.0
     thinking_mode: false
     pricing:
       input: 1.25
@@ -33,6 +32,7 @@ models:
       description: "$1.25/$10.00 per 1M tokens"
     context_limit: 400000
     openrouter_name: "openai/gpt-5"
+    requires_byok: true # OpenRouter에서 BYOK 필수
 
   gpt-5-mini:
     full_name: "gpt-5-mini"

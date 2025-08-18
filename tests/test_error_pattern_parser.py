@@ -181,6 +181,73 @@ class TestErrorPatternParser:
         assert result.error_type == "api_error"
         assert result.matched_pattern == "api_error"  # catch-all 패턴
 
+    def test_openrouter_byok_pattern_matching(self, parser: ErrorPatternParser):
+        """OpenRouter BYOK 에러 패턴 매칭 테스트"""
+        # httpx.HTTPStatusError 시뮬레이션
+        import httpx
+        
+        byok_response = {
+            "error": {
+                "message": (
+                    "OpenAI is requiring a key to access this model, "
+                    "which you can add in https://openrouter.ai/settings/integrations "
+                    "- you can also switch to gpt-5-chat or gpt-5-mini."
+                )
+            }
+        }
+        
+        # httpx.Response 모킹
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.text = json.dumps(byok_response)
+        
+        # httpx.HTTPStatusError 생성
+        mock_error = httpx.HTTPStatusError(
+            "403 Forbidden", 
+            request=MagicMock(), 
+            response=mock_response
+        )
+
+        result = parser.parse_error("openrouter", mock_error)
+
+        assert result.error_type == "byok_required"
+        assert result.matched_pattern == "byok_required"
+        assert result.http_status_code == 403
+
+    def test_openrouter_byok_pattern_without_alternatives(self, parser: ErrorPatternParser):
+        """대안 모델이 없는 OpenRouter BYOK 에러 패턴 테스트"""
+        # httpx.HTTPStatusError 시뮬레이션 (대안 모델 없음)
+        import httpx
+        
+        byok_response = {
+            "error": {
+                "message": (
+                    "OpenAI is requiring a key to access this model, "
+                    "which you can add in https://openrouter.ai/settings/integrations"
+                )
+            }
+        }
+        
+        # httpx.Response 모킹
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.text = json.dumps(byok_response)
+        
+        # httpx.HTTPStatusError 생성
+        mock_error = httpx.HTTPStatusError(
+            "403 Forbidden", 
+            request=MagicMock(), 
+            response=mock_response
+        )
+
+        result = parser.parse_error("openrouter", mock_error)
+
+        assert result.error_type == "byok_required"
+        assert result.matched_pattern == "byok_required"
+        assert result.http_status_code == 403
+        # 대안 모델 정보가 없어야 함
+        assert not result.additional_token_info
+
     def test_error_response_integration(self, parser: ErrorPatternParser):
         """ErrorResponse 클래스와의 통합 테스트"""
         # OpenAI 에러 시뮬레이션
