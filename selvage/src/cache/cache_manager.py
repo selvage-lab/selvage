@@ -15,7 +15,7 @@ from .models import CacheEntry, CacheKeyInfo
 class CacheManager:
     """리뷰 결과 캐싱을 관리하는 클래스"""
 
-    def __init__(self, cache_ttl_hours: int = 24):
+    def __init__(self, cache_ttl_hours: int = 24) -> None:
         """캐시 매니저 초기화
 
         Args:

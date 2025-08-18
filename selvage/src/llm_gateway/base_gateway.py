@@ -13,6 +13,14 @@ import google.genai.types as genai_types
 import instructor
 import openai
 from google import genai
+from tenacity import (
+    after_log,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
@@ -28,12 +36,21 @@ from selvage.src.utils.token.models import (
     StructuredReviewResponse,
 )
 
+# LLM API 응답 타입 별칭
+LLMResponse = (
+    openai.types.Completion
+    | anthropic.types.Message
+    | genai_types.GenerateContentResponse
+)
+
 
 class BaseGateway(abc.ABC):
     """LLM 게이트웨이의 추상 기본 클래스"""
 
     @staticmethod
-    def _handle_openai_cost_estimation(resp: Any, model: str) -> EstimatedCost | None:
+    def _handle_openai_cost_estimation(
+        resp: LLMResponse, model: str
+    ) -> EstimatedCost | None:
         if (
             isinstance(resp, openai.types.Completion)
             and hasattr(resp, "usage")
@@ -43,7 +60,9 @@ class BaseGateway(abc.ABC):
         return None
 
     @staticmethod
-    def _handle_claude_cost_estimation(resp: Any, model: str) -> EstimatedCost | None:
+    def _handle_claude_cost_estimation(
+        resp: LLMResponse, model: str
+    ) -> EstimatedCost | None:
         if (
             isinstance(resp, anthropic.types.Message)
             and hasattr(resp, "usage")
@@ -53,7 +72,9 @@ class BaseGateway(abc.ABC):
         return None
 
     @staticmethod
-    def _handle_google_cost_estimation(resp: Any, model: str) -> EstimatedCost | None:
+    def _handle_google_cost_estimation(
+        resp: LLMResponse, model: str
+    ) -> EstimatedCost | None:
         if (
             isinstance(resp, genai_types.GenerateContentResponse)
             and hasattr(resp, "usage_metadata")
@@ -65,7 +86,7 @@ class BaseGateway(abc.ABC):
         return None
 
     provider_handlers: dict[
-        ModelProvider, Callable[[Any, str], EstimatedCost | None]
+        ModelProvider, Callable[[LLMResponse, str], EstimatedCost | None]
     ] = {
         ModelProvider.OPENAI: _handle_openai_cost_estimation,
         ModelProvider.ANTHROPIC: _handle_claude_cost_estimation,
@@ -119,7 +140,8 @@ class BaseGateway(abc.ABC):
         """현재 프로바이더에 맞는 LLM 클라이언트를 생성합니다.
 
         Returns:
-            instructor.Instructor | genai.Client | anthropic.Anthropic: 구조화된 응답을 지원하는 LLM 클라이언트
+            instructor.Instructor | genai.Client | anthropic.Anthropic:
+                구조화된 응답을 지원하는 LLM 클라이언트
         """
         return LLMClientFactory.create_client(
             self.get_provider(), self.api_key, self.model
@@ -127,9 +149,7 @@ class BaseGateway(abc.ABC):
 
     def estimate_cost(
         self,
-        raw_response: openai.types.Completion
-        | anthropic.types.Message
-        | genai_types.GenerateContentResponse,
+        raw_response: LLMResponse,
     ) -> EstimatedCost:
         """API 응답의 usage 정보를 이용하여 비용을 계산합니다.
 
@@ -149,10 +169,24 @@ class BaseGateway(abc.ABC):
 
         # usage 정보가 없는 경우 빈 응답 반환
         console.warning(
-            f"Usage 정보를 찾을 수 없습니다: {provider} 모델 {model_name}. 0 비용으로 출력합니다."
+            f"Usage 정보를 찾을 수 없습니다: {provider} 모델 {model_name}. "
+            "0 비용으로 출력합니다."
         )
         return EstimatedCost.get_zero_cost(model_name)
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=8),
+        retry=retry_if_exception_type(
+            (
+                ConnectionError,
+                TimeoutError,
+                ValueError,  # API 응답 구조 문제
+            )
+        ),
+        before_sleep=before_sleep_log(console.logger, log_level="INFO"),
+        after=after_log(console.logger, log_level="DEBUG"),
+    )
     def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
         """코드를 리뷰합니다.
 

@@ -1,12 +1,14 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .error_pattern_parser import ErrorPatternParser
 
 
 class ErrorResponse(BaseModel):
     """LLM API 에러 응답을 구조화한 모델"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     error_type: str
     """에러 유형: 'context_limit_exceeded', 'api_error', 'parse_error', etc."""
@@ -25,6 +27,9 @@ class ErrorResponse(BaseModel):
 
     raw_error: dict[str, Any] = Field(default_factory=dict)
     """원본 에러 응답 데이터"""
+
+    exception: Exception | None = Field(default=None, exclude=True)
+    """원본 예외 객체 (직렬화에서 제외)"""
 
     @classmethod
     def from_exception(cls, error: Exception, provider: str) -> "ErrorResponse":
@@ -78,6 +83,7 @@ class ErrorResponse(BaseModel):
             http_status_code=http_status_code,
             provider=provider,
             raw_error=raw_error,
+            exception=error,
         )
 
     def is_context_limit_error(self) -> bool:
