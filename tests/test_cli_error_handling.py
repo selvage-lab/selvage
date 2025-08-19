@@ -178,4 +178,4 @@ class TestCLIErrorHandling:
             _handle_api_error(error_response)
 
         # 기존 일반 에러 처리 메시지 확인
-        mock_console.error.assert_any_call("API 오류 (openai): General error")
+        mock_console.error.assert_any_call("API 오류 (OpenAI): General error")

@@ -11,26 +11,28 @@ class TestContextLimitHandlingMock:
 
     def test_openai_context_limit_error_response_creation(self):
         """OpenAI context limit 에러에서 ErrorResponse 생성 테스트"""
-        # OpenAI context limit 에러 시뮬레이션
-        mock_error = MagicMock()
+        # OpenAI context limit 에러 시뮬레이션 - 실제 Exception 클래스 사용
         error_message = (
             "Error code: 400 - {'error': {'message': \"This model's maximum context length is 128000 tokens. "
             'However, your messages resulted in 273619 tokens. Please reduce the length of the messages.", '
             "'type': 'invalid_request_error', 'param': 'messages', 'code': 'context_length_exceeded'}}"
         )
-        mock_error.__str__ = MagicMock(return_value=error_message)
 
-        # HTTP response 속성 시뮬레이션
-        mock_response = MagicMock(status_code=400)
-        mock_response.json.return_value = {
-            "error": {
-                "message": "This model's maximum context length is 128000 tokens. However, your messages resulted in 273619 tokens.",
-                "type": "invalid_request_error",
-                "param": "messages",
-                "code": "context_length_exceeded",
-            }
-        }
-        mock_error.response = mock_response
+        class MockOpenAIError(Exception):
+            def __init__(self, message):
+                super().__init__(message)
+                # HTTP response 속성 시뮬레이션
+                self.response = MagicMock(status_code=400)
+                self.response.json.return_value = {
+                    "error": {
+                        "message": "This model's maximum context length is 128000 tokens. However, your messages resulted in 273619 tokens.",
+                        "type": "invalid_request_error",
+                        "param": "messages",
+                        "code": "context_length_exceeded",
+                    }
+                }
+
+        mock_error = MockOpenAIError(error_message)
 
         # ErrorResponse 생성
         error_response = ErrorResponse.from_exception(mock_error, ModelProvider.OPENAI)
@@ -44,15 +46,19 @@ class TestContextLimitHandlingMock:
 
     def test_anthropic_context_limit_error_response_creation(self):
         """Anthropic context limit 에러에서 ErrorResponse 생성 테스트"""
-        # Anthropic context limit 에러 시뮬레이션
-        mock_error = MagicMock()
+        # Anthropic context limit 에러 시뮬레이션 - 실제 Exception 클래스 사용
         error_message = (
             "Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', "
             "'message': 'prompt is too long: 209924 tokens > 200000 maximum'}}"
         )
-        mock_error.__str__ = MagicMock(return_value=error_message)
-        mock_error.status_code = 400
-        mock_error.type = "invalid_request_error"
+
+        class MockAnthropicError(Exception):
+            def __init__(self, message):
+                super().__init__(message)
+                self.status_code = 400
+                self.type = "invalid_request_error"
+
+        mock_error = MockAnthropicError(error_message)
 
         # ErrorResponse 생성
         error_response = ErrorResponse.from_exception(

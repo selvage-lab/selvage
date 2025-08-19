@@ -34,8 +34,8 @@ class TestOpenRouterGatewayRetry:
         # tenacity retry 객체의 속성들 확인
         retry_obj = self.gateway._review_code_with_retry.retry
 
-        # 재시도 횟수 (최대 3회)
-        assert retry_obj.stop.max_attempt_number == 3
+        # 재시도 횟수 (최대 2회)
+        assert retry_obj.stop.max_attempt_number == 2
 
         # 지수 백오프 설정 (multiplier=1, min=1, max=8)
         wait_obj = retry_obj.wait
