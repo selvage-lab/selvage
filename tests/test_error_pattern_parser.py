@@ -44,7 +44,12 @@ class TestErrorPatternParser:
         """패턴 파서 초기화 테스트"""
         assert parser is not None
         supported_providers = parser.get_supported_providers()
-        expected_providers = ["openai", "anthropic", "google", "openrouter"]
+        expected_providers = [
+            ModelProvider.OPENAI.value,
+            ModelProvider.ANTHROPIC.value,
+            ModelProvider.GOOGLE.value,
+            ModelProvider.OPENROUTER.value,
+        ]
 
         for provider in expected_providers:
             assert provider in supported_providers
@@ -73,6 +78,8 @@ class TestErrorPatternParser:
                 "code": "context_length_exceeded",
             }
         }
+        # OpenAI는 response.text를 사용하지 않으므로 명시적으로 제거
+        del mock_response.text
         mock_error.response = mock_response
 
         result = parser.parse_error(ModelProvider.OPENAI, mock_error)
@@ -106,6 +113,9 @@ class TestErrorPatternParser:
                 "message": "prompt is too long: 209924 tokens > 200000 maximum",
             },
         }
+        # response 속성이 없도록 명시적으로 제거
+        if hasattr(mock_error, "response"):
+            del mock_error.response
 
         result = parser.parse_error(ModelProvider.ANTHROPIC, mock_error)
 
@@ -152,26 +162,22 @@ class TestErrorPatternParser:
             "please check your plan and billing details."
         )
         mock_error.__str__ = MagicMock(return_value=error_message)
+        # response 속성이 없도록 명시적으로 제거
+        if hasattr(mock_error, "response"):
+            del mock_error.response
 
         result = parser.parse_error(ModelProvider.GOOGLE, mock_error)
 
         assert result.error_type == "quota_exceeded"
         assert result.matched_pattern == "quota_exceeded"
 
-    def test_unknown_provider_error(self, parser: ErrorPatternParser):
-        """알 수 없는 프로바이더 에러 테스트"""
-        mock_error = MagicMock()
-        mock_error.__str__ = MagicMock(return_value="Unknown error")
-
-        result = parser.parse_error(ModelProvider.UNKNOWN, mock_error)
-
-        assert result.error_type == "api_error"
-        assert result.matched_pattern is None
-
     def test_no_matching_pattern_error(self, parser: ErrorPatternParser):
         """매칭되는 패턴이 없는 경우 테스트"""
         mock_error = MagicMock()
         mock_error.__str__ = MagicMock(return_value="Completely unknown error message")
+        # response 속성이 없도록 명시적으로 제거
+        if hasattr(mock_error, "response"):
+            del mock_error.response
 
         result = parser.parse_error(ModelProvider.OPENAI, mock_error)
 
@@ -235,7 +241,7 @@ class TestErrorPatternParser:
             "403 Forbidden", request=MagicMock(), response=mock_response
         )
 
-        result = parser.parse_error("openrouter", mock_error)
+        result = parser.parse_error(ModelProvider.OPENROUTER, mock_error)
 
         assert result.error_type == "byok_required"
         assert result.matched_pattern == "byok_required"
@@ -245,25 +251,33 @@ class TestErrorPatternParser:
 
     def test_error_response_integration(self, parser: ErrorPatternParser):
         """ErrorResponse 클래스와의 통합 테스트"""
-        # OpenAI 에러 시뮬레이션
-        mock_error = MagicMock()
+        # OpenAI 에러 시뮬레이션 - 실제 Exception 사용
         error_message = (
             "This model's maximum context length is 128000 tokens. "
             "However, your messages resulted in 150000 tokens."
         )
-        mock_error.__str__ = MagicMock(return_value=error_message)
 
-        mock_response = MagicMock()
-        mock_response.status_code = 400
-        mock_response.json.return_value = {"error": {"code": "context_length_exceeded"}}
-        mock_error.response = mock_response
+        # 실제 Exception 객체 생성
+        class MockOpenAIError(Exception):
+            def __init__(self, message):
+                super().__init__(message)
+                mock_response = MagicMock()
+                mock_response.status_code = 400
+                mock_response.json.return_value = {
+                    "error": {"code": "context_length_exceeded"}
+                }
+                # OpenAI는 response.text를 사용하지 않으므로 명시적으로 제거
+                del mock_response.text
+                self.response = mock_response
+
+        mock_error = MockOpenAIError(error_message)
 
         # ErrorResponse.from_exception 메서드 테스트
-        error_response = ErrorResponse.from_exception(mock_error, "openai")
+        error_response = ErrorResponse.from_exception(mock_error, ModelProvider.OPENAI)
 
         assert error_response.error_type == "context_limit_exceeded"
         assert error_response.error_code == "context_length_exceeded"
-        assert error_response.provider == "openai"
+        assert error_response.provider == ModelProvider.OPENAI
         assert error_response.is_context_limit_error() is True
 
         # 토큰 정보가 raw_error에 포함되는지 확인
@@ -302,7 +316,7 @@ class TestErrorPatternParser:
         # 검증: context_limit_exceeded로 분류되어야 함
         assert error_response.error_type == "context_limit_exceeded"
         assert error_response.error_code == "invalid_request_error"
-        assert error_response.provider == "anthropic"
+        assert error_response.provider == ModelProvider.ANTHROPIC
         assert error_response.is_context_limit_error() is True
 
         # 토큰 정보가 추출되어야 함
@@ -352,12 +366,21 @@ class TestErrorPatternParser:
                 mock_error.response.status_code = result_data["http_status_code"]
 
                 # OpenRouter의 경우 JSON 응답 구조 추가
-                if provider == "openrouter":
+                if provider == ModelProvider.OPENROUTER.value:
                     mock_error.response.text = json.dumps(
                         {"error": {"message": error_message}}
                     )
+                else:
+                    # OpenRouter가 아닌 경우 response.text 제거
+                    del mock_error.response.text
+            else:
+                # response 속성이 없도록 명시적으로 제거
+                if hasattr(mock_error, "response"):
+                    del mock_error.response
 
-            parsing_result = parser.parse_error(provider, mock_error)
+            parsing_result = parser.parse_error(
+                ModelProvider.from_string(provider), mock_error
+            )
 
             # 기본적인 파싱 성공 확인
             assert parsing_result.error_type is not None

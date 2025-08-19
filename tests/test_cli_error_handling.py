@@ -12,6 +12,7 @@ from selvage.src.exceptions.openrouter_api_error import (
     OpenRouterResponseError,
 )
 from selvage.src.models.error_response import ErrorResponse
+from selvage.src.models.model_provider import ModelProvider
 
 
 class TestCLIErrorHandling:
@@ -143,7 +144,7 @@ class TestCLIErrorHandling:
         with patch("selvage.cli._handle_openrouter_error") as mock_handle_openrouter:
             # ErrorResponse에 exception 속성을 설정 (monkey patching)
             error_response = ErrorResponse.from_exception(
-                openrouter_error, "openrouter"
+                openrouter_error, ModelProvider.OPENROUTER
             )
             error_response.exception = openrouter_error  # 테스트를 위해 추가
 
@@ -155,7 +156,7 @@ class TestCLIErrorHandling:
         # JSON 파싱 에러의 경우 특화 핸들러 호출 확인
         with patch("selvage.cli._handle_json_parsing_error") as mock_handle_json:
             error_response = ErrorResponse.from_exception(
-                json_parsing_error, "openrouter"
+                json_parsing_error, ModelProvider.OPENROUTER
             )
             error_response.exception = json_parsing_error  # 테스트를 위해 추가
 
@@ -168,7 +169,9 @@ class TestCLIErrorHandling:
     def test_handle_api_error_fallback_to_general_handling(self, mock_console):
         """일반적인 에러의 경우 기존 처리 로직을 사용하는지 테스트"""
         general_error = ValueError("General error")
-        error_response = ErrorResponse.from_exception(general_error, "openai")
+        error_response = ErrorResponse.from_exception(
+            general_error, ModelProvider.OPENAI
+        )
         error_response.exception = general_error  # 테스트를 위해 추가
 
         with pytest.raises(Exception):

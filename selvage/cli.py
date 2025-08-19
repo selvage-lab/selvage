@@ -274,7 +274,8 @@ def _handle_api_error(error_response: ErrorResponse) -> None:
     else:
         # 기존 에러 처리 로직
         console.error(
-            f"API 오류 ({error_response.provider}): {error_response.error_message}"
+            f"API 오류 ({error_response.provider.get_display_name()}): "
+            f"{error_response.error_message}"
         )
 
     raise Exception(f"API error: {error_response.error_message}")
@@ -485,7 +486,7 @@ def review_code(
 
         console.success("코드 리뷰가 완료되었습니다!")
     except UnsupportedModelError:
-        # UnsupportedModelError는 이미 명확한 메시지가 표시되었으므로 
+        # UnsupportedModelError는 이미 명확한 메시지가 표시되었으므로
         # 추가 메시지 없이 종료
         return
     except Exception as e:

@@ -24,7 +24,7 @@ class ErrorResponse(BaseModel):
     http_status_code: int | None = None
     """HTTP 상태 코드"""
 
-    provider: str
+    provider: ModelProvider
     """LLM Provider: 'openai', 'anthropic', 'google', 'openrouter'"""
 
     raw_error: dict[str, Any] = Field(default_factory=dict)

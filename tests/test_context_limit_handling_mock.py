@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock
 
 from selvage.src.models.error_response import ErrorResponse
+from selvage.src.models.model_provider import ModelProvider
 
 
 class TestContextLimitHandlingMock:
@@ -32,12 +33,12 @@ class TestContextLimitHandlingMock:
         mock_error.response = mock_response
 
         # ErrorResponse 생성
-        error_response = ErrorResponse.from_exception(mock_error, "openai")
+        error_response = ErrorResponse.from_exception(mock_error, ModelProvider.OPENAI)
 
         # 검증
         assert error_response.error_type == "context_limit_exceeded"
         assert error_response.error_code == "context_length_exceeded"
-        assert error_response.provider == "openai"
+        assert error_response.provider == ModelProvider.OPENAI
         assert error_response.is_context_limit_error() is True
         assert error_response.should_retry_with_multiturn() is True
 
@@ -54,11 +55,13 @@ class TestContextLimitHandlingMock:
         mock_error.type = "invalid_request_error"
 
         # ErrorResponse 생성
-        error_response = ErrorResponse.from_exception(mock_error, "anthropic")
+        error_response = ErrorResponse.from_exception(
+            mock_error, ModelProvider.ANTHROPIC
+        )
 
         # 검증
         assert error_response.error_type == "context_limit_exceeded"
-        assert error_response.provider == "anthropic"
+        assert error_response.provider == ModelProvider.ANTHROPIC
         assert error_response.is_context_limit_error() is True
 
     def test_context_limit_error_detection_logic(self):
@@ -67,7 +70,7 @@ class TestContextLimitHandlingMock:
         context_error = ErrorResponse(
             error_type="context_limit_exceeded",
             error_message="Context limit exceeded",
-            provider="openai",
+            provider=ModelProvider.OPENAI,
         )
 
         assert context_error.is_context_limit_error() is True
@@ -75,7 +78,9 @@ class TestContextLimitHandlingMock:
 
         # 일반 API 에러인 경우
         api_error = ErrorResponse(
-            error_type="api_error", error_message="General API error", provider="openai"
+            error_type="api_error",
+            error_message="General API error",
+            provider=ModelProvider.OPENAI,
         )
 
         assert api_error.is_context_limit_error() is False
