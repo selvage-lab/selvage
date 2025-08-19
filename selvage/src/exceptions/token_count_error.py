@@ -12,7 +12,7 @@ class TokenCountError(Exception):
 
     def __init__(
         self, model: str, message: str, original_error: Exception | None = None
-    ):
+    ) -> None:
         self.model = model
         self.original_error = original_error
         super().__init__(f"[{model}] 토큰 계산 중 오류 발생: {message}")

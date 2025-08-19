@@ -169,7 +169,7 @@ class TestReviewSynthesizer:
             ReviewResult.get_error_result(
                 error=Exception("Test error"),
                 model="test-model",
-                provider="test-provider",
+                provider=ModelProvider.OPENAI,
             )
         ]
 
@@ -319,7 +319,7 @@ class TestReviewSynthesizerLLMIntegration:
         """API 클라이언트 초기화 테스트"""
         # Given & When: ReviewSynthesizer 생성
         synthesizer = ReviewSynthesizer("gpt-4o")
-        
+
         # Then: API 클라이언트와 프롬프트 매니저가 초기화되어야 함
         assert synthesizer.api_client is not None
         assert synthesizer.prompt_manager is not None
@@ -330,17 +330,21 @@ class TestReviewSynthesizerLLMIntegration:
         """프롬프트 매니저 기능 테스트"""
         # Given: ReviewSynthesizer 인스턴스
         synthesizer = ReviewSynthesizer("test-model")
-        
+
         # When: 프롬프트 매니저를 통한 프롬프트 조회
         summary_prompt = synthesizer.prompt_manager.get_summary_synthesis_prompt()
-        system_prompt = synthesizer.prompt_manager.get_system_prompt_for_task("summary_synthesis")
-        
+        system_prompt = synthesizer.prompt_manager.get_system_prompt_for_task(
+            "summary_synthesis"
+        )
+
         # Then: 프롬프트가 정상적으로 반환되어야 함
         assert summary_prompt is not None
         assert len(summary_prompt) > 0
         assert system_prompt == summary_prompt
 
-    @patch("selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis")
+    @patch(
+        "selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis"
+    )
     def test_fallback_synthesis_single_result(
         self, mock_llm_synthesis: Mock, sample_review_results: list[ReviewResult]
     ) -> None:
@@ -355,13 +359,18 @@ class TestReviewSynthesizerLLMIntegration:
 
         # Then: API 클라이언트의 합성이 시도되었는지 확인
         mock_llm_synthesis.assert_called_once()
-        
+
         # Then: fallback 로직이 올바르게 작동하여 단일 결과가 그대로 반환되어야 함
         assert result.success is True
         assert result.review_response.summary == "첫 번째 청크: 함수가 추가되었습니다."
-        assert result.review_response.recommendations == ["함수명 개선", "에러 처리 추가"]
+        assert result.review_response.recommendations == [
+            "함수명 개선",
+            "에러 처리 추가",
+        ]
 
-    @patch("selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis")
+    @patch(
+        "selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis"
+    )
     def test_fallback_synthesis_multiple_results(
         self, mock_llm_synthesis: Mock, sample_review_results: list[ReviewResult]
     ) -> None:
@@ -430,7 +439,10 @@ class TestReviewSynthesizerLLMIntegration:
         assert synthesis_data["task"] == "summary_synthesis"
         assert len(synthesis_data["summaries"]) == 2
         assert synthesis_data["summaries"][0] == "첫 번째 청크: 함수가 추가되었습니다."
-        assert synthesis_data["summaries"][1] == "두 번째 청크: 로직이 전면적으로 개선되었습니다."
+        assert (
+            synthesis_data["summaries"][1]
+            == "두 번째 청크: 로직이 전면적으로 개선되었습니다."
+        )
 
     def test_provider_specific_params_openai(
         self, sample_model_info: ModelInfoDict
@@ -630,7 +642,7 @@ class TestReviewSynthesizerEndToEndMock:
                 result = ReviewResult.get_error_result(
                     error=Exception(chunk_data["error_info"]["error_message"]),
                     model=chunk_data["estimated_cost"]["model"],
-                    provider=chunk_data["error_info"]["provider"],
+                    provider=ModelProvider.OPENAI,
                 )
 
             results.append(result)
@@ -816,9 +828,9 @@ class TestReviewSynthesizerEndToEndMock:
         assert result.review_response.summary is not None
         assert len(result.review_response.recommendations) > 0
 
-        # 재시도 확인: 
+        # 재시도 확인:
         # 실제로는 _call_openai_api의 try-catch에서 예외가 잡혀서 instructor의 재시도가 동작하지 않음
-        # mock.side_effect = Exception으로 설정하면 첫 번째 호출에서 예외가 발생하고, 
+        # mock.side_effect = Exception으로 설정하면 첫 번째 호출에서 예외가 발생하고,
         # _call_openai_api의 except 블록이 이를 잡아서 None을 반환하므로 재시도가 일어나지 않음
         # 따라서 실제로는 1회만 호출됨 (이것이 현재 구현의 실제 동작)
         assert (

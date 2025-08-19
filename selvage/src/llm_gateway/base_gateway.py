@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import logging
 from collections.abc import Callable
 from typing import Any
 
@@ -13,7 +14,17 @@ import google.genai.types as genai_types
 import instructor
 import openai
 from google import genai
+from tenacity import (
+    RetryError,
+    after_log,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
+from selvage.src.exceptions.json_parsing_error import JSONParsingError
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -28,12 +39,21 @@ from selvage.src.utils.token.models import (
     StructuredReviewResponse,
 )
 
+# LLM API 응답 타입 별칭
+LLMResponse = (
+    openai.types.Completion
+    | anthropic.types.Message
+    | genai_types.GenerateContentResponse
+)
+
 
 class BaseGateway(abc.ABC):
     """LLM 게이트웨이의 추상 기본 클래스"""
 
     @staticmethod
-    def _handle_openai_cost_estimation(resp: Any, model: str) -> EstimatedCost | None:
+    def _handle_openai_cost_estimation(
+        resp: LLMResponse, model: str
+    ) -> EstimatedCost | None:
         if (
             isinstance(resp, openai.types.Completion)
             and hasattr(resp, "usage")
@@ -43,7 +63,9 @@ class BaseGateway(abc.ABC):
         return None
 
     @staticmethod
-    def _handle_claude_cost_estimation(resp: Any, model: str) -> EstimatedCost | None:
+    def _handle_claude_cost_estimation(
+        resp: LLMResponse, model: str
+    ) -> EstimatedCost | None:
         if (
             isinstance(resp, anthropic.types.Message)
             and hasattr(resp, "usage")
@@ -53,7 +75,9 @@ class BaseGateway(abc.ABC):
         return None
 
     @staticmethod
-    def _handle_google_cost_estimation(resp: Any, model: str) -> EstimatedCost | None:
+    def _handle_google_cost_estimation(
+        resp: LLMResponse, model: str
+    ) -> EstimatedCost | None:
         if (
             isinstance(resp, genai_types.GenerateContentResponse)
             and hasattr(resp, "usage_metadata")
@@ -65,7 +89,7 @@ class BaseGateway(abc.ABC):
         return None
 
     provider_handlers: dict[
-        ModelProvider, Callable[[Any, str], EstimatedCost | None]
+        ModelProvider, Callable[[LLMResponse, str], EstimatedCost | None]
     ] = {
         ModelProvider.OPENAI: _handle_openai_cost_estimation,
         ModelProvider.ANTHROPIC: _handle_claude_cost_estimation,
@@ -119,7 +143,8 @@ class BaseGateway(abc.ABC):
         """현재 프로바이더에 맞는 LLM 클라이언트를 생성합니다.
 
         Returns:
-            instructor.Instructor | genai.Client | anthropic.Anthropic: 구조화된 응답을 지원하는 LLM 클라이언트
+            instructor.Instructor | genai.Client | anthropic.Anthropic:
+                구조화된 응답을 지원하는 LLM 클라이언트
         """
         return LLMClientFactory.create_client(
             self.get_provider(), self.api_key, self.model
@@ -127,9 +152,7 @@ class BaseGateway(abc.ABC):
 
     def estimate_cost(
         self,
-        raw_response: openai.types.Completion
-        | anthropic.types.Message
-        | genai_types.GenerateContentResponse,
+        raw_response: LLMResponse,
     ) -> EstimatedCost:
         """API 응답의 usage 정보를 이용하여 비용을 계산합니다.
 
@@ -149,11 +172,46 @@ class BaseGateway(abc.ABC):
 
         # usage 정보가 없는 경우 빈 응답 반환
         console.warning(
-            f"Usage 정보를 찾을 수 없습니다: {provider} 모델 {model_name}. 0 비용으로 출력합니다."
+            f"Usage 정보를 찾을 수 없습니다: {provider} 모델 {model_name}. "
+            "0 비용으로 출력합니다."
         )
         return EstimatedCost.get_zero_cost(model_name)
 
     def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
+        """코드를 리뷰합니다.
+
+        Args:
+            review_prompt: 리뷰용 프롬프트 객체
+
+        Returns:
+            ReviewResult: 리뷰 결과
+        """
+        try:
+            return self._review_code_with_retry(review_prompt)
+        except RetryError as e:
+            console.error(f"재시도 한계 초과: {str(e)}", exception=e)
+            # RetryError를 ReviewResult로 변환
+            return ReviewResult.get_error_result(
+                e, self.get_model_name(), self.get_provider()
+            )
+
+    @retry(
+        stop=stop_after_attempt(2),
+        wait=wait_exponential(multiplier=1, min=1, max=8),
+        retry=retry_if_exception_type(
+            (
+                ConnectionError,
+                TimeoutError,
+                ValueError,  # API 응답 구조 문제
+                JSONParsingError,  # JSON 파싱 오류
+            )
+        ),
+        before_sleep=before_sleep_log(console.logger, log_level=logging.INFO),
+        after=after_log(console.logger, log_level=logging.DEBUG),
+    )
+    def _review_code_with_retry(
+        self, review_prompt: ReviewPromptWithFileContent
+    ) -> ReviewResult:
         """코드를 리뷰합니다.
 
         Args:
@@ -179,7 +237,7 @@ class BaseGateway(abc.ABC):
             if isinstance(client, instructor.Instructor):
                 structured_response, raw_api_response = (
                     client.chat.completions.create_with_completion(
-                        response_model=StructuredReviewResponse, max_retries=2, **params
+                        response_model=StructuredReviewResponse, max_retries=0, **params
                     )
                 )
             elif isinstance(client, genai.Client):
@@ -196,9 +254,10 @@ class BaseGateway(abc.ABC):
                     console.error(
                         f"응답 파싱 오류: {str(parse_error)}", exception=parse_error
                     )
-                    return ReviewResult.get_error_result(
-                        parse_error, self.get_model_name(), self.get_provider().value
-                    )
+                    # 파싱 오류를 JSONParsingError로 변환하여 재시도 가능하도록 함
+                    raise JSONParsingError.from_parsing_exception(
+                        parse_error, "Google API", response_text
+                    ) from parse_error
             elif isinstance(client, anthropic.Anthropic):
                 try:
                     raw_api_response = client.messages.create(**params)
@@ -217,13 +276,17 @@ class BaseGateway(abc.ABC):
                     if structured_response is None:
                         return ReviewResult.get_empty_result(self.get_model_name())
 
+                except JSONParsingError:
+                    # JSONParsingError는 그대로 재전파
+                    raise
                 except Exception as parse_error:
                     console.error(
                         f"응답 파싱 오류: {str(parse_error)}", exception=parse_error
                     )
-                    return ReviewResult.get_error_result(
-                        parse_error, self.get_model_name(), self.get_provider().value
-                    )
+                    # 기타 파싱 오류를 JSONParsingError로 변환하여 재시도 가능하도록 함
+                    raise JSONParsingError.from_parsing_exception(
+                        parse_error, "Anthropic API", response_text
+                    ) from parse_error
 
             # 응답 처리
             if not structured_response:
@@ -236,8 +299,12 @@ class BaseGateway(abc.ABC):
                 estimated_cost=self.estimate_cost(raw_api_response),
             )
 
+        except (ConnectionError, TimeoutError, ValueError, JSONParsingError) as e:
+            console.error(f"리뷰 요청 중 오류 발생: {str(e)}", exception=e)
+            # 재시도 가능 예외는 재전파하여 tenacity가 처리하도록 함
+            raise
         except Exception as e:
             console.error(f"리뷰 요청 중 오류 발생: {str(e)}", exception=e)
             return ReviewResult.get_error_result(
-                e, self.get_model_name(), self.get_provider().value
+                e, self.get_model_name(), self.get_provider()
             )

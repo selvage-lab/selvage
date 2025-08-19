@@ -24,6 +24,12 @@ from selvage.src.config import (
 )
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
+from selvage.src.exceptions.json_parsing_error import JSONParsingError
+from selvage.src.exceptions.openrouter_api_error import (
+    OpenRouterAPIError,
+    OpenRouterAuthenticationError,
+    OpenRouterResponseError,
+)
 from selvage.src.exceptions.unsupported_model_error import UnsupportedModelError
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.llm_gateway.gateway_factory import GatewayFactory
@@ -258,11 +264,51 @@ def _handle_context_limit_error(
 
 
 def _handle_api_error(error_response: ErrorResponse) -> None:
-    """일반 API 에러 처리"""
-    console.error(
-        f"API 오류 ({error_response.provider}): {error_response.error_message}"
-    )
+    """API 에러 처리"""
+
+    # OpenRouter 관련 에러 특별 처리
+    if isinstance(error_response.exception, OpenRouterAPIError):
+        _handle_openrouter_error(error_response.exception)
+    elif isinstance(error_response.exception, JSONParsingError):
+        _handle_json_parsing_error(error_response.exception)
+    else:
+        # 기존 에러 처리 로직
+        console.error(
+            f"API 오류 ({error_response.provider.get_display_name()}): "
+            f"{error_response.error_message}"
+        )
+
     raise Exception(f"API error: {error_response.error_message}")
+
+
+def _handle_openrouter_error(error: OpenRouterAPIError) -> None:
+    """OpenRouter 관련 에러 처리"""
+    if isinstance(error, OpenRouterAuthenticationError):
+        console.error("OpenRouter API 인증 오류")
+        console.info("해결 방법:")
+        console.print("  1. OPENROUTER_API_KEY 환경변수 확인")
+        console.print("  2. API 키 유효성 확인")
+    elif isinstance(error, OpenRouterResponseError):
+        console.error(f"OpenRouter API 응답 구조 오류: {error}")
+        if error.missing_field:
+            console.error(f"누락된 필드: {error.missing_field}")
+        if get_default_debug_mode() and error.raw_response:
+            console.error(f"원본 응답: {error.raw_response}")
+    else:
+        console.error(f"OpenRouter API 오류: {error}")
+
+
+def _handle_json_parsing_error(error: JSONParsingError) -> None:
+    """JSON 파싱 에러 처리"""
+    console.error("구조화된 응답 파싱에 실패했습니다")
+    console.error(f"오류: {error}")
+
+    if get_default_debug_mode():
+        console.error("디버그 정보:")
+        if error.parsing_error:
+            console.error(f"  파싱 오류: {error.parsing_error}")
+        if error.raw_response:
+            console.error(f"  원본 응답 (일부): {error.raw_response}")
 
 
 def _handle_unknown_error() -> None:
@@ -440,7 +486,8 @@ def review_code(
 
         console.success("코드 리뷰가 완료되었습니다!")
     except UnsupportedModelError:
-        # UnsupportedModelError는 이미 명확한 메시지가 표시되었으므로 추가 메시지 없이 종료
+        # UnsupportedModelError는 이미 명확한 메시지가 표시되었으므로
+        # 추가 메시지 없이 종료
         return
     except Exception as e:
         console.error(f"코드 리뷰 중 오류가 발생했습니다: {str(e)}", exception=e)
@@ -615,7 +662,7 @@ def language(language_name: str | None) -> None:
 
 
 @config.command(name="list")
-def show_config():
+def show_config() -> None:
     """모든 설정 표시"""
     config_list()
 

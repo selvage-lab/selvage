@@ -3,12 +3,28 @@
 OpenRouter API를 통한 LLM 서비스 게이트웨이를 제공합니다.
 """
 
+import logging
 import os
 from typing import Any
+
+from tenacity import (
+    RetryError,
+    after_log,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.exceptions.invalid_model_provider_error import (
     InvalidModelProviderError,
+)
+from selvage.src.exceptions.json_parsing_error import JSONParsingError
+from selvage.src.exceptions.openrouter_api_error import (
+    OpenRouterConnectionError,
+    OpenRouterResponseError,
 )
 from selvage.src.exceptions.unsupported_model_error import UnsupportedModelError
 from selvage.src.llm_gateway.base_gateway import BaseGateway
@@ -200,6 +216,41 @@ class OpenRouterGateway(BaseGateway):
 
         Returns:
             ReviewResult: 리뷰 결과
+        """
+        try:
+            return self._review_code_with_retry(review_prompt)
+        except RetryError as e:
+            console.error(f"재시도 한계 초과: {str(e)}", exception=e)
+            # RetryError를 ReviewResult로 변환
+            return ReviewResult.get_error_result(
+                e, self.get_model_name(), ModelProvider.OPENROUTER
+            )
+
+    @retry(
+        stop=stop_after_attempt(2),
+        wait=wait_exponential(multiplier=1, min=1, max=8),
+        retry=retry_if_exception_type(
+            (
+                OpenRouterResponseError,
+                OpenRouterConnectionError,
+                ConnectionError,
+                TimeoutError,
+                JSONParsingError,  # JSON 파싱 오류
+            )
+        ),
+        before_sleep=before_sleep_log(console.logger, log_level=logging.INFO),
+        after=after_log(console.logger, log_level=logging.DEBUG),
+    )
+    def _review_code_with_retry(
+        self, review_prompt: ReviewPromptWithFileContent
+    ) -> ReviewResult:
+        """OpenRouter API를 사용하여 코드를 리뷰합니다.
+
+        Args:
+            review_prompt: 리뷰용 프롬프트 객체
+
+        Returns:
+            ReviewResult: 리뷰 결과
 
         Raises:
             Exception: API 호출 중 오류가 발생한 경우
@@ -221,32 +272,19 @@ class OpenRouterGateway(BaseGateway):
                 # 응답을 OpenAI SDK 형식으로 변환
                 raw_api_response = OpenRouterResponse.from_dict(raw_response_data)
 
-                # 응답에서 텍스트 추출
-                if not raw_api_response.choices:
-                    error_msg = "OpenRouter API 응답에 choices가 없습니다"
-                    console.error(error_msg)
-                    console.error(f"원본 응답: {raw_response_data}")
-                    raise ValueError(error_msg)
-
-                response_text = raw_api_response.choices[0].message.content
-                if not response_text:
-                    error_msg = "OpenRouter API 응답에 content가 없습니다"
-                    console.error(error_msg)
-                    console.error(f"원본 응답: {raw_response_data}")
-                    raise ValueError(error_msg)
+                # API 응답 검증 및 텍스트 추출
+                self._validate_api_response(raw_api_response, raw_response_data)
+                response_text = self._extract_response_content(
+                    raw_api_response, raw_response_data
+                )
 
                 # JSON 파싱
                 structured_response = JSONExtractor.validate_and_parse_json(
                     response_text, StructuredReviewResponse
                 )
 
-                if structured_response is None:
-                    error_msg = (
-                        "OpenRouter API 응답에서 유효한 JSON을 파싱할 수 없습니다"
-                    )
-                    console.error(error_msg)
-                    console.error(f"원본 응답: {response_text}")
-                    raise ValueError(error_msg)
+                # 구조화된 응답 검증
+                self._validate_structured_response(structured_response, response_text)
 
                 # 비용 계산 - OpenRouter usage에서 cost 정보 추출
                 usage = raw_api_response.usage
@@ -273,8 +311,82 @@ class OpenRouterGateway(BaseGateway):
                     estimated_cost=estimated_cost,
                 )
 
+        except (
+            OpenRouterResponseError,
+            OpenRouterConnectionError,
+            ConnectionError,
+            TimeoutError,
+            JSONParsingError,
+        ) as e:
+            console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
+            raise
         except Exception as e:
             console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
             return ReviewResult.get_error_result(
-                e, self.get_model_name(), self.get_provider().value
+                e, self.get_model_name(), ModelProvider.OPENROUTER
             )
+
+    def _validate_api_response(
+        self, raw_api_response: OpenRouterResponse, raw_response_data: dict
+    ) -> None:
+        """OpenRouter API 응답의 기본 구조를 검증합니다.
+
+        Args:
+            raw_api_response: 파싱된 응답 객체
+            raw_response_data: 원본 응답 데이터
+
+        Raises:
+            OpenRouterResponseError: choices가 없는 경우
+        """
+        if not raw_api_response.choices:
+            error_msg = "OpenRouter API 응답에 choices가 없습니다"
+            console.error(error_msg)
+            if console.is_debug_mode():
+                console.error(f"원본 응답: {raw_response_data}")
+            raise OpenRouterResponseError(
+                error_msg, raw_response=raw_response_data, missing_field="choices"
+            )
+
+    def _extract_response_content(
+        self, raw_api_response: OpenRouterResponse, raw_response_data: dict
+    ) -> str:
+        """응답에서 텍스트 내용을 추출하고 검증합니다.
+
+        Args:
+            raw_api_response: 파싱된 응답 객체
+            raw_response_data: 원본 응답 데이터
+
+        Returns:
+            str: 추출된 응답 텍스트
+
+        Raises:
+            OpenRouterResponseError: content가 없는 경우
+        """
+        response_text = raw_api_response.choices[0].message.content
+        if not response_text:
+            error_msg = "OpenRouter API 응답에 content가 없습니다"
+            console.error(error_msg)
+            if console.is_debug_mode():
+                console.error(f"원본 응답: {raw_response_data}")
+            raise OpenRouterResponseError(
+                error_msg, raw_response=raw_response_data, missing_field="content"
+            )
+        return response_text
+
+    def _validate_structured_response(
+        self, structured_response: StructuredReviewResponse | None, response_text: str
+    ) -> None:
+        """구조화된 응답의 유효성을 검증합니다.
+
+        Args:
+            structured_response: 파싱된 구조화된 응답
+            response_text: 원본 응답 텍스트
+
+        Raises:
+            OpenRouterResponseError: 구조화된 응답이 None인 경우
+        """
+        if structured_response is None:
+            error_msg = "OpenRouter API 응답에서 유효한 JSON을 파싱할 수 없습니다"
+            console.error(error_msg)
+            console.error(f"원본 응답: {response_text}")
+            raise OpenRouterResponseError(error_msg)

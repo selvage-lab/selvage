@@ -201,7 +201,7 @@ def test_anthropic_context_limit_workflow():
                 f"   error_message: {review_result.error_response.error_message[:100]}..."
             )
 
-        # 검증: 실패해야 하고, context limit 에러로 식별되어야 함
+        # 검증: 실패해야 하고, 에러 응답이 있어야 함
         assert review_result.success is False, (
             "Context limit 초과 시 success=False여야 합니다"
         )
@@ -259,7 +259,7 @@ def test_openrouter_context_limit_workflow(model_name, context_limit):
                 f"   error_message: {review_result.error_response.error_message[:100]}..."
             )
 
-        # 검증: 실패해야 하고, context limit 에러로 식별되어야 함
+        # 검증: 실패해야 하고, 에러 응답이 있어야 함
         assert review_result.success is False, (
             "Context limit 초과 시 success=False여야 합니다"
         )

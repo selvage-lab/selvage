@@ -7,6 +7,7 @@ import pytest
 from selvage.src.context_extractor.line_range import LineRange
 from selvage.src.diff_parser.models.hunk import Hunk
 from selvage.src.models.error_response import ErrorResponse
+from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
 from selvage.src.multiturn.models import TokenInfo
 from selvage.src.multiturn.multiturn_review_executor import MultiturnReviewExecutor
@@ -80,7 +81,7 @@ class TestMultiturnReviewExecutor:
             error_type="context_limit_exceeded",
             error_code="context_length_exceeded",
             error_message="Context limit exceeded",
-            provider="openai",
+            provider=ModelProvider.OPENAI,
             raw_error={"actual_tokens": 150000, "max_tokens": 100000},
         )
 
@@ -91,7 +92,7 @@ class TestMultiturnReviewExecutor:
             error_type="context_limit_exceeded",
             error_code="context_length_exceeded",
             error_message="Context limit exceeded",
-            provider="gemini",
+            provider=ModelProvider.GOOGLE,
             raw_error={},
         )
 
@@ -238,10 +239,10 @@ class TestMultiturnReviewExecutor:
     ) -> None:
         """ReviewSynthesizer를 통한 여러 ReviewResult 합성 테스트"""
         from selvage.src.multiturn.review_synthesizer import ReviewSynthesizer
-        
+
         # Given: ReviewSynthesizer 인스턴스
         synthesizer = ReviewSynthesizer(mock_llm_gateway.get_model_name())
-        
+
         # When: 결과 합성
         merged_result = synthesizer.synthesize_review_results(sample_review_results)
 

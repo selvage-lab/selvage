@@ -11,6 +11,7 @@ from selvage.src.models.error_pattern_parser import (
     ErrorParsingResult,
     ErrorPatternParser,
 )
+from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.base_console import console
 
 # OpenRouter API 요청 파라미터 타입
@@ -60,7 +61,9 @@ class OpenRouterHTTPClient:
 
             # 에러 패턴 분석을 통한 구조화된 에러 처리
             try:
-                error_result = self.error_parser.parse_error("openrouter", e)
+                error_result = self.error_parser.parse_error(
+                    ModelProvider.OPENROUTER, e
+                )
                 self._handle_structured_error(error_result)
             except Exception as parse_error:
                 console.debug(f"에러 패턴 분석 실패: {parse_error}")

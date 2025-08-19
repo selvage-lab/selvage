@@ -12,6 +12,8 @@ from typing import Any, NamedTuple
 
 import yaml
 
+from selvage.src.models.model_provider import ModelProvider
+
 
 class TokenInfo(NamedTuple):
     """토큰 정보를 담는 클래스"""
@@ -57,7 +59,9 @@ class ErrorPatternParser:
         except yaml.YAMLError as e:
             raise ValueError(f"패턴 설정 파일 파싱 실패: {e}") from e
 
-    def parse_error(self, provider: str, error: Exception) -> ErrorParsingResult:
+    def parse_error(
+        self, provider: ModelProvider, error: Exception
+    ) -> ErrorParsingResult:
         """
         에러를 분석하여 구조화된 정보를 추출합니다.
 
@@ -72,16 +76,11 @@ class ErrorPatternParser:
         if not self._patterns:
             return ErrorParsingResult(error_type="parse_error")
 
-        provider_patterns = self._patterns.get("providers", {}).get(provider, {})
+        provider_patterns = self._patterns.get("providers", {}).get(provider.value, {})
         if not provider_patterns:
             return ErrorParsingResult(error_type="api_error")
 
-        # OpenRouter의 경우 실제 JSON 응답에서 메시지 추출
-        if provider == "openrouter":
-            error_message = self._extract_openrouter_message(error)
-        else:
-            error_message = str(error)
-
+        error_message = self._extract_error_message(error, provider)
         error_attrs = self._extract_error_attributes(error)
 
         # 패턴 우선순위에 따라 정렬
@@ -143,24 +142,25 @@ class ErrorPatternParser:
 
         return attrs
 
-    def _extract_openrouter_message(self, error: Exception) -> str:
-        """OpenRouter HTTPStatusError에서 실제 JSON 응답 메시지를 추출합니다."""
-        try:
-            # HTTPStatusError에서 response.text 추출 시도
-            if hasattr(error, "response") and hasattr(error.response, "text"):
-                response_text = error.response.text
-                response_data = json.loads(response_text)
+    def _extract_error_message(self, error: Exception, provider: ModelProvider) -> str:
+        """Provider별로 적절한 에러 메시지를 추출합니다."""
+        # OpenRouter만 JSON 응답에서 메시지 추출 시도
+        if provider == ModelProvider.OPENROUTER:
+            try:
+                # HTTPStatusError에서 response.text 추출 시도
+                if hasattr(error, "response") and hasattr(error.response, "text"):
+                    response_text = error.response.text
+                    response_data = json.loads(response_text)
 
-                # OpenRouter 응답 구조: {"error": {"message": "실제 메시지"}}
-                if isinstance(response_data, dict) and "error" in response_data:
-                    error_info = response_data["error"]
-                    if isinstance(error_info, dict) and "message" in error_info:
-                        return error_info["message"]
+                    # OpenRouter 응답 구조: {"error": {"message": "실제 메시지"}}
+                    if isinstance(response_data, dict) and "error" in response_data:
+                        error_info = response_data["error"]
+                        if isinstance(error_info, dict) and "message" in error_info:
+                            return error_info["message"]
+            except (AttributeError, json.JSONDecodeError, KeyError):
+                pass
 
-        except (AttributeError, json.JSONDecodeError, KeyError):
-            pass
-
-        # 추출 실패 시 기본 에러 메시지 반환
+        # 다른 provider이거나 JSON 추출 실패 시 기본 문자열 반환
         return str(error)
 
     def _try_match_pattern(
@@ -323,11 +323,11 @@ class ErrorPatternParser:
         return list(self._patterns.get("providers", {}).keys())
 
     def get_pattern_info(
-        self, provider: str, pattern_name: str
+        self, provider: ModelProvider, pattern_name: str
     ) -> dict[str, Any] | None:
         """특정 프로바이더의 패턴 정보를 반환합니다."""
         if not self._patterns:
             return None
 
-        provider_patterns = self._patterns.get("providers", {}).get(provider, {})
+        provider_patterns = self._patterns.get("providers", {}).get(provider.value, {})
         return provider_patterns.get("patterns", {}).get(pattern_name)
