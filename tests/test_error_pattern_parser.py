@@ -14,6 +14,7 @@ import pytest
 
 from selvage.src.models.error_pattern_parser import ErrorPatternParser
 from selvage.src.models.error_response import ErrorResponse
+from selvage.src.models.model_provider import ModelProvider
 
 
 class TestErrorPatternParser:
@@ -74,7 +75,7 @@ class TestErrorPatternParser:
         }
         mock_error.response = mock_response
 
-        result = parser.parse_error("openai", mock_error)
+        result = parser.parse_error(ModelProvider.OPENAI, mock_error)
 
         assert result.error_type == "context_limit_exceeded"
         assert result.error_code == "context_length_exceeded"
@@ -106,7 +107,7 @@ class TestErrorPatternParser:
             },
         }
 
-        result = parser.parse_error("anthropic", mock_error)
+        result = parser.parse_error(ModelProvider.ANTHROPIC, mock_error)
 
         assert result.error_type == "context_limit_exceeded"
         assert result.error_code == "invalid_request_error"
@@ -127,17 +128,13 @@ class TestErrorPatternParser:
             "However, you requested about 2315418 tokens (2315418 of text input)."
         )
         mock_error.__str__ = MagicMock(return_value=error_message)
-        
+
         # OpenRouter JSON 응답 구조 시뮬레이션
         mock_response = MagicMock()
-        mock_response.text = json.dumps({
-            "error": {
-                "message": error_message
-            }
-        })
+        mock_response.text = json.dumps({"error": {"message": error_message}})
         mock_error.response = mock_response
 
-        result = parser.parse_error("openrouter", mock_error)
+        result = parser.parse_error(ModelProvider.OPENROUTER, mock_error)
 
         assert result.error_type == "context_limit_exceeded"
         assert result.matched_pattern == "context_limit_exceeded"
@@ -156,7 +153,7 @@ class TestErrorPatternParser:
         )
         mock_error.__str__ = MagicMock(return_value=error_message)
 
-        result = parser.parse_error("google", mock_error)
+        result = parser.parse_error(ModelProvider.GOOGLE, mock_error)
 
         assert result.error_type == "quota_exceeded"
         assert result.matched_pattern == "quota_exceeded"
@@ -166,7 +163,7 @@ class TestErrorPatternParser:
         mock_error = MagicMock()
         mock_error.__str__ = MagicMock(return_value="Unknown error")
 
-        result = parser.parse_error("unknown_provider", mock_error)
+        result = parser.parse_error(ModelProvider.UNKNOWN, mock_error)
 
         assert result.error_type == "api_error"
         assert result.matched_pattern is None
@@ -176,7 +173,7 @@ class TestErrorPatternParser:
         mock_error = MagicMock()
         mock_error.__str__ = MagicMock(return_value="Completely unknown error message")
 
-        result = parser.parse_error("openai", mock_error)
+        result = parser.parse_error(ModelProvider.OPENAI, mock_error)
 
         assert result.error_type == "api_error"
         assert result.matched_pattern == "api_error"  # catch-all 패턴
@@ -185,7 +182,7 @@ class TestErrorPatternParser:
         """OpenRouter BYOK 에러 패턴 매칭 테스트"""
         # httpx.HTTPStatusError 시뮬레이션
         import httpx
-        
+
         byok_response = {
             "error": {
                 "message": (
@@ -195,30 +192,30 @@ class TestErrorPatternParser:
                 )
             }
         }
-        
+
         # httpx.Response 모킹
         mock_response = MagicMock()
         mock_response.status_code = 403
         mock_response.text = json.dumps(byok_response)
-        
+
         # httpx.HTTPStatusError 생성
         mock_error = httpx.HTTPStatusError(
-            "403 Forbidden", 
-            request=MagicMock(), 
-            response=mock_response
+            "403 Forbidden", request=MagicMock(), response=mock_response
         )
 
-        result = parser.parse_error("openrouter", mock_error)
+        result = parser.parse_error(ModelProvider.OPENROUTER, mock_error)
 
         assert result.error_type == "byok_required"
         assert result.matched_pattern == "byok_required"
         assert result.http_status_code == 403
 
-    def test_openrouter_byok_pattern_without_alternatives(self, parser: ErrorPatternParser):
+    def test_openrouter_byok_pattern_without_alternatives(
+        self, parser: ErrorPatternParser
+    ):
         """대안 모델이 없는 OpenRouter BYOK 에러 패턴 테스트"""
         # httpx.HTTPStatusError 시뮬레이션 (대안 모델 없음)
         import httpx
-        
+
         byok_response = {
             "error": {
                 "message": (
@@ -227,17 +224,15 @@ class TestErrorPatternParser:
                 )
             }
         }
-        
+
         # httpx.Response 모킹
         mock_response = MagicMock()
         mock_response.status_code = 403
         mock_response.text = json.dumps(byok_response)
-        
+
         # httpx.HTTPStatusError 생성
         mock_error = httpx.HTTPStatusError(
-            "403 Forbidden", 
-            request=MagicMock(), 
-            response=mock_response
+            "403 Forbidden", request=MagicMock(), response=mock_response
         )
 
         result = parser.parse_error("openrouter", mock_error)
@@ -277,7 +272,9 @@ class TestErrorPatternParser:
         assert error_response.raw_error["actual_tokens"] == 150000
         assert error_response.raw_error["max_tokens"] == 128000
 
-    def test_anthropic_new_context_limit_error_pattern(self, parser: ErrorPatternParser):
+    def test_anthropic_new_context_limit_error_pattern(
+        self, parser: ErrorPatternParser
+    ):
         """Anthropic의 새로운 context limit 에러 패턴 테스트 - input length and max_tokens exceed context limit"""
         # 실제 발생한 에러 메시지 형태
         error_message = (
@@ -285,7 +282,7 @@ class TestErrorPatternParser:
             "'message': 'input length and `max_tokens` exceed context limit: 155345 + 64000 > 200000, "
             "decrease input length or `max_tokens` and try again'}}"
         )
-        
+
         # Mock exception with proper attributes for Anthropic error
         mock_error = Exception(error_message)
         mock_error.status_code = 400
@@ -293,12 +290,14 @@ class TestErrorPatternParser:
             "type": "error",
             "error": {
                 "type": "invalid_request_error",
-                "message": "input length and `max_tokens` exceed context limit: 155345 + 64000 > 200000, decrease input length or `max_tokens` and try again"
-            }
+                "message": "input length and `max_tokens` exceed context limit: 155345 + 64000 > 200000, decrease input length or `max_tokens` and try again",
+            },
         }
 
         # 에러 응답 생성
-        error_response = ErrorResponse.from_exception(mock_error, "anthropic")
+        error_response = ErrorResponse.from_exception(
+            mock_error, ModelProvider.ANTHROPIC
+        )
 
         # 검증: context_limit_exceeded로 분류되어야 함
         assert error_response.error_type == "context_limit_exceeded"
@@ -317,14 +316,14 @@ class TestErrorPatternParser:
     @pytest.mark.parametrize(
         "provider,pattern_name",
         [
-            ("openai", "context_limit_exceeded"),
-            ("anthropic", "context_limit_exceeded"),
-            ("google", "quota_exceeded"),
-            ("openrouter", "context_limit_exceeded"),
+            (ModelProvider.OPENAI, "context_limit_exceeded"),
+            (ModelProvider.ANTHROPIC, "context_limit_exceeded"),
+            (ModelProvider.GOOGLE, "quota_exceeded"),
+            (ModelProvider.OPENROUTER, "context_limit_exceeded"),
         ],
     )
     def test_pattern_info_retrieval(
-        self, parser: ErrorPatternParser, provider: str, pattern_name: str
+        self, parser: ErrorPatternParser, provider: ModelProvider, pattern_name: str
     ):
         """패턴 정보 조회 테스트"""
         pattern_info = parser.get_pattern_info(provider, pattern_name)
@@ -351,14 +350,12 @@ class TestErrorPatternParser:
             if "http_status_code" in result_data:
                 mock_error.response = MagicMock()
                 mock_error.response.status_code = result_data["http_status_code"]
-                
+
                 # OpenRouter의 경우 JSON 응답 구조 추가
                 if provider == "openrouter":
-                    mock_error.response.text = json.dumps({
-                        "error": {
-                            "message": error_message
-                        }
-                    })
+                    mock_error.response.text = json.dumps(
+                        {"error": {"message": error_message}}
+                    )
 
             parsing_result = parser.parse_error(provider, mock_error)
 
