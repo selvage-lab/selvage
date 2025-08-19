@@ -112,15 +112,12 @@ class TestCLIErrorHandling:
         mock_console.error.assert_any_call(f"  원본 응답 (일부): {raw_response}")
 
     @patch("selvage.cli.console")
-    @patch("selvage.cli.get_default_debug_mode")
-    def test_handle_json_parsing_error_without_debug(
-        self, mock_get_debug_mode, mock_console
-    ):
+    def test_handle_json_parsing_error_without_debug(self, mock_console):
         """JSON 파싱 에러 처리 테스트 (디버그 모드 비활성화)"""
         from selvage.cli import _handle_json_parsing_error
 
         # 디버그 모드 비활성화
-        mock_get_debug_mode.return_value = False
+        mock_console.is_debug_mode.return_value = False
 
         error = JSONParsingError("JSON 파싱에 실패했습니다")
 

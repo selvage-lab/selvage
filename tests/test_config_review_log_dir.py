@@ -266,7 +266,7 @@ class TestCLIConfigReviewLogDir(unittest.TestCase):
             mock_get_api_key.side_effect = APIKeyNotFoundError(ModelProvider.OPENAI)
 
             with patch("selvage.cli.get_default_model", return_value=None):
-                with patch("selvage.cli.get_default_debug_mode", return_value=False):
+                with patch("selvage.cli.console.is_debug_mode", return_value=False):
                     result = self.runner.invoke(cli, ["config", "list"])
 
         self.assertEqual(result.exit_code, 0)

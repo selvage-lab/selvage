@@ -388,5 +388,6 @@ class OpenRouterGateway(BaseGateway):
         if structured_response is None:
             error_msg = "OpenRouter API 응답에서 유효한 JSON을 파싱할 수 없습니다"
             console.error(error_msg)
-            console.error(f"원본 응답: {response_text}")
+            if console.is_debug_mode():
+                console.error(f"원본 응답: {response_text}")
             raise OpenRouterResponseError(error_msg)

@@ -12,7 +12,6 @@ from selvage.__version__ import __version__
 from selvage.src.cache import CacheManager
 from selvage.src.config import (
     get_api_key,
-    get_default_debug_mode,
     get_default_language,
     get_default_model,
     get_default_review_log_dir,
@@ -137,7 +136,7 @@ def config_debug_mode(value: str | None = None) -> None:
             console.error("디버그 모드 설정에 실패했습니다.")
     else:
         # 값이 지정되지 않은 경우 현재 설정을 표시
-        current_value = get_default_debug_mode()
+        current_value = console.is_debug_mode()
         status = "활성화" if current_value else "비활성화"
         console.info(f"현재 디버그 모드: {status}")
         console.info(
@@ -239,7 +238,7 @@ def config_list() -> None:
     else:
         console.print("기본 언어: 설정되지 않음", style="red")
 
-    default_debug_mode = get_default_debug_mode()
+    default_debug_mode = console.is_debug_mode()
     console.print(f"디버그 모드: {default_debug_mode}", style="green")
 
     review_log_dir = get_default_review_log_dir()
@@ -292,7 +291,7 @@ def _handle_openrouter_error(error: OpenRouterAPIError) -> None:
         console.error(f"OpenRouter API 응답 구조 오류: {error}")
         if error.missing_field:
             console.error(f"누락된 필드: {error.missing_field}")
-        if get_default_debug_mode() and error.raw_response:
+        if console.is_debug_mode() and error.raw_response:
             console.error(f"원본 응답: {error.raw_response}")
     else:
         console.error(f"OpenRouter API 오류: {error}")
@@ -303,7 +302,7 @@ def _handle_json_parsing_error(error: JSONParsingError) -> None:
     console.error("구조화된 응답 파싱에 실패했습니다")
     console.error(f"오류: {error}")
 
-    if get_default_debug_mode():
+    if console.is_debug_mode():
         console.error("디버그 정보:")
         if error.parsing_error:
             console.error(f"  파싱 오류: {error.parsing_error}")
