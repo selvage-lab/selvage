@@ -100,7 +100,7 @@ class MultiturnReviewExecutor:
                     error_result = ReviewResult.get_error_result(
                         error=e,
                         model=llm_gateway.get_model_name(),
-                        provider=llm_gateway.get_provider().value,
+                        provider=llm_gateway.get_provider(),
                     )
                     review_results.append(error_result)
 
@@ -128,7 +128,7 @@ class MultiturnReviewExecutor:
                 error_result = ReviewResult.get_error_result(
                     error=e,
                     model=llm_gateway.get_model_name(),
-                    provider=llm_gateway.get_provider().value,
+                    provider=llm_gateway.get_provider(),
                 )
                 review_results.append(error_result)
 

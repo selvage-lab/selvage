@@ -146,15 +146,15 @@ class DataProcessor_{index}:
     return system_content, messages
 
 
-def assert_context_limit_error(error: Exception, provider: str) -> None:
+def assert_context_limit_error(error: Exception, provider: ModelProvider) -> None:
     """Context limit 에러가 올바른지 검증합니다."""
     error_message = str(error).lower()
-    
+
     # 현재 구조에서는 UnsupportedModelError가 발생할 수 있음
     if "unsupported model" in error_message or "지원되지 않는 모델" in error_message:
         # 모델이 지원되지 않는 경우는 예상된 동작
         return
-    
+
     # OpenRouter는 다른 검증 방식 사용 (HTTP 400 에러로만 나타남)
     if provider != "openrouter":
         # 공통 키워드 검증 (OpenRouter 제외)
@@ -247,23 +247,23 @@ def test_openai_context_limit_error() -> None:
         # 성공적으로 게이트웨이가 생성되면 실제 context limit 테스트 진행
         if not os.getenv("OPENAI_API_KEY"):
             pytest.skip("OPENAI_API_KEY not found")
-        
+
         with pytest.raises(Exception) as exc_info:
             messages = create_oversized_messages(400000)  # gpt-5 context limit
             client = gateway._create_client()
             params = gateway._create_request_params(messages)
-            
+
             if hasattr(client, "client"):
                 underlying_client = client.client
                 underlying_client.chat.completions.create(**params)
             else:
                 client.chat.completions.create(**params)
-        
-        assert_context_limit_error(exc_info.value, "openai")
-        
+
+        assert_context_limit_error(exc_info.value, ModelProvider.OPENAI)
+
     except Exception as e:
         # UnsupportedModelError 또는 기타 모델 관련 에러는 예상된 동작
-        assert_context_limit_error(e, "openai")
+        assert_context_limit_error(e, ModelProvider.OPENAI)
 
 
 def test_anthropic_context_limit_error() -> None:
@@ -273,11 +273,13 @@ def test_anthropic_context_limit_error() -> None:
         # 성공적으로 게이트웨이가 생성되면 실제 context limit 테스트 진행
         if not os.getenv("ANTHROPIC_API_KEY"):
             pytest.skip("ANTHROPIC_API_KEY not found")
-        
+
         with pytest.raises(Exception) as exc_info:
-            system_content, messages = create_anthropic_oversized_content(200000)  # Claude context limit
+            system_content, messages = create_anthropic_oversized_content(
+                200000
+            )  # Claude context limit
             client = gateway._create_client()
-            
+
             if hasattr(client, "client"):
                 underlying_client = client.client
                 underlying_client.messages.create(
@@ -295,12 +297,12 @@ def test_anthropic_context_limit_error() -> None:
                     messages=messages,
                     temperature=0.0,
                 )
-        
-        assert_context_limit_error(exc_info.value, "anthropic")
-        
+
+        assert_context_limit_error(exc_info.value, ModelProvider.ANTHROPIC)
+
     except Exception as e:
         # 모델 관련 에러는 예상된 동작
-        assert_context_limit_error(e, "anthropic")
+        assert_context_limit_error(e, ModelProvider.ANTHROPIC)
 
 
 def test_google_context_limit_error() -> None:
@@ -310,20 +312,20 @@ def test_google_context_limit_error() -> None:
         # 성공적으로 게이트웨이가 생성되면 실제 context limit 테스트 진행
         if not os.getenv("GOOGLE_API_KEY"):
             pytest.skip("GOOGLE_API_KEY not found")
-        
+
         with pytest.raises(Exception) as exc_info:
             messages = create_oversized_messages(1048576)  # Gemini context limit
             client = gateway._create_client()
             params = gateway._create_request_params(messages)
-            
+
             # 직접 API 호출
             client.models.generate_content(**params)
-        
-        assert_context_limit_error(exc_info.value, "google")
-        
+
+        assert_context_limit_error(exc_info.value, ModelProvider.GOOGLE)
+
     except Exception as e:
         # 모델 관련 에러는 예상된 동작
-        assert_context_limit_error(e, "google")
+        assert_context_limit_error(e, ModelProvider.GOOGLE)
 
 
 @pytest.mark.parametrize("model_name", ["qwen3-coder", "kimi-k2", "deepseek-r1-0528"])
@@ -365,21 +367,21 @@ def test_openrouter_models_context_limit_error(
 
     try:
         gateway = GatewayFactory.create(model_info["full_name"])
-        
+
         with pytest.raises(Exception) as exc_info:
             messages = create_oversized_messages(model_info["context_limit"])
             client = gateway._create_client()
             params = gateway._create_request_params(messages)
-            
+
             # OpenRouter HTTP 클라이언트 사용
             with client as http_client:
                 http_client.create_completion(**params)
-        
-        assert_context_limit_error(exc_info.value, "openrouter")
-        
+
+        assert_context_limit_error(exc_info.value, ModelProvider.OPENROUTER)
+
     except Exception as e:
         # 모델 관련 에러는 예상된 동작
-        assert_context_limit_error(e, "openrouter")
+        assert_context_limit_error(e, ModelProvider.OPENROUTER)
 
 
 if __name__ == "__main__":

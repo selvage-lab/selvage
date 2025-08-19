@@ -6,15 +6,21 @@ providers:
   openai:
     patterns:
       context_limit_exceeded:
-        # OpenAI의 context length exceeded 에러 패턴
-        keywords: ["context_length_exceeded"]
+        # OpenAI의 context length exceeded 에러 패턴 (기존 모델 + GPT-5)
+        keywords: ["context_length_exceeded", "Request too large", "TPM"]
         message_patterns:
+          # 기존 GPT-3.5, GPT-4 패턴
           - regex: "This model's maximum context length is (\\d+(?:,\\d+)*) tokens\\. However, your messages resulted in (\\d+(?:,\\d+)*) tokens"
             extract_tokens:
               max_tokens: 1 # 첫 번째 캡처 그룹
               actual_tokens: 2 # 두 번째 캡처 그룹
-        error_codes: ["context_length_exceeded"]
-        http_status_codes: [400]
+          # GPT-5 새로운 패턴 (TPM rate limit으로 표시됨)
+          - regex: "Request too large for .* on tokens per min \\(TPM\\): Limit (\\d+(?:,\\d+)*), Requested (\\d+(?:,\\d+)*)"
+            extract_tokens:
+              max_tokens: 1 # TPM 제한 (첫 번째 캡처 그룹)
+              actual_tokens: 2 # 요청된 토큰 수 (두 번째 캡처 그룹)
+        error_codes: ["context_length_exceeded", "rate_limit_exceeded"]
+        http_status_codes: [400, 429]
         error_type: "context_limit_exceeded"
 
       api_error:
@@ -28,7 +34,13 @@ providers:
     patterns:
       context_limit_exceeded:
         # Anthropic의 prompt too long 에러 패턴
-        keywords: ["prompt is too long", "input length", "max_tokens", "exceed context limit"]
+        keywords:
+          [
+            "prompt is too long",
+            "input length",
+            "max_tokens",
+            "exceed context limit",
+          ]
         message_patterns:
           - regex: "prompt is too long: (\\d+(?:,\\d+)*) tokens > (\\d+(?:,\\d+)*) maximum"
             extract_tokens:

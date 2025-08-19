@@ -2,6 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from selvage.src.models.model_provider import ModelProvider
+
 from .error_pattern_parser import ErrorPatternParser
 
 
@@ -32,7 +34,9 @@ class ErrorResponse(BaseModel):
     """원본 예외 객체 (직렬화에서 제외)"""
 
     @classmethod
-    def from_exception(cls, error: Exception, provider: str) -> "ErrorResponse":
+    def from_exception(
+        cls, error: Exception, provider: ModelProvider
+    ) -> "ErrorResponse":
         """Exception 객체에서 ErrorResponse를 생성합니다.
 
         Args:
@@ -76,9 +80,14 @@ class ErrorResponse(BaseModel):
             http_status_code = None
             raw_error["parse_error"] = str(parse_error)
 
+        # error_code를 안전하게 string으로 변환
+        safe_error_code = None
+        if error_code is not None:
+            safe_error_code = str(error_code)
+
         return cls(
             error_type=error_type,
-            error_code=str(error_code) if error_code is not None else None,
+            error_code=safe_error_code,
             error_message=error_message,
             http_status_code=http_status_code,
             provider=provider,

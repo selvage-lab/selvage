@@ -27,12 +27,12 @@ class TestOpenRouterGatewayRetry:
             self.gateway = OpenRouterGateway(self.model_info)
 
     def test_retry_decorator_applied_to_review_code(self):
-        """OpenRouterGateway의 review_code에 특화된 retry 데코레이터가 적용되었는지 테스트"""
-        # review_code 메서드에 retry 관련 속성이 있는지 확인
-        assert hasattr(self.gateway.review_code, "retry")
+        """OpenRouterGateway의 _review_code_with_retry에 특화된 retry 데코레이터가 적용되었는지 테스트"""
+        # _review_code_with_retry 메서드에 retry 관련 속성이 있는지 확인
+        assert hasattr(self.gateway._review_code_with_retry, "retry")
 
         # tenacity retry 객체의 속성들 확인
-        retry_obj = self.gateway.review_code.retry
+        retry_obj = self.gateway._review_code_with_retry.retry
 
         # 재시도 횟수 (최대 3회)
         assert retry_obj.stop.max_attempt_number == 3

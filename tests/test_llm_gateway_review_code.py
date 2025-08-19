@@ -250,7 +250,7 @@ def test_review_code_success_with_genai(
         "issues": issues_list_for_json,
         "summary": expected_summary_genai,
         "score": expected_score_genai,
-        "recommendations": expected_recommendations_genai
+        "recommendations": expected_recommendations_genai,
     }
     mock_genai_response.text = json.dumps(response_json)
     mock_genai_models.generate_content.return_value = mock_genai_response
@@ -344,15 +344,15 @@ def test_review_code_parsing_error(
 
     with patch.object(MockBaseGateway, "_create_request_params"):
         gateway = MockBaseGateway(google_model_info_fixture)
+
+        # 파싱 오류는 3번 재시도 후 RetryError가 발생하지만, 이는 ReviewResult로 변환됨
         review_result: ReviewResult = gateway.review_code(review_prompt_fixture)
         response: ReviewResponse = review_result.review_response
 
-        # 새로운 에러 처리 시스템: success=False, error_response에 파싱 에러 정보 저장
+        # RetryError로 인한 에러 처리 시스템: success=False, error_response에 에러 정보 저장
         assert review_result.success is False
         assert review_result.error_response is not None
-        assert (
-            review_result.error_response.error_type == "api_error"
-        )  # 파싱 에러는 api_error로 분류
+        assert review_result.error_response.error_type == "api_error"
         assert len(response.issues) == 0
 
 

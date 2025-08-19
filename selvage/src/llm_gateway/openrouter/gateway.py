@@ -8,6 +8,7 @@ import os
 from typing import Any
 
 from tenacity import (
+    RetryError,
     after_log,
     before_sleep_log,
     retry,
@@ -207,8 +208,26 @@ class OpenRouterGateway(BaseGateway):
         """
         return OpenRouterHTTPClient(self.api_key)
 
+    def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
+        """OpenRouter API를 사용하여 코드를 리뷰합니다.
+
+        Args:
+            review_prompt: 리뷰용 프롬프트 객체
+
+        Returns:
+            ReviewResult: 리뷰 결과
+        """
+        try:
+            return self._review_code_with_retry(review_prompt)
+        except RetryError as e:
+            console.error(f"재시도 한계 초과: {str(e)}", exception=e)
+            # RetryError를 ReviewResult로 변환
+            return ReviewResult.get_error_result(
+                e, self.get_model_name(), ModelProvider.OPENROUTER
+            )
+
     @retry(
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(2),
         wait=wait_exponential(multiplier=1, min=1, max=8),
         retry=retry_if_exception_type(
             (
@@ -222,7 +241,9 @@ class OpenRouterGateway(BaseGateway):
         before_sleep=before_sleep_log(console.logger, log_level=logging.INFO),
         after=after_log(console.logger, log_level=logging.DEBUG),
     )
-    def review_code(self, review_prompt: ReviewPromptWithFileContent) -> ReviewResult:
+    def _review_code_with_retry(
+        self, review_prompt: ReviewPromptWithFileContent
+    ) -> ReviewResult:
         """OpenRouter API를 사용하여 코드를 리뷰합니다.
 
         Args:
@@ -302,7 +323,7 @@ class OpenRouterGateway(BaseGateway):
         except Exception as e:
             console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
             return ReviewResult.get_error_result(
-                e, self.get_model_name(), self.get_provider().value
+                e, self.get_model_name(), ModelProvider.OPENROUTER
             )
 
     def _validate_api_response(

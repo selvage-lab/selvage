@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from selvage.src.models.error_response import ErrorResponse
+from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.token.models import EstimatedCost, ReviewResponse
 
 
@@ -32,7 +33,9 @@ class ReviewResult(BaseModel):
 
     @staticmethod
     def get_error_result(
-        error: Exception, model: str = "unknown", provider: str = "unknown"
+        error: Exception,
+        model: str = "unknown",
+        provider: ModelProvider = ModelProvider.OPENROUTER,
     ) -> "ReviewResult":
         """에러 발생 시 리뷰 결과를 생성합니다.
 
