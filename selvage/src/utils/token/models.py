@@ -48,7 +48,7 @@ class StructuredSynthesisResponse(BaseModel):
 
     summary: str = Field(
         description="Integrated review summary combining chunk content from a holistic perspective",  # noqa: E501
-        min_length=10,
+        min_length=1,
     )
     recommendations: list[str] = Field(
         description="Refined recommendation list with duplicates removed and priorities sorted",  # noqa: E501
@@ -214,7 +214,7 @@ class SummarySynthesisResponse(BaseModel):
 
     summary: str = Field(
         description="통합된 리뷰 요약. 각 청크의 summary를 종합",
-        min_length=10,
+        min_length=1,
     )
 
 
