@@ -315,29 +315,9 @@ class SynthesisAPIClient:
                 },
             }
 
-            # 모델별 파라미터 처리 (gateway와 동일 로직 적용)
-            model_params = model_info.get("params", {}).copy()
-
-            # Claude thinking 모드 → OpenRouter reasoning.max_tokens로 매핑
-            thinking_config = model_params.pop("thinking", None)
-            if thinking_config and openrouter_model_name.startswith("anthropic/claude"):
-                budget_tokens = SynthesisConfig.THINKING_BUDGET_TOKENS
-                if budget_tokens:
-                    params["reasoning"] = {"max_tokens": budget_tokens}
-                    console.log_info(
-                        f"확장 사고 모드 활성화: max_tokens={budget_tokens}"
-                    )
-
-            # GPT-5 reasoning_effort → OpenRouter reasoning.effort로 매핑
-            reasoning_effort = model_params.get("reasoning_effort")
-            if reasoning_effort and openrouter_model_name.startswith("openai/gpt-5"):
-                params["reasoning"] = {"effort": reasoning_effort}
-                console.log_info(f"GPT-5 추론 강도 설정: effort={reasoning_effort}")
-                # GPT-5 모델에 한해 원본 파라미터에서 제거
-                model_params.pop("reasoning_effort", None)
-
-            # 나머지 모델 파라미터 병합
-            params.update(model_params)
+            # OpenRouter 전용 파라미터만 사용
+            openrouter_params = model_info.get("openrouter_params", {})
+            params.update(openrouter_params)
 
             return params
         else:

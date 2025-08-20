@@ -82,7 +82,7 @@ export OPENAI_API_KEY="your-api-key"
 export ANTHROPIC_API_KEY="your-api-key"
 
 # Google
-export GOOGLE_API_KEY="your-api-key"
+export GEMINI_API_KEY="your-api-key"
 
 # OpenRouter
 export OPENROUTER_API_KEY="your-api-key"
