@@ -2,8 +2,12 @@
 
 from unittest.mock import Mock, patch
 
+import anthropic
+import instructor
 import pytest
+from google import genai
 
+from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.multiturn.synthesis_api_client import SynthesisAPIClient
@@ -122,7 +126,7 @@ class TestSynthesisAPIClient:
 
         # When: 요청 파라미터 생성
         params = api_client._create_request_params(
-            messages, sample_model_info, SummarySynthesisResponse
+            messages, sample_model_info, SummarySynthesisResponse, instructor.Instructor
         )
 
         # Then: OpenAI 형식의 파라미터 생성
@@ -148,7 +152,7 @@ class TestSynthesisAPIClient:
 
         # When: 요청 파라미터 생성
         params = api_client._create_request_params(
-            messages, anthropic_model_info, SummarySynthesisResponse
+            messages, anthropic_model_info, SummarySynthesisResponse, anthropic.Anthropic
         )
 
         # Then: Anthropic 형식의 파라미터 생성
@@ -172,7 +176,7 @@ class TestSynthesisAPIClient:
 
         # When: 요청 파라미터 생성
         params = api_client._create_request_params(
-            messages, google_model_info, SummarySynthesisResponse
+            messages, google_model_info, SummarySynthesisResponse, genai.Client
         )
 
         # Then: Google 형식의 파라미터 생성
@@ -198,7 +202,7 @@ class TestSynthesisAPIClient:
 
         # When: 요청 파라미터 생성
         params = api_client._create_request_params(
-            messages, openrouter_model_info, SummarySynthesisResponse
+            messages, openrouter_model_info, SummarySynthesisResponse, OpenRouterHTTPClient
         )
 
         # Then: OpenRouter 형식의 파라미터 생성
@@ -227,7 +231,7 @@ class TestSynthesisAPIClient:
         # When & Then: 예외 발생
         with pytest.raises(ValueError, match="지원하지 않는 프로바이더"):
             api_client._create_request_params(
-                messages, unsupported_model_info, SummarySynthesisResponse
+                messages, unsupported_model_info, SummarySynthesisResponse, instructor.Instructor
             )
 
     @patch(

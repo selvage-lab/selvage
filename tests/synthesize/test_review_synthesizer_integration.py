@@ -147,7 +147,7 @@ class TestReviewSynthesizerRealIntegration:
     @pytest.mark.parametrize(
         "model_name",
         [
-            "gpt-4o",  # OpenAI
+            "gpt-5",  # OpenAI
             "gemini-2.5-flash",  # Google
             "qwen3-coder",  # OpenRouter
         ],
@@ -194,7 +194,7 @@ class TestReviewSynthesizerRealIntegration:
     @pytest.mark.parametrize(
         "model_name",
         [
-            "gpt-4o",  # OpenAI
+            "gpt-5",  # OpenAI
             "claude-sonnet-4",  # Anthropic (일반)
             "gemini-2.5-flash",  # Google
             "qwen3-coder",  # OpenRouter

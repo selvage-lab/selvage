@@ -52,7 +52,7 @@ class StructuredSynthesisResponse(BaseModel):
     )
     recommendations: list[str] = Field(
         description="Refined recommendation list with duplicates removed and priorities sorted",  # noqa: E501
-        min_items=0,
+        min_length=0,
     )
     synthesis_quality: str = Field(
         description="Synthesis quality indicator (excellent/good/fair)",
