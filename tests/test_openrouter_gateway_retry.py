@@ -152,3 +152,123 @@ class TestOpenRouterGatewayRetry:
 
         # 디버그 모드에서 원본 응답이 로깅되었는지 확인
         mock_console.error.assert_any_call(f"원본 응답: {raw_data}")
+
+
+class TestOpenRouterGatewayModelSpecific:
+    """OpenRouterGateway 모델별 특수 파라미터 테스트"""
+
+    def test_is_claude_model_detection(self):
+        """Claude 모델 식별 함수 테스트"""
+        model_info = {
+            "full_name": "claude-sonnet-4",
+            "provider": ModelProvider.OPENROUTER,
+            "openrouter_name": "anthropic/claude-sonnet-4",
+            "description": "Test Claude model",
+        }
+        
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
+            gateway = OpenRouterGateway(model_info)
+            
+        # Claude 모델 식별 테스트
+        assert gateway._is_claude_model("anthropic/claude-sonnet-4") is True
+        assert gateway._is_claude_model("anthropic/claude-haiku-3.5") is True
+        assert gateway._is_claude_model("openai/gpt-5") is False
+        assert gateway._is_claude_model("google/gemini-2.5-pro") is False
+
+    def test_is_gpt5_model_detection(self):
+        """GPT-5 모델 식별 함수 테스트"""
+        model_info = {
+            "full_name": "gpt-5",
+            "provider": ModelProvider.OPENROUTER,
+            "openrouter_name": "openai/gpt-5",
+            "description": "Test GPT-5 model",
+        }
+        
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
+            gateway = OpenRouterGateway(model_info)
+            
+        # GPT-5 모델 식별 테스트
+        assert gateway._is_gpt5_model("openai/gpt-5") is True
+        assert gateway._is_gpt5_model("openai/gpt-5-mini") is True
+        assert gateway._is_gpt5_model("openai/gpt-5-nano") is True
+        assert gateway._is_gpt5_model("openai/gpt-4o") is False
+        assert gateway._is_gpt5_model("anthropic/claude-sonnet-4") is False
+
+    def test_gpt5_reasoning_effort_parameter_processing(self):
+        """GPT-5 모델의 reasoning_effort 파라미터 처리 테스트"""
+        model_info = {
+            "full_name": "gpt-5",
+            "provider": ModelProvider.OPENROUTER,
+            "openrouter_name": "openai/gpt-5",
+            "description": "Test GPT-5 model",
+            "params": {
+                "reasoning_effort": "high",
+                "temperature": 0.0,
+            },
+        }
+        
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
+            gateway = OpenRouterGateway(model_info)
+            
+        messages = [{"role": "user", "content": "Test message"}]
+        
+        # _create_request_params 호출하여 파라미터 확인
+        params = gateway._create_request_params(messages)
+        
+        # GPT-5 reasoning_effort 파라미터가 reasoning.effort로 변환되었는지 확인
+        assert "reasoning" in params
+        assert params["reasoning"]["effort"] == "high"
+        assert params["temperature"] == 0.0
+        # reasoning_effort 파라미터는 제거되어야 함
+        assert "reasoning_effort" not in params
+
+    def test_non_gpt5_model_ignores_reasoning_effort(self):
+        """GPT-5가 아닌 모델은 reasoning_effort 파라미터를 무시하는지 테스트"""
+        model_info = {
+            "full_name": "gemini-2.5-pro",
+            "provider": ModelProvider.OPENROUTER,
+            "openrouter_name": "google/gemini-2.5-pro",
+            "description": "Test Gemini model",
+            "params": {
+                "reasoning_effort": "high",  # GPT-5가 아니므로 무시되어야 함
+                "temperature": 0.0,
+            },
+        }
+        
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
+            gateway = OpenRouterGateway(model_info)
+            
+        messages = [{"role": "user", "content": "Test message"}]
+        
+        # _create_request_params 호출하여 파라미터 확인
+        params = gateway._create_request_params(messages)
+        
+        # reasoning 파라미터가 추가되지 않아야 함
+        assert "reasoning" not in params
+        # reasoning_effort는 일반 파라미터로 그대로 전달되어야 함
+        assert params["reasoning_effort"] == "high"
+        assert params["temperature"] == 0.0
+
+    @patch("selvage.src.llm_gateway.openrouter.gateway.console")
+    def test_gpt5_reasoning_effort_logging(self, mock_console):
+        """GPT-5 reasoning_effort 파라미터 처리 시 로깅 테스트"""
+        model_info = {
+            "full_name": "gpt-5-high",
+            "provider": ModelProvider.OPENROUTER,
+            "openrouter_name": "openai/gpt-5",
+            "description": "Test GPT-5 High model",
+            "params": {
+                "reasoning_effort": "high",
+            },
+        }
+        
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
+            gateway = OpenRouterGateway(model_info)
+            
+        messages = [{"role": "user", "content": "Test message"}]
+        
+        # _create_request_params 호출
+        gateway._create_request_params(messages)
+        
+        # 로깅이 호출되었는지 확인
+        mock_console.log_info.assert_called_with("GPT-5 추론 강도 설정: effort=high")

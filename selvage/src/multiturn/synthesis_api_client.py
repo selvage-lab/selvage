@@ -23,6 +23,7 @@ class SynthesisConfig:
     MAX_TOKENS = 5000
     TEMPERATURE = 0.1
     MAX_RETRIES = 2
+    THINKING_BUDGET_TOKENS = 1024
 
 
 class SynthesisAPIClient:
@@ -294,7 +295,8 @@ class SynthesisAPIClient:
             schema_name = "summary_synthesis_response"
             schema = response_model.model_json_schema()
 
-            return {
+            # 기본 파라미터 구성
+            params: dict[str, Any] = {
                 "model": openrouter_model_name,
                 "messages": messages,
                 "max_tokens": SynthesisConfig.MAX_TOKENS,
@@ -307,10 +309,37 @@ class SynthesisAPIClient:
                         "schema": schema,
                     },
                 },
+                # OpenRouter usage 정보 포함
                 "usage": {
-                    "include_usage": True,
+                    "include": True,
                 },
             }
+
+            # 모델별 파라미터 처리 (gateway와 동일 로직 적용)
+            model_params = model_info.get("params", {}).copy()
+
+            # Claude thinking 모드 → OpenRouter reasoning.max_tokens로 매핑
+            thinking_config = model_params.pop("thinking", None)
+            if thinking_config and openrouter_model_name.startswith("anthropic/claude"):
+                budget_tokens = SynthesisConfig.THINKING_BUDGET_TOKENS
+                if budget_tokens:
+                    params["reasoning"] = {"max_tokens": budget_tokens}
+                    console.log_info(
+                        f"확장 사고 모드 활성화: max_tokens={budget_tokens}"
+                    )
+
+            # GPT-5 reasoning_effort → OpenRouter reasoning.effort로 매핑
+            reasoning_effort = model_params.get("reasoning_effort")
+            if reasoning_effort and openrouter_model_name.startswith("openai/gpt-5"):
+                params["reasoning"] = {"effort": reasoning_effort}
+                console.log_info(f"GPT-5 추론 강도 설정: effort={reasoning_effort}")
+                # GPT-5 모델에 한해 원본 파라미터에서 제거
+                model_params.pop("reasoning_effort", None)
+
+            # 나머지 모델 파라미터 병합
+            params.update(model_params)
+
+            return params
         else:
             raise ValueError(f"지원하지 않는 프로바이더: {provider}")
 

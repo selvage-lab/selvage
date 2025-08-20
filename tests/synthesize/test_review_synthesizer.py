@@ -598,7 +598,7 @@ class TestReviewSynthesizerLLMIntegration:
         assert "$defs" in schema or "properties" in schema  # Pydantic schema 구조 확인
 
         # usage 설정 확인
-        assert params["usage"]["include_usage"] is True
+        assert params["usage"]["include"] is True
 
 
 class TestReviewSynthesizerEndToEndMock:

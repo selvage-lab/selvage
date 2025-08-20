@@ -143,7 +143,6 @@ class TestReviewSynthesizerRealIntegration:
 
         return results
 
-    @pytest.mark.skip(reason="Skipping real integration tests")
     @pytest.mark.parametrize(
         "model_name",
         [
@@ -198,6 +197,8 @@ class TestReviewSynthesizerRealIntegration:
             "claude-sonnet-4",  # Anthropic (일반)
             "gemini-2.5-flash",  # Google
             "qwen3-coder",  # OpenRouter
+            "claude-sonnet-4-thinking",
+            "gpt-5-mini",
         ],
     )
     def test_integration_with_complex_dataset(

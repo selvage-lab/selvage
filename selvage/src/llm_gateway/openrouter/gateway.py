@@ -157,6 +157,15 @@ class OpenRouterGateway(BaseGateway):
                 params["reasoning"] = {"max_tokens": budget_tokens}
                 console.log_info(f"확장 사고 모드 활성화: max_tokens={budget_tokens}")
 
+        # reasoning_effort 파라미터 처리 (GPT-5 모델용)
+        reasoning_effort = model_params.get("reasoning_effort", None)
+        if reasoning_effort and self._is_gpt5_model(openrouter_model_name):
+            # GPT-5의 reasoning_effort 파라미터를 OpenRouter의 reasoning.effort 형식으로 변환  # noqa: E501
+            params["reasoning"] = {"effort": reasoning_effort}
+            console.log_info(f"GPT-5 추론 강도 설정: effort={reasoning_effort}")
+            # GPT-5 모델인 경우에만 reasoning_effort 파라미터를 제거
+            model_params.pop("reasoning_effort", None)
+
         params.update(model_params)
 
         return params
@@ -196,6 +205,17 @@ class OpenRouterGateway(BaseGateway):
             bool: Claude 모델이면 True, 아니면 False
         """
         return model_name.startswith("anthropic/claude")
+
+    def _is_gpt5_model(self, model_name: str) -> bool:
+        """OpenRouter 모델명이 GPT-5 모델인지 확인합니다.
+
+        Args:
+            model_name: OpenRouter 형식의 모델명
+
+        Returns:
+            bool: GPT-5 모델이면 True, 아니면 False
+        """
+        return model_name.startswith("openai/gpt-5")
 
     def _create_client(self) -> OpenRouterHTTPClient:
         """OpenRouter API 클라이언트를 생성합니다.

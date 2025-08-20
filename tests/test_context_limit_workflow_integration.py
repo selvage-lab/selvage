@@ -110,6 +110,7 @@ class DataProcessor_{index}:
 tester = ContextLimitWorkflowTester()
 
 
+@pytest.mark.integration
 def test_openai_context_limit_workflow():
     """OpenAI API의 context limit 에러를 실제 워크플로우로 검증합니다."""
     if not os.getenv("OPENAI_API_KEY"):
@@ -164,6 +165,7 @@ def test_openai_context_limit_workflow():
         pytest.fail(f"예상치 못한 예외 발생: {e}")
 
 
+@pytest.mark.integration
 def test_anthropic_context_limit_workflow():
     """Anthropic API의 context limit 에러를 실제 워크플로우로 검증합니다."""
     if not os.getenv("ANTHROPIC_API_KEY"):
@@ -218,6 +220,7 @@ def test_anthropic_context_limit_workflow():
         pytest.fail(f"예상치 못한 예외 발생: {e}")
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "model_name,context_limit",
     [
@@ -276,6 +279,7 @@ def test_openrouter_context_limit_workflow(model_name, context_limit):
         pytest.fail(f"예상치 못한 예외 발생: {e}")
 
 
+@pytest.mark.integration
 def test_google_context_limit_workflow():
     """Google Gemini API의 context limit 에러를 실제 워크플로우로 검증합니다."""
     if not os.getenv("GEMINI_API_KEY"):

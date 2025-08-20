@@ -152,7 +152,10 @@ class TestSynthesisAPIClient:
 
         # When: 요청 파라미터 생성
         params = api_client._create_request_params(
-            messages, anthropic_model_info, SummarySynthesisResponse, anthropic.Anthropic
+            messages,
+            anthropic_model_info,
+            SummarySynthesisResponse,
+            anthropic.Anthropic,
         )
 
         # Then: Anthropic 형식의 파라미터 생성
@@ -202,7 +205,10 @@ class TestSynthesisAPIClient:
 
         # When: 요청 파라미터 생성
         params = api_client._create_request_params(
-            messages, openrouter_model_info, SummarySynthesisResponse, OpenRouterHTTPClient
+            messages,
+            openrouter_model_info,
+            SummarySynthesisResponse,
+            OpenRouterHTTPClient,
         )
 
         # Then: OpenRouter 형식의 파라미터 생성
@@ -215,7 +221,7 @@ class TestSynthesisAPIClient:
             params["response_format"]["json_schema"]["name"]
             == "summary_synthesis_response"
         )
-        assert params["usage"]["include_usage"] is True
+        assert params["usage"]["include"] is True
 
     def test_create_request_params_unsupported_provider(
         self, api_client: SynthesisAPIClient
@@ -231,7 +237,10 @@ class TestSynthesisAPIClient:
         # When & Then: 예외 발생
         with pytest.raises(ValueError, match="지원하지 않는 프로바이더"):
             api_client._create_request_params(
-                messages, unsupported_model_info, SummarySynthesisResponse, instructor.Instructor
+                messages,
+                unsupported_model_info,
+                SummarySynthesisResponse,
+                instructor.Instructor,
             )
 
     @patch(
