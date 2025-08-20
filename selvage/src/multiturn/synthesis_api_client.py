@@ -6,6 +6,7 @@ from typing import Any
 import openai
 
 from selvage.src.config import get_api_key
+from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
 from selvage.src.model_config import ModelConfig, ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.multiturn.synthesis_types import ApiResponseType, ClientType, T
@@ -13,12 +14,7 @@ from selvage.src.utils.base_console import console
 from selvage.src.utils.json_extractor import JSONExtractor
 from selvage.src.utils.llm_client_factory import LLMClientFactory
 from selvage.src.utils.token.cost_estimator import CostEstimator
-from selvage.src.utils.token.models import (
-    EstimatedCost,
-    RecommendationSynthesisResponse,
-    StructuredSynthesisResponse,
-    SummarySynthesisResponse,
-)
+from selvage.src.utils.token.models import EstimatedCost
 
 
 class SynthesisConfig:
@@ -66,13 +62,19 @@ class SynthesisAPIClient:
                 },
             ]
 
-            # 3. API 요청 파라미터 생성
-            params = self._create_request_params(messages, model_info, response_model)
+            # 3. API 요청 파라미터 생성 (클라이언트 타입 기반)
+            params = self._create_request_params(
+                messages, model_info, response_model, type(client)
+            )
 
-            # 4. 프로바이더별 API 호출
-            provider = model_info["provider"]
+            # 4. 프로바이더별 API 호출 (클라이언트 타입 기반)
+            if isinstance(client, OpenRouterHTTPClient):
+                effective_provider = ModelProvider.OPENROUTER
+            else:
+                effective_provider = model_info["provider"]
+
             structured_response, raw_api_response = self._call_provider_api(
-                provider, client, params, response_model
+                effective_provider, client, params, response_model
             )
 
             if structured_response is None:
@@ -80,7 +82,7 @@ class SynthesisAPIClient:
 
             # 5. 비용 계산
             estimated_cost = self._calculate_synthesis_cost(
-                provider, raw_api_response, model_info["full_name"]
+                effective_provider, raw_api_response, model_info["full_name"]
             )
 
             return structured_response, estimated_cost
@@ -224,9 +226,14 @@ class SynthesisAPIClient:
         messages: list[dict[str, str]],
         model_info: ModelInfoDict,
         response_model: type[T],
+        client_type: type,
     ) -> dict[str, Any]:
         """프로바이더별 API 요청 파라미터 생성"""
-        provider = model_info["provider"]
+        # 클라이언트 타입으로 실제 사용할 프로바이더 결정
+        if client_type is OpenRouterHTTPClient:
+            provider = ModelProvider.OPENROUTER
+        else:
+            provider = model_info["provider"]
 
         if provider == ModelProvider.OPENAI:
             return {
@@ -284,15 +291,8 @@ class SynthesisAPIClient:
             )
 
             # 응답 모델에 따라 스키마 이름과 스키마를 동적으로 설정
-            schema_name = "synthesis_response"
+            schema_name = "summary_synthesis_response"
             schema = response_model.model_json_schema()
-
-            if response_model == SummarySynthesisResponse:
-                schema_name = "summary_synthesis_response"
-            elif response_model == RecommendationSynthesisResponse:
-                schema_name = "recommendation_synthesis_response"
-            elif response_model == StructuredSynthesisResponse:
-                schema_name = "structured_synthesis_response"
 
             return {
                 "model": openrouter_model_name,

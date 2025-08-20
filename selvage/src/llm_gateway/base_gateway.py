@@ -30,7 +30,6 @@ from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
 from selvage.src.utils.base_console import console
 from selvage.src.utils.json_extractor import JSONExtractor
-from selvage.src.utils.llm_client_factory import LLMClientFactory
 from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 from selvage.src.utils.token import CostEstimator
 from selvage.src.utils.token.models import (
@@ -146,6 +145,8 @@ class BaseGateway(abc.ABC):
             instructor.Instructor | genai.Client | anthropic.Anthropic:
                 구조화된 응답을 지원하는 LLM 클라이언트
         """
+        from selvage.src.utils.llm_client_factory import LLMClientFactory
+
         return LLMClientFactory.create_client(
             self.get_provider(), self.api_key, self.model
         )

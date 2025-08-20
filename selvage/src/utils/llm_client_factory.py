@@ -6,6 +6,8 @@ import instructor
 from anthropic import Anthropic
 from google import genai
 
+from selvage.src.config import get_api_key, has_openrouter_api_key
+from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 
@@ -18,8 +20,13 @@ class LLMClientFactory:
     @staticmethod
     def create_client(
         provider: ModelProvider, api_key: str, model_info: ModelInfoDict
-    ) -> instructor.Instructor | genai.Client | Anthropic | object:
+    ) -> instructor.Instructor | genai.Client | Anthropic | OpenRouterHTTPClient:
         """프로바이더에 맞는, 구조화된 응답을 지원하는 클라이언트를 생성합니다.
+
+        OpenRouter First 정책:
+        1. BYOK 필수 모델은 원본 provider 클라이언트 사용
+        2. OpenRouter API key가 설정되어 있으면 OpenRouter 클라이언트 사용
+        3. 그렇지 않으면 원본 provider 클라이언트 사용
 
         Args:
             provider: LLM 프로바이더 (openai, anthropic, google, openrouter)
@@ -34,6 +41,12 @@ class LLMClientFactory:
         Raises:
             ValueError: 지원하지 않는 프로바이더인 경우
         """
+        # OpenRouter First 로직
+        if not model_info.get("requires_byok", False) and has_openrouter_api_key():
+            openrouter_api_key = get_api_key(ModelProvider.OPENROUTER)
+            return OpenRouterHTTPClient(api_key=openrouter_api_key)
+
+        # 기존 로직: BYOK 모델이거나 OpenRouter 키 없을 때
         if provider == ModelProvider.OPENAI:
             from openai import OpenAI
 
@@ -51,11 +64,6 @@ class LLMClientFactory:
         elif provider == ModelProvider.GOOGLE:
             return genai.Client(api_key=api_key)
         elif provider == ModelProvider.OPENROUTER:
-            # Lazy import to avoid circular dependency
-            from selvage.src.llm_gateway.openrouter.http_client import (
-                OpenRouterHTTPClient,
-            )
-
             return OpenRouterHTTPClient(api_key=api_key)
         else:
             raise ValueError(f"지원하지 않는 LLM 프로바이더입니다: {provider}")
