@@ -3,9 +3,12 @@
 import json
 from typing import Any
 
+import instructor
 import openai
+from google import genai
 
 from selvage.src.config import get_api_key
+from selvage.src.exceptions.json_parsing_error import JSONParsingError
 from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
 from selvage.src.model_config import ModelConfig, ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
@@ -79,7 +82,12 @@ class SynthesisAPIClient:
             )
 
             if structured_response is None:
-                return None, EstimatedCost.get_zero_cost(self.model_name)
+                console.error(f"LLM 응답 파싱 실패: {self.model_name}")
+                raise JSONParsingError(
+                    message=f"LLM 응답 파싱 실패: {self.model_name}",
+                    raw_response="",
+                    parsing_error=None,
+                )
 
             # 5. 비용 계산
             estimated_cost = self._calculate_synthesis_cost(
@@ -121,7 +129,10 @@ class SynthesisAPIClient:
             raise ValueError(f"지원하지 않는 프로바이더: {provider}")
 
     def _call_openai_api(
-        self, client: ClientType, params: dict[str, Any], response_model: type[T]
+        self,
+        client: instructor.Instructor,
+        params: dict[str, Any],
+        response_model: type[T],
     ) -> tuple[T | None, ApiResponseType | None]:
         """OpenAI API 호출 전략"""
         try:
@@ -138,18 +149,11 @@ class SynthesisAPIClient:
             return None, None
 
     def _call_google_api(
-        self, client: ClientType, params: dict[str, Any], response_model: type[T]
+        self, client: genai.Client, params: dict[str, Any], response_model: type[T]
     ) -> tuple[T | None, ApiResponseType | None]:
         """Google Gemini API 호출 전략"""
         try:
-            # Google API에서는 generation_config를 별도로 설정
-            generation_config = {
-                "temperature": SynthesisConfig.TEMPERATURE,
-            }
-
-            raw_response = client.models.generate_content(
-                generation_config=generation_config, **params
-            )
+            raw_response = client.models.generate_content(**params)
             response_text = raw_response.text
             if response_text is None:
                 return None, None
@@ -216,7 +220,9 @@ class SynthesisAPIClient:
                 if not response_text:
                     return None, None
 
-                structured_response = response_model.model_validate_json(response_text)
+                structured_response = JSONExtractor.validate_and_parse_json(
+                    response_text, response_model
+                )
                 return structured_response, raw_response_data
         except Exception as e:
             console.error(f"OpenRouter API 호출 실패: {e}")
@@ -237,31 +243,46 @@ class SynthesisAPIClient:
             provider = model_info["provider"]
 
         if provider == ModelProvider.OPENAI:
-            return {
+            params = {
                 "model": model_info["full_name"],
                 "messages": messages,
-                "max_tokens": SynthesisConfig.MAX_TOKENS,
-                "temperature": SynthesisConfig.TEMPERATURE,
+                "max_completion_tokens": SynthesisConfig.MAX_TOKENS,
+                "reasoning_effort": "medium",
             }
-        elif provider == ModelProvider.GOOGLE:
-            # Gemini용 메시지 형식 변환
-            contents = []
-            for msg in messages:
-                if msg["role"] == "system":
-                    contents.append(
-                        {
-                            "role": "user",
-                            "parts": [{"text": f"System: {msg['content']}"}],
-                        }
-                    )
-                else:
-                    contents.append(
-                        {"role": msg["role"], "parts": [{"text": msg["content"]}]}
-                    )
 
+            return params
+        elif provider == ModelProvider.GOOGLE:
+            # 시스템 프롬프트와 유저 메시지 구분
+            system_prompt = None
+            contents = []
+
+            for message in messages:
+                role = message.get("role", "")
+                content = message.get("content", "")
+
+                if role == "system":
+                    system_prompt = content
+                elif role == "user":
+                    contents.append(content)
+
+            # 온도 설정 (기본값: 0.1)
+            temperature = SynthesisConfig.TEMPERATURE
+
+            # config 생성
+            from google.genai import types
+
+            generation_config = types.GenerateContentConfig(
+                temperature=temperature,
+                system_instruction=system_prompt,
+                response_mime_type="application/json",
+                response_schema=response_model,
+            )
+
+            # Gemini API 요청 파라미터 생성
             return {
                 "model": model_info["full_name"],
-                "contents": contents,
+                "contents": "\n\n".join(contents) if contents else "",
+                "config": generation_config,
             }
         elif provider == ModelProvider.ANTHROPIC:
             # system 메시지 분리
@@ -317,6 +338,13 @@ class SynthesisAPIClient:
 
             # OpenRouter 전용 파라미터만 사용
             openrouter_params = model_info.get("openrouter_params", {})
+            if (
+                "reasoning" in openrouter_params
+                and "max_tokens" in openrouter_params["reasoning"]
+            ):
+                openrouter_params["reasoning"]["max_tokens"] = (
+                    SynthesisConfig.THINKING_BUDGET_TOKENS
+                )
             params.update(openrouter_params)
 
             return params
