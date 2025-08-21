@@ -41,6 +41,25 @@ class StructuredReviewResponse(BaseModel):
     recommendations: list[str]
 
 
+class StructuredSynthesisResponse(BaseModel):
+    """Synthesis result structured output model"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    summary: str = Field(
+        description="Integrated review summary combining chunk content from a holistic perspective",  # noqa: E501
+        min_length=1,
+    )
+    recommendations: list[str] = Field(
+        description="Refined recommendation list with duplicates removed and priorities sorted",  # noqa: E501
+        min_length=0,
+    )
+    synthesis_quality: str = Field(
+        description="Synthesis quality indicator (excellent/good/fair)",
+        pattern="^(excellent|good|fair)$",
+    )
+
+
 class ReviewRequest(BaseModel):
     """코드 리뷰 요청 모델"""
 
@@ -195,30 +214,7 @@ class SummarySynthesisResponse(BaseModel):
 
     summary: str = Field(
         description="통합된 리뷰 요약. 각 청크의 summary를 종합",
-        min_length=10,
-    )
-
-
-class RecommendationSynthesisResponse(BaseModel):
-    """Recommendations 전용 합성 응답 모델"""
-
-    recommendations: list[str] = Field(
-        description="정제된 권장사항 목록. 중복 제거 및 우선순위 정렬 완료", min_items=0
-    )
-
-
-class StructuredSynthesisResponse(BaseModel):
-    """합성 결과 전용 Structured Outputs 모델 (기존 호환성 유지)"""
-
-    summary: str = Field(
-        description="통합된 리뷰 요약. 각 청크의 내용을 종합",
-        min_length=10,
-    )
-    recommendations: list[str] = Field(
-        description="정제된 권장사항 목록. 중복 제거 및 우선순위 정렬 완료", min_items=0
-    )
-    synthesis_quality: str = Field(
-        description="합성 품질 지표", pattern="^(excellent|good|fair)$"
+        min_length=1,
     )
 
 

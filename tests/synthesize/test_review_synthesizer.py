@@ -4,8 +4,12 @@ import json
 from typing import Any
 from unittest.mock import Mock, patch
 
+import anthropic
+import instructor
 import pytest
+from google import genai
 
+from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -15,6 +19,7 @@ from selvage.src.utils.token.models import (
     ReviewIssue,
     ReviewResponse,
     StructuredSynthesisResponse,
+    SummarySynthesisResponse,
 )
 
 
@@ -299,10 +304,10 @@ class TestReviewSynthesizerLLMIntegration:
 
     def test_structured_synthesis_response_validation(self) -> None:
         """StructuredSynthesisResponse 유효성 검증 테스트"""
-        # Given: 최소 길이 미만의 summary
+        # Given: 빈 문자열 summary (min_length=1 미만)
         with pytest.raises(ValueError):
             StructuredSynthesisResponse(
-                summary="짧음",  # min_length=10 미만
+                summary="",  # min_length=1 미만
                 recommendations=[],
                 synthesis_quality="good",
             )
@@ -314,6 +319,20 @@ class TestReviewSynthesizerLLMIntegration:
                 recommendations=[],
                 synthesis_quality="invalid_value",  # pattern 불일치
             )
+
+    def test_structured_synthesis_response_short_summary(self) -> None:
+        """StructuredSynthesisResponse 짧은 요약 허용 테스트"""
+        # Given: 짧은 요약 (min_length=1 이상)
+        short_summaries = ["OK", "Good", "Pass", "No issues", "Minor changes"]
+
+        for summary in short_summaries:
+            # When & Then: 짧은 요약도 정상 생성되어야 함
+            response = StructuredSynthesisResponse(
+                summary=summary,
+                recommendations=[],
+                synthesis_quality="good",
+            )
+            assert response.summary == summary
 
     def test_api_client_initialization(self) -> None:
         """API 클라이언트 초기화 테스트"""
@@ -448,7 +467,6 @@ class TestReviewSynthesizerLLMIntegration:
         self, sample_model_info: ModelInfoDict
     ) -> None:
         """OpenAI 프로바이더 요청 파라미터 생성 테스트"""
-        from selvage.src.utils.token.models import SummarySynthesisResponse
 
         synthesizer = ReviewSynthesizer("gpt-4o")
         messages = [
@@ -458,7 +476,7 @@ class TestReviewSynthesizerLLMIntegration:
 
         # When: API 클라이언트를 통한 파라미터 생성
         params = synthesizer.api_client._create_request_params(
-            messages, sample_model_info, SummarySynthesisResponse
+            messages, sample_model_info, SummarySynthesisResponse, instructor.Instructor
         )
 
         # Then: OpenAI 파라미터 확인
@@ -469,7 +487,6 @@ class TestReviewSynthesizerLLMIntegration:
 
     def test_provider_specific_params_anthropic(self) -> None:
         """Anthropic 프로바이더 요청 파라미터 생성 테스트"""
-        from selvage.src.utils.token.models import SummarySynthesisResponse
 
         synthesizer = ReviewSynthesizer("claude-sonnet-4")
         anthropic_model_info = {
@@ -484,7 +501,10 @@ class TestReviewSynthesizerLLMIntegration:
 
         # When: API 클라이언트를 통한 파라미터 생성
         params = synthesizer.api_client._create_request_params(
-            messages, anthropic_model_info, SummarySynthesisResponse
+            messages,
+            anthropic_model_info,
+            SummarySynthesisResponse,
+            anthropic.Anthropic,
         )
 
         # Then: Anthropic 파라미터 확인
@@ -498,7 +518,6 @@ class TestReviewSynthesizerLLMIntegration:
 
     def test_provider_specific_params_google(self) -> None:
         """Google 프로바이더 요청 파라미터 생성 테스트"""
-        from selvage.src.utils.token.models import SummarySynthesisResponse
 
         synthesizer = ReviewSynthesizer("gemini-2.5-pro")
         google_model_info = {
@@ -513,7 +532,7 @@ class TestReviewSynthesizerLLMIntegration:
 
         # When: API 클라이언트를 통한 파라미터 생성
         params = synthesizer.api_client._create_request_params(
-            messages, google_model_info, SummarySynthesisResponse
+            messages, google_model_info, SummarySynthesisResponse, genai.Client
         )
 
         # Then: Google 파라미터 확인
@@ -537,7 +556,6 @@ class TestReviewSynthesizerLLMIntegration:
 
     def test_provider_specific_params_openrouter(self) -> None:
         """OpenRouter 프로바이더 요청 파라미터 생성 테스트"""
-        from selvage.src.utils.token.models import SummarySynthesisResponse
 
         synthesizer = ReviewSynthesizer("kimi-k2")
         openrouter_model_info = {
@@ -553,7 +571,10 @@ class TestReviewSynthesizerLLMIntegration:
 
         # When: API 클라이언트를 통한 파라미터 생성
         params = synthesizer.api_client._create_request_params(
-            messages, openrouter_model_info, SummarySynthesisResponse
+            messages,
+            openrouter_model_info,
+            SummarySynthesisResponse,
+            OpenRouterHTTPClient,
         )
 
         # Then: OpenRouter 파라미터 확인
@@ -577,7 +598,7 @@ class TestReviewSynthesizerLLMIntegration:
         assert "$defs" in schema or "properties" in schema  # Pydantic schema 구조 확인
 
         # usage 설정 확인
-        assert params["usage"]["include_usage"] is True
+        assert params["usage"]["include"] is True
 
 
 class TestReviewSynthesizerEndToEndMock:

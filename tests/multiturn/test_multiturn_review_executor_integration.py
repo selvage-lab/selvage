@@ -13,7 +13,7 @@ from selvage.src.multiturn.multiturn_review_executor import MultiturnReviewExecu
 from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 
 
-@pytest.mark.skip(reason="Skipping integration tests for now")
+@pytest.mark.integration
 class TestMultiturnReviewExecutorIntegration:
     """개선된 MultiturnReviewExecutor 통합 테스트"""
 
@@ -92,7 +92,7 @@ class TestMultiturnReviewExecutorIntegration:
         # 토큰 정보는 픽스처에서 주입됨
         token_info = token_info_300k
 
-        print(f"\\n=== {model_name} 300K 토큰 테스트 (미리 로드됨) ===")
+        print(f"\n=== {model_name} 300K 토큰 테스트 (미리 로드됨) ===")
         print(f"User prompts count: {len(large_300k_prompt.user_prompts)}")
 
         try:

@@ -145,19 +145,9 @@ class OpenRouterGateway(BaseGateway):
             },
         }
 
-        # 모델별 파라미터 설정
-        model_params = self.model["params"].copy()
-
-        # thinking 파라미터 처리 (Claude 모델용)
-        thinking_config = model_params.pop("thinking", None)
-        if thinking_config and self._is_claude_model(openrouter_model_name):
-            # Claude의 thinking 파라미터를 OpenRouter의 reasoning 형식으로 변환
-            budget_tokens = thinking_config.get("budget_tokens")
-            if budget_tokens:
-                params["reasoning"] = {"max_tokens": budget_tokens}
-                console.log_info(f"확장 사고 모드 활성화: max_tokens={budget_tokens}")
-
-        params.update(model_params)
+        # OpenRouter 전용 파라미터만 사용
+        openrouter_params = self.model.get("openrouter_params", {})
+        params.update(openrouter_params)
 
         return params
 
@@ -185,17 +175,6 @@ class OpenRouterGateway(BaseGateway):
             dict: JSON Schema (Pydantic ConfigDict로 additionalProperties 자동 처리)
         """
         return StructuredReviewResponse.model_json_schema()
-
-    def _is_claude_model(self, model_name: str) -> bool:
-        """OpenRouter 모델명이 Claude 모델인지 확인합니다.
-
-        Args:
-            model_name: OpenRouter 형식의 모델명
-
-        Returns:
-            bool: Claude 모델이면 True, 아니면 False
-        """
-        return model_name.startswith("anthropic/claude")
 
     def _create_client(self) -> OpenRouterHTTPClient:
         """OpenRouter API 클라이언트를 생성합니다.

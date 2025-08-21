@@ -152,3 +152,33 @@ class TestOpenRouterGatewayRetry:
 
         # 디버그 모드에서 원본 응답이 로깅되었는지 확인
         mock_console.error.assert_any_call(f"원본 응답: {raw_data}")
+
+
+class TestOpenRouterGatewayModelSpecific:
+    """OpenRouterGateway 모델별 특수 파라미터 테스트"""
+
+    def test_openrouter_params_usage(self):
+        """OpenRouter에서 openrouter_params 사용 테스트"""
+        model_info = {
+            "full_name": "claude-sonnet-4-thinking",
+            "provider": ModelProvider.OPENROUTER,
+            "openrouter_name": "anthropic/claude-sonnet-4",
+            "description": "Test Claude thinking model",
+            "params": {
+                "temperature": 1,
+            },
+            "openrouter_params": {"temperature": 1, "reasoning": {"max_tokens": 20000}},
+        }
+
+        with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
+            gateway = OpenRouterGateway(model_info)
+
+        messages = [{"role": "user", "content": "Test message"}]
+
+        # _create_request_params 호출하여 파라미터 확인
+        params = gateway._create_request_params(messages)
+
+        # openrouter_params가 올바르게 적용되었는지 확인
+        assert params["temperature"] == 1
+        assert "reasoning" in params
+        assert params["reasoning"]["max_tokens"] == 20000
