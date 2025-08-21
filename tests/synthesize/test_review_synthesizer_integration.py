@@ -150,20 +150,23 @@ class TestReviewSynthesizerRealIntegration:
         print("========== 복잡한 데이터셋 완료 ==========\n")
 
     def test_integration_no_api_key_fallback_behavior(
-        self, integration_review_results: list[ReviewResult]
+        self, complex_integration_review_results: list[ReviewResult]
     ) -> None:
         """API 키 없이도 fallback으로 동작하는 통합 테스트"""
         # Given: 존재하지 않는 모델 (API 키 없음)
         synthesizer = ReviewSynthesizer("non-existent-model")
 
         # When: API 키 없는 상태에서 합성 시도
-        result = synthesizer.synthesize_review_results(integration_review_results)
+        result = synthesizer.synthesize_review_results(
+            complex_integration_review_results
+        )
 
         # Then: fallback으로 성공적으로 처리
         assert result.success is True
         assert result.review_response.summary is not None
-        assert len(result.review_response.recommendations) > 0
-        assert len(result.review_response.issues) == 3  # 원본 이슈 유지
+        # complex_integration_review_results의 정확한 개수 검증
+        assert len(result.review_response.issues) == 9  # 4개 청크의 총 이슈 수
+        assert len(result.review_response.recommendations) == 22  # 4개 청크의 총 권장사항 수
 
     def test_integration_with_minimal_data(self) -> None:
         """최소한의 데이터로 통합 테스트"""
@@ -190,7 +193,7 @@ class TestReviewSynthesizerRealIntegration:
         assert len(result.review_response.recommendations) == 2
 
     def test_integration_cost_tracking(
-        self, integration_review_results: list[ReviewResult]
+        self, complex_integration_review_results: list[ReviewResult]
     ) -> None:
         """실제 API 비용 추적 통합 테스트"""
         # Given: 저렴한 모델로 비용 추적 테스트
@@ -198,7 +201,9 @@ class TestReviewSynthesizerRealIntegration:
         synthesizer = ReviewSynthesizer(model_name)
 
         # When: 실제 API 호출
-        result = synthesizer.synthesize_review_results(integration_review_results)
+        result = synthesizer.synthesize_review_results(
+            complex_integration_review_results
+        )
 
         # Then: 비용 추적 검증
         assert result.success is True

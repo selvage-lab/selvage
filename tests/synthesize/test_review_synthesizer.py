@@ -482,8 +482,8 @@ class TestReviewSynthesizerLLMIntegration:
         # Then: OpenAI 파라미터 확인
         assert params["model"] == "gpt-4o"
         assert params["messages"] == messages
-        assert params["max_tokens"] == 5000  # SynthesisConfig.MAX_TOKENS
-        assert params["temperature"] == 0.1
+        assert params["max_completion_tokens"] == 5000  # SynthesisConfig.MAX_TOKENS
+        assert params["reasoning_effort"] == "medium"
 
     def test_provider_specific_params_anthropic(self) -> None:
         """Anthropic 프로바이더 요청 파라미터 생성 테스트"""
@@ -538,21 +538,13 @@ class TestReviewSynthesizerLLMIntegration:
         # Then: Google 파라미터 확인
         assert params["model"] == "gemini-2.5-pro"
 
-        # contents 형식 변환 확인 (system → user 변환)
-        expected_contents = [
-            {
-                "role": "user",
-                "parts": [{"text": "System: test system prompt"}],
-            },
-            {
-                "role": "user",
-                "parts": [{"text": "test user message"}],
-            },
-        ]
+        # contents 형식 변환 확인 (단일 문자열로 결합)
+        expected_contents = "test user message"
         assert params["contents"] == expected_contents
 
-        # Google Gemini API에서는 generation_config를 직접 파라미터로 전달하지 않음
-        assert "generation_config" not in params
+        # generation_config에 system_instruction과 response_schema가 올바르게 설정되었는지 확인
+        assert params["config"].system_instruction == "test system prompt"
+        assert params["config"].response_schema == SummarySynthesisResponse
 
     def test_provider_specific_params_openrouter(self) -> None:
         """OpenRouter 프로바이더 요청 파라미터 생성 테스트"""

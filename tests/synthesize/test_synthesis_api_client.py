@@ -132,8 +132,8 @@ class TestSynthesisAPIClient:
         # Then: OpenAI 형식의 파라미터 생성
         assert params["model"] == "gpt-4o"
         assert params["messages"] == messages
-        assert params["max_tokens"] == 5000
-        assert params["temperature"] == 0.1
+        assert params["max_completion_tokens"] == 5000
+        assert params["reasoning_effort"] == "medium"
 
     def test_create_request_params_anthropic(
         self, api_client: SynthesisAPIClient
@@ -184,9 +184,11 @@ class TestSynthesisAPIClient:
 
         # Then: Google 형식의 파라미터 생성
         assert params["model"] == "gemini-2.5-pro"
-        assert len(params["contents"]) == 2
-        assert params["contents"][0]["role"] == "user"
-        assert "System:" in params["contents"][0]["parts"][0]["text"]
+        # contents가 단일 문자열로 결합됨
+        assert params["contents"] == "사용자 메시지"
+        # generation_config에 system_instruction과 response_schema가 설정됨
+        assert params["config"].system_instruction == "시스템 프롬프트"
+        assert params["config"].response_schema == SummarySynthesisResponse
 
     def test_create_request_params_openrouter(
         self, api_client: SynthesisAPIClient
