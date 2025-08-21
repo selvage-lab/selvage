@@ -166,7 +166,9 @@ class TestReviewSynthesizerRealIntegration:
         assert result.review_response.summary is not None
         # complex_integration_review_results의 정확한 개수 검증
         assert len(result.review_response.issues) == 9  # 4개 청크의 총 이슈 수
-        assert len(result.review_response.recommendations) == 22  # 4개 청크의 총 권장사항 수
+        assert (
+            len(result.review_response.recommendations) == 22
+        )  # 4개 청크의 총 권장사항 수
 
     def test_integration_with_minimal_data(self) -> None:
         """최소한의 데이터로 통합 테스트"""
