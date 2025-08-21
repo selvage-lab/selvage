@@ -62,7 +62,7 @@ class TestMultiturnReviewExecutorIntegration:
         max_tokens = int(get_model_context_limit(model_name))
         return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
 
-    @pytest.fixture(params=["kimi-k2"])
+    @pytest.fixture(params=["gpt-5-mini"])
     def model_name(self, request) -> str:
         """테스트할 모델들"""
         return request.param
@@ -77,7 +77,6 @@ class TestMultiturnReviewExecutorIntegration:
         """MultiturnReviewExecutor 인스턴스"""
         return MultiturnReviewExecutor()
 
-    @pytest.mark.integration
     @pytest.mark.slow
     def test_multiturn_review_300k_preloaded(
         self,

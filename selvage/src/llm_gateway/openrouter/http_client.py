@@ -3,6 +3,7 @@
 OpenRouter API와의 HTTP 통신을 담당하는 클라이언트를 제공합니다.
 """
 
+import json
 from typing import Any
 
 import httpx
@@ -47,7 +48,28 @@ class OpenRouterHTTPClient:
         try:
             response = self.client.post(url, json=params)
             response.raise_for_status()
-            return response.json()
+
+            # JSON 파싱 시도
+            try:
+                return response.json()
+            except json.JSONDecodeError as json_error:  # JSON 파싱 에러
+                console.error(
+                    f"OpenRouter API 응답이 유효한 JSON이 아닙니다: {json_error}"
+                )
+                console.error(f"응답 상태코드: {response.status_code}")
+                console.error(f"응답 헤더: {response.headers}")
+                console.error(f"응답 내용 (처음 1000자): {response.text[:1000]}")
+
+                # JSON 파싱 에러도 에러 패턴 분석으로 처리
+                try:
+                    error_result = self.error_parser.parse_error(
+                        ModelProvider.OPENROUTER, json_error
+                    )
+                    self._handle_structured_error(error_result)
+                except Exception as parse_error:
+                    console.debug(f"JSON 파싱 에러 패턴 분석 실패: {parse_error}")
+
+                raise
         except httpx.HTTPStatusError as e:
             error_detail = "응답 내용 없음"
             try:

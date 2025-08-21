@@ -137,7 +137,7 @@ class ErrorPatternParser:
                     attrs["error_code"] = error_info.get(
                         "code", attrs.get("error_code")
                     )
-            except (AttributeError, ValueError):
+            except (AttributeError, json.JSONDecodeError):
                 pass
 
         return attrs

@@ -11,6 +11,12 @@ def pytest_addoption(parser):
         default=False,
         help="통합 테스트를 포함하여 실행합니다.",
     )
+    parser.addoption(
+        "--run-all",
+        action="store_true",
+        default=False,
+        help="모든 마크를 무시하고 모든 테스트를 강제 실행합니다.",
+    )
 
 
 def pytest_configure(config):
@@ -27,6 +33,10 @@ def pytest_configure(config):
 
 def pytest_collection_modifyitems(config, items):
     """테스트 수집 후 테스트 아이템을 수정합니다."""
+    # --run-all 옵션이 있으면 모든 마크를 무시하고 실행
+    if config.getoption("--run-all"):
+        return
+    
     if not config.getoption("--integration"):
         # --integration 옵션이 없으면 integration 마커가 있는 테스트들을 스킵
         skip_integration = pytest.mark.skip(
