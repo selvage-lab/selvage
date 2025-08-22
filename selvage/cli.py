@@ -111,6 +111,7 @@ def config_model(model_name: str | None = None) -> None:
             console.success(f"기본 모델이 {model_name}로 설정되었습니다.")
         else:
             console.error("기본 모델 설정에 실패했습니다.")
+            return
     else:
         # 모델이 지정되지 않은 경우 현재 설정을 표시
         current_model = get_default_model()
@@ -134,6 +135,7 @@ def config_debug_mode(value: str | None = None) -> None:
             )
         else:
             console.error("디버그 모드 설정에 실패했습니다.")
+            return
     else:
         # 값이 지정되지 않은 경우 현재 설정을 표시
         current_value = console.is_debug_mode()
@@ -152,6 +154,7 @@ def config_language(language: str | None = None) -> None:
             console.success(f"기본 언어가 {language}로 설정되었습니다.")
         else:
             console.error("기본 언어 설정에 실패했습니다.")
+            return
     else:
         # 언어가 지정되지 않은 경우 현재 설정을 표시
         current_language = get_default_language()
@@ -204,7 +207,7 @@ def config_list() -> None:
             # API 키 가져오기 시도 (에러 메시지 억제)
             from unittest.mock import patch
 
-            with patch("selvage.src.config.console"):
+            with patch("selvage.src.utils.base_console.console"):
                 get_api_key(provider)
 
             if env_value:

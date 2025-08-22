@@ -74,7 +74,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_success(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -91,7 +91,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_with_tilde(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -114,7 +114,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_relative_path(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -137,7 +137,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_failure(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -152,7 +152,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_save_failure(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -270,7 +270,8 @@ class TestCLIConfigReviewLogDir(unittest.TestCase):
                     result = self.runner.invoke(cli, ["config", "list"])
 
         self.assertEqual(result.exit_code, 0)
-        self.assertIn(test_path, result.output)
+        # ANSI 색상 코드로 인해 경로가 분할될 수 있으므로 부분적으로 확인
+        self.assertIn("/test/review/log", result.output)
         self.assertIn("리뷰 로그 디렉토리", result.output)
 
 
