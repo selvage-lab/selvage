@@ -41,6 +41,7 @@ from selvage.src.utils.token.models import (
 # LLM API 응답 타입 별칭
 LLMResponse = (
     openai.types.Completion
+    | openai.types.chat.ChatCompletion
     | anthropic.types.Message
     | genai_types.GenerateContentResponse
 )
@@ -54,7 +55,10 @@ class BaseGateway(abc.ABC):
         resp: LLMResponse, model: str
     ) -> EstimatedCost | None:
         if (
-            isinstance(resp, openai.types.Completion)
+            (
+                isinstance(resp, openai.types.Completion)
+                or isinstance(resp, openai.types.chat.ChatCompletion)
+            )
             and hasattr(resp, "usage")
             and resp.usage
         ):
