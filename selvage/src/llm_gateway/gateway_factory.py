@@ -1,8 +1,8 @@
 """LLM 게이트웨이 생성을 담당하는 팩토리 클래스"""
 
 from selvage.src.config import has_openai_api_key, has_openrouter_api_key
-from selvage.src.llm_gateway import get_model_info
 from selvage.src.llm_gateway.base_gateway import BaseGateway
+from selvage.src.model_config import get_model_info
 from selvage.src.models.model_provider import ModelProvider
 
 

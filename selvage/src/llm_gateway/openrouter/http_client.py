@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 
+from selvage.src.exceptions.json_parsing_error import JSONParsingError
 from selvage.src.models.error_pattern_parser import (
     ErrorParsingResult,
     ErrorPatternParser,
@@ -69,7 +70,11 @@ class OpenRouterHTTPClient:
                 except Exception as parse_error:
                     console.debug(f"JSON 파싱 에러 패턴 분석 실패: {parse_error}")
 
-                raise
+                raise JSONParsingError.from_parsing_exception(
+                    json_error,
+                    "OpenRouter API 응답이 유효한 JSON이 아닙니다",
+                    response.text,
+                ) from json_error
         except httpx.HTTPStatusError as e:
             error_detail = "응답 내용 없음"
             try:

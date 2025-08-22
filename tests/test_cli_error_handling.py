@@ -47,15 +47,12 @@ class TestCLIErrorHandling:
         mock_console.print.assert_any_call("  2. API 키 유효성 확인")
 
     @patch("selvage.cli.console")
-    @patch("selvage.cli.config")
-    def test_handle_openrouter_response_error_with_debug(
-        self, mock_config, mock_console
-    ):
+    def test_handle_openrouter_response_error_with_debug(self, mock_console):
         """OpenRouter 응답 에러 처리 테스트 (디버그 모드)"""
         from selvage.cli import _handle_openrouter_error
 
         # 디버그 모드 활성화
-        mock_config.is_debug_mode.return_value = True
+        mock_console.is_debug_mode.return_value = True
 
         raw_response = {"error": "no choices"}
         error = OpenRouterResponseError(
@@ -85,13 +82,12 @@ class TestCLIErrorHandling:
         mock_console.error.assert_any_call("OpenRouter API 오류: General API error")
 
     @patch("selvage.cli.console")
-    @patch("selvage.cli.config")
-    def test_handle_json_parsing_error_with_debug(self, mock_config, mock_console):
+    def test_handle_json_parsing_error_with_debug(self, mock_console):
         """JSON 파싱 에러 처리 테스트 (디버그 모드)"""
         from selvage.cli import _handle_json_parsing_error
 
         # 디버그 모드 활성화
-        mock_config.is_debug_mode.return_value = True
+        mock_console.is_debug_mode.return_value = True
 
         parsing_error = ValueError("Invalid JSON")
         raw_response = "invalid json response"

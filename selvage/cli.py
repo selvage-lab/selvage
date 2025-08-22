@@ -370,7 +370,6 @@ def review_code(
     provider = model_info.get("provider", "unknown")
 
     # OpenRouter First: OpenRouter key가 있으면 OpenRouter를 사용
-
     if has_openrouter_api_key():
         provider = ModelProvider.OPENROUTER
 

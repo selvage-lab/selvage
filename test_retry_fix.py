@@ -77,21 +77,14 @@ def test_base_gateway_retry_exception_propagation():
     review_prompt = create_test_review_prompt()
 
     # _create_client이 ConnectionError를 발생시키도록 모킹
-    from tenacity import RetryError
-
     with patch.object(
         gateway, "_create_client", side_effect=ConnectionError("Connection failed")
     ):
-        try:
-            # retry는 3번 시도 후 최종적으로 RetryError를 발생시켜야 함
-            gateway.review_code(review_prompt)
-            assert False, "RetryError가 발생하지 않았습니다"
-        except RetryError as e:
-            print("✅ retry 로직이 올바르게 작동함: 3번 재시도 후 RetryError 발생")
-            # RetryError의 원인이 ConnectionError인지 확인
-            assert "ConnectionError" in str(e)
-        except Exception as e:
-            assert False, f"예상하지 못한 예외 타입: {type(e).__name__}: {e}"
+        result = gateway.review_code(review_prompt)
+        assert result.success is False
+        assert result.error_response is not None
+        assert "ConnectionError" in result.error_response.error_message
+        print("✅ retry 로직이 올바르게 작동함: RetryError가 ReviewResult로 변환됨")
 
 
 def test_openrouter_gateway_retry_exception_propagation():
@@ -115,25 +108,18 @@ def test_openrouter_gateway_retry_exception_propagation():
         review_prompt = create_test_review_prompt()
 
         # _create_client이 OpenRouterConnectionError를 발생시키도록 모킹
-        from tenacity import RetryError
-
         with patch.object(
             gateway,
             "_create_client",
             side_effect=OpenRouterConnectionError("OpenRouter connection failed"),
         ):
-            try:
-                # retry는 3번 시도 후 최종적으로 RetryError를 발생시켜야 함
-                gateway.review_code(review_prompt)
-                assert False, "RetryError가 발생하지 않았습니다"
-            except RetryError as e:
-                print(
-                    "✅ OpenRouter retry 로직이 올바르게 작동함: 3번 재시도 후 RetryError 발생"
-                )
-                # RetryError의 원인이 OpenRouterConnectionError인지 확인
-                assert "OpenRouterConnectionError" in str(e)
-            except Exception as e:
-                assert False, f"예상하지 못한 예외 타입: {type(e).__name__}: {e}"
+            result = gateway.review_code(review_prompt)
+            assert result.success is False
+            assert result.error_response is not None
+            assert "OpenRouterConnectionError" in result.error_response.error_message
+            print(
+                "✅ OpenRouter retry 로직이 올바르게 작동함: RetryError가 ReviewResult로 변환됨"
+            )
 
 
 def test_non_retryable_exception_handling():

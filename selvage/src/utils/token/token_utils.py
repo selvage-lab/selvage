@@ -232,7 +232,6 @@ class TokenUtils:
                 )
 
             # Anthropic API를 사용하여 정확한 토큰 계산
-
             return TokenUtils._count_tokens_claude_anthropic(review_prompt, model)
 
         except Exception as e:
