@@ -275,11 +275,12 @@ review_request = ReviewRequest(
 프롬프트 생성은 `create_code_review_prompt` 메서드를 통해 단일 경로로 진행됩니다:
 
 **지능형 컨텍스트 추출 프롬프트**:
-   - 파일별로 `UserPromptWithFileContent` 객체 생성
-   - 각 파일에 대해 지능형 컨텍스트 추출 시스템 적용:
-     - **SMART_CONTEXT**: AST 기반 트리시터 분석으로 관련 코드 블록만 추출
-     - **FALLBACK_CONTEXT**: AST 분석 실패 시 텍스트 기반 패턴 매칭으로 추출
-     - **FULL_CONTEXT**: 새 파일이나 전체 재작성 파일의 경우 전체 내용 포함
+
+- 파일별로 `UserPromptWithFileContent` 객체 생성
+- 각 파일에 대해 지능형 컨텍스트 추출 시스템 적용:
+  - **SMART_CONTEXT**: AST 기반 트리시터 분석으로 관련 코드 블록만 추출
+  - **FALLBACK_CONTEXT**: AST 분석 실패 시 텍스트 기반 패턴 매칭으로 추출
+  - **FULL_CONTEXT**: 새 파일이나 전체 재작성 파일의 경우 전체 내용 포함
 
 #### 프롬프트 구조 예시
 
@@ -336,7 +337,7 @@ message = user_prompt.to_message()
 
 #### 구현 예시
 
-````python
+```python
 def create_code_review_prompt(self, review_request: ReviewRequest) -> ReviewPromptWithFileContent:
     """지능형 컨텍스트 추출을 사용한 프롬프트 생성"""
     system_prompt_content = self._get_code_review_system_prompt(
@@ -389,7 +390,7 @@ def create_code_review_prompt(self, review_request: ReviewRequest) -> ReviewProm
         system_prompt=system_prompt,
         user_prompts=user_prompts,
     )
-````
+```
 
 최종 결과인 `ReviewPromptWithFileContent` 객체는 LLM 게이트웨이로 전달되어 API 요청을 생성하는 데 사용됩니다.
 
@@ -896,7 +897,7 @@ review_log = {
     "review_response": response_data,                  # 응답 정보
     "status": status.value,                            # 리뷰 상태
     "error": str(error) if error else None,            # 오류 정보
-    "prompt_version": "v3",                            # 프롬프트 버전
+    "prompt_version": "v4",                            # 프롬프트 버전
 }
 ```
 

@@ -118,7 +118,7 @@ def mock_review_log_data():
         },
         "status": "SUCCESS",
         "error": None,
-        "prompt_version": "v2",
+        "prompt_version": "v4",
     }
 
 
