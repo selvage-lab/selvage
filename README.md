@@ -20,12 +20,8 @@
 
 **Selvage: 코드 리뷰도 엣지있게!**
 
-동료의 리뷰를 기다리며 작업이 늦어지거나, 퇴근 무렵 쌓인 리뷰 요청에 발목 잡힌 경험이 있으신가요?  
-Selvage는 이런 코드 리뷰 병목 현상을 해결하는 AI 기반 도구입니다.
-
-Selvage는 **OpenRouter 하나의 API 키로 모든 최첨단 AI 모델**(OpenAI GPT-5, Anthropic Claude, Google Gemini 등)에 접근할 수 있는 혁신적인 Git diff 분석 도구입니다.  
-복잡한 여러 API 키 관리 없이, 단일 설정으로 다양한 AI 모델을 자유롭게 선택하여 코드 변경사항 리뷰를 받을 수 있습니다.  
-이를 통해 코드 품질 향상, 잠재적 버그 조기 발견, 보안 강화는 물론, 개발자 생산성까지 크게 향상시킬 수 있습니다.
+더 이상 리뷰를 기다리지 마세요. AI가 코드 변경사항을 즉시 분석하여 품질 개선과 버그 예방을 제공합니다.  
+스마트 컨텍스트 분석(AST 기반)으로 정확하고 비용 효율적이며, 멀티턴 처리로 대용량까지 - 모든 Git 워크플로우에 완벽 통합됩니다.
 
 <details>
 <summary><strong>Table of Contents</strong></summary>
@@ -84,53 +80,76 @@ selvage review --model claude-sonnet-4-thinking
 
 ---
 
-<details>
-<summary><strong>💡 고급 설정 (선택사항)</strong></summary>
+## ⌨️ CLI 사용법
 
-### 개발 버전 설치
-
-```bash
-git clone https://github.com/anomie7/selvage.git
-cd selvage
-pip install -e .
-```
-
-### 개발 환경 설치
+### Selvage 설정하기
 
 ```bash
-# 개발 의존성 포함 설치 (pytest, build 등)
-pip install -e .[dev]
-
-# 개발 + E2E 테스트 환경 설치 (testcontainers, docker 등)
-pip install -e .[dev,e2e]
-```
-
-### 개별 Provider API 키 사용
-
-OpenRouter 대신 각 provider API 키를 개별 설정할 수도 있습니다:
-
-```bash
-export OPENAI_API_KEY="your_openai_api_key_here"
-export ANTHROPIC_API_KEY="your_anthropic_api_key_here"
-export GEMINI_API_KEY="your_gemini_api_key_here"
-```
-
-### 추가 설정 옵션
-
-```bash
-# 기본 사용할 모델 설정
-selvage config model claude-sonnet-4-thinking
-
-# 설정 확인
+# 모든 설정 보기
 selvage config list
 
-# 디버그 모드 활성화 (개발시 유용)
-selvage config debug-mode on
+# 기본 모델 설정
+selvage config model <모델명>
+
 ```
 
-💡 **더 자세한 CLI 사용법**: [CLI 사용법](#️-cli-사용법) | [고급 사용법](#️-고급-사용법) 섹션을 참고하세요.
+### 코드 리뷰하기
 
-</details>
+```bash
+selvage review [OPTIONS]
+```
+
+#### 주요 옵션
+
+- `--repo-path <경로>`: Git 저장소 경로 (기본값: 현재 디렉토리)
+- `--staged`: 스테이징된 변경사항만 리뷰
+- `--target-commit <커밋ID>`: 특정 커밋부터 HEAD까지의 변경사항 리뷰 (예: abc1234)
+- `--target-branch <브랜치명>`: 현재 브랜치와 지정된 브랜치 간 변경사항 리뷰 (예: main)
+- `--model <모델명>`: 사용할 AI 모델 (예: claude-sonnet-4-thinking)
+- `--open-ui`: 리뷰 완료 후 자동으로 UI 실행
+- `--no-print`: 터미널에 리뷰 결과를 출력하지 않음 (기본적으로 터미널 출력 활성화)
+
+#### 사용 예시
+
+```bash
+# 현재 워킹 디렉토리 변경사항 리뷰
+selvage review
+
+# 커밋 전 최종 점검
+selvage review --staged
+
+# 특정 파일들만 리뷰
+git add specific_files.py && selvage review --staged
+
+# PR 보내기 전 코드 리뷰
+selvage review --target-branch develop
+
+# 빠르고 경제적인 모델로 간단한 변경사항 리뷰
+selvage review --model gemini-2.5-flash
+
+# 리뷰 후 웹 UI로 자세히 확인
+selvage review --target-branch main --open-ui
+```
+
+### 결과 확인하기
+
+리뷰 결과는 **터미널에 바로 출력**되며, 동시에 파일로도 자동 저장됩니다.
+
+**추가적인 리뷰 관리 및 재확인**을 위해 웹 UI를 사용할 수 있습니다:
+
+```bash
+# 저장된 모든 리뷰 결과를 웹 UI로 관리
+selvage view
+
+# 다른 포트에서 UI 실행
+selvage view --port 8502
+```
+
+**UI 주요 기능:**
+
+- 📋 모든 리뷰 결과 목록 표시
+- 🎨 마크다운 형식 표시
+- 🗂️ JSON 구조화된 결과 보기
 
 ## 🌐 지원 언어 및 모델
 
@@ -180,77 +199,6 @@ selvage config debug-mode on
 
 - **gemini-2.5-pro**: 대용량 컨텍스트 및 고급 추론 (1M+ 토큰)
 - **gemini-2.5-flash**: 응답 속도와 비용 효율성 최적화 (1M+ 토큰)
-
-## ⌨️ CLI 사용법
-
-### Selvage 설정하기
-
-```bash
-# 모든 설정 보기
-selvage config list
-
-# 기본 모델 설정
-selvage config model <모델명>
-
-# 디버그 모드 설정
-selvage config debug-mode on
-
-```
-
-### 코드 리뷰하기
-
-```bash
-selvage review [OPTIONS]
-```
-
-#### 주요 옵션
-
-- `--repo-path <경로>`: Git 저장소 경로 (기본값: 현재 디렉토리)
-- `--staged`: 스테이징된 변경사항만 리뷰
-- `--target-commit <커밋ID>`: 특정 커밋부터 HEAD까지의 변경사항 리뷰 (예: abc1234)
-- `--target-branch <브랜치명>`: 현재 브랜치와 지정된 브랜치 간 변경사항 리뷰 (예: main)
-- `--model <모델명>`: 사용할 AI 모델 (예: claude-sonnet-4-thinking)
-- `--open-ui`: 리뷰 완료 후 자동으로 UI 실행
-- `--no-print`: 터미널에 리뷰 결과를 출력하지 않음 (기본적으로 터미널 출력 활성화)
-
-#### 사용 예시
-
-```bash
-# 현재 워킹 디렉토리 변경사항 리뷰
-selvage review
-
-# 스테이징된 변경사항을 Claude로 리뷰
-selvage review --staged --model claude-sonnet-4-thinking
-
-# 리뷰 후 터미널에 출력하지 않음 (파일로만 저장)
-selvage review --no-print --model gemini-2.5-flash
-
-# main 브랜치와 현재 브랜치 간 차이점 리뷰 후 UI 열기
-selvage review --target-branch main --open-ui
-
-# 특정 커밋 이후 변경사항 리뷰 (기본적으로 터미널 출력)
-selvage review --target-commit abc1234 --model gemini-2.5-pro
-```
-
-### 결과 확인하기
-
-리뷰 결과는 **터미널에 바로 출력**되며, 동시에 파일로도 자동 저장됩니다.
-
-**추가적인 리뷰 관리 및 재확인**을 위해 웹 UI를 사용할 수 있습니다:
-
-```bash
-# 저장된 모든 리뷰 결과를 웹 UI로 관리
-selvage view
-
-# 다른 포트에서 UI 실행
-selvage view --port 8502
-```
-
-**UI 주요 기능:**
-
-- 📋 모든 리뷰 결과 목록 표시
-- 🎨 마크다운 형식 표시
-- 🗂️ JSON 구조화된 결과 보기
 
 ## 📄 리뷰 결과 저장 형식
 
@@ -306,6 +254,54 @@ Selvage는 LLM model의 컨텍스트 제한을 초과하는 대용량 코드 변
 # 작은 변경사항에는 경제적인 모델 사용
 selvage review --model gemini-2.5-flash
 ```
+
+## 💡 고급 설정 (개발자/기여자용)
+
+<details>
+<summary><strong>개발 및 고급 설정 옵션</strong></summary>
+
+### 개발 버전 설치
+
+```bash
+git clone https://github.com/anomie7/selvage.git
+cd selvage
+pip install -e .
+```
+
+### 개발 환경 설치
+
+```bash
+# 개발 의존성 포함 설치 (pytest, build 등)
+pip install -e .[dev]
+
+# 개발 + E2E 테스트 환경 설치 (testcontainers, docker 등)
+pip install -e .[dev,e2e]
+```
+
+### 개별 Provider API 키 사용
+
+OpenRouter 대신 각 provider API 키를 개별 설정할 수도 있습니다:
+
+```bash
+export OPENAI_API_KEY="your_openai_api_key_here"
+export ANTHROPIC_API_KEY="your_anthropic_api_key_here"
+export GEMINI_API_KEY="your_gemini_api_key_here"
+```
+
+### 개발 및 디버깅 설정
+
+```bash
+# 기본 사용할 모델 설정 (고급 사용자)
+selvage config model claude-sonnet-4-thinking
+
+# 설정 확인
+selvage config list
+
+# 디버그 모드 활성화 (문제 해결 및 개발시 사용)
+selvage config debug-mode on
+```
+
+</details>
 
 ## 🤝 기여하기
 
