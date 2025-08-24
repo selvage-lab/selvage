@@ -76,7 +76,7 @@ selvage review --model claude-sonnet-4-thinking
 
 🎉 **완료!** 리뷰 결과가 터미널에 바로 출력됩니다.
 
-**💡 더 많은 옵션:** [다양한 리뷰 옵션](#다양한-리뷰-옵션) | [CLI 사용법](#️-cli-사용법) | [고급 사용법](#️-고급-사용법)
+**💡 더 많은 옵션:** [CLI 사용법](#️-cli-사용법) | [고급 사용법](#️-고급-사용법)
 
 ---
 
@@ -179,11 +179,6 @@ selvage view --port 8502
 
 🚀 **OpenRouter API 키 하나로 아래 모든 모델을 통합 관리하세요!**
 
-#### 🌟 OpenRouter 독점 모델 (OpenRouter API 키만 필요)
-
-- **qwen3-coder** (Qwen): ⭐ **추천** - 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
-- **kimi-k2** (Moonshot AI): 1T 파라미터 MoE 대용량 추론 모델 (128K 토큰)
-
 #### OpenAI 모델 (OpenRouter 또는 OpenAI API 키)
 
 - **gpt-5**: 최신 고급 추론 모델 (400K 컨텍스트)
@@ -200,6 +195,11 @@ selvage view --port 8502
 - **gemini-2.5-pro**: 대용량 컨텍스트 및 고급 추론 (1M+ 토큰)
 - **gemini-2.5-flash**: 응답 속도와 비용 효율성 최적화 (1M+ 토큰)
 
+#### 🌟 OpenRouter 독점 모델 (OpenRouter API 키만 필요)
+
+- **qwen3-coder** (Qwen): ⭐ **추천** - 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
+- **kimi-k2** (Moonshot AI): 1T 파라미터 MoE 대용량 추론 모델 (128K 토큰)
+
 ## 📄 리뷰 결과 저장 형식
 
 리뷰 결과는 터미널 출력과 동시에 **구조화된 파일**로 저장됩니다:
@@ -213,30 +213,32 @@ selvage view --port 8502
 
 ## 🛠️ 고급 사용법
 
-### 모델별 최적 사용 시나리오
-
-```bash
-# 복잡한 로직 분석 - Claude 추천
-selvage review --model claude-sonnet-4-thinking
-
-# 대용량 코드베이스 - Gemini 추천
-selvage review --model gemini-2.5-pro
-
-# 빠른 리뷰 - Gemini Flash 추천
-selvage review --model gemini-2.5-flash
-```
-
 ### 다양한 Git 워크플로우와 통합
 
+#### 팀 협업 워크플로우
+
 ```bash
-# PR 리뷰 전 체크
-selvage review --target-branch main
+# Pull Request 생성 전 코드 품질 검증
+selvage review --target-branch main --model claude-sonnet-4-thinking
 
-# 커밋 전 최종 검토
-selvage review --staged --open-ui
+# 코드 리뷰어를 위한 변경사항 사전 분석
+selvage review --target-branch develop --model claude-sonnet-4-thinking
 
-# 특정 기능 브랜치 전체 리뷰
-selvage review --target-branch develop
+# 특정 커밋 이후 모든 변경사항 종합 리뷰
+selvage review --target-commit a1b2c3d --model claude-sonnet-4-thinking
+```
+
+#### 개발 단계별 품질 관리
+
+```bash
+# 개발 중 빠른 피드백 (WIP 커밋 전)
+selvage review --model gemini-2.5-flash
+
+# 스테이징된 변경사항 최종 검증 (커밋 전)
+selvage review --staged --model claude-sonnet-4-thinking
+
+# 핫픽스 배포 전 긴급 검토
+selvage review --target-branch main --model claude-sonnet-4-thinking
 ```
 
 ### 대용량 코드 리뷰
@@ -246,7 +248,8 @@ selvage review --target-branch develop
 selvage review --model claude-sonnet-4  # 사용 방법은 동일, 자동 감지 후 멀티턴 처리 적용
 ```
 
-Selvage는 LLM model의 컨텍스트 제한을 초과하는 대용량 코드 변경사항도 자동으로 처리합니다. 프롬프트를 지능적으로 분할하여 순차 처리 후 결과를 합성해 제공합니다.
+Selvage는 LLM model의 컨텍스트 제한을 초과하는 대용량 코드 변경사항도 처리합니다.  
+Long Context Mode는 자동으로 실행되니 기다리기만 하면 됩니다.
 
 ### 비용 최적화
 
