@@ -14,9 +14,8 @@ class GatewayFactory:
         """주어진 모델 이름에 맞는 LLM 게이트웨이 객체를 생성합니다.
 
         OpenRouter First 방식:
-        1. BYOK 필수 모델은 직접 원본 provider 게이트웨이 사용
-        2. OpenRouter API key가 설정되어 있으면 나머지 모델을 OpenRouter로 처리
-        3. 그렇지 않으면 기존 provider별 게이트웨이 사용
+        1. OpenRouter API key가 설정되어 있으면 나머지 모델을 OpenRouter로 처리
+        2. 그렇지 않으면 기존 provider별 게이트웨이 사용
 
         Args:
             model: 사용할 모델 이름
