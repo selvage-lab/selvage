@@ -1,6 +1,6 @@
 """LLM 게이트웨이 생성을 담당하는 팩토리 클래스"""
 
-from selvage.src.config import has_openai_api_key, has_openrouter_api_key
+from selvage.src.config import has_openrouter_api_key
 from selvage.src.llm_gateway.base_gateway import BaseGateway
 from selvage.src.model_config import get_model_info
 from selvage.src.models.model_provider import ModelProvider
@@ -25,24 +25,6 @@ class GatewayFactory:
             BaseGateway: LLM 게이트웨이 객체
         """
         model_info = get_model_info(model)
-
-        if model_info.get("requires_byok", False):
-            provider = model_info["provider"]
-            if provider == ModelProvider.OPENAI:
-                if not has_openai_api_key():
-                    from selvage.src.exceptions.api_key_not_found_error import (
-                        APIKeyNotFoundError,
-                    )
-
-                    raise APIKeyNotFoundError(
-                        message=f"{model} 모델은 OpenAI API key가 필요합니다. "
-                        f"OPENAI_API_KEY 환경변수를 설정하거나 "
-                        f"OpenRouter BYOK를 설정하세요: "
-                        f"https://openrouter.ai/settings/integrations"
-                    )
-                from selvage.src.llm_gateway.openai_gateway import OpenAIGateway
-
-                return OpenAIGateway(model_info=model_info)
 
         # OpenRouter First: API key가 있으면 나머지 모델을 OpenRouter로
         if has_openrouter_api_key():

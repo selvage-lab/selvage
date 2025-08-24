@@ -57,9 +57,10 @@ class OpenRouterHTTPClient:
                 console.error(
                     f"OpenRouter API 응답이 유효한 JSON이 아닙니다: {json_error}"
                 )
-                console.error(f"응답 상태코드: {response.status_code}")
-                console.error(f"응답 헤더: {response.headers}")
-                console.error(f"응답 내용 (처음 1000자): {response.text[:1000]}")
+                if console.is_debug_mode():
+                    console.error(f"응답 상태코드: {response.status_code}")
+                    console.error(f"응답 헤더: {response.headers}")
+                    console.error(f"응답 내용 (처음 1000자): {response.text[:1000]}")
 
                 # JSON 파싱 에러도 에러 패턴 분석으로 처리
                 try:

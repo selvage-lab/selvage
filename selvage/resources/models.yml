@@ -16,7 +16,6 @@ models:
       description: "$1.25/$10.00 per 1M tokens"
     context_limit: 400000
     openrouter_name: "openai/gpt-5"
-    requires_byok: true # OpenRouter에서 BYOK 필수
     openrouter_params:
       reasoning:
         effort: "medium"
@@ -35,7 +34,6 @@ models:
       description: "$1.25/$10.00 per 1M tokens"
     context_limit: 400000
     openrouter_name: "openai/gpt-5"
-    requires_byok: true # OpenRouter에서 BYOK 필수
     openrouter_params:
       reasoning:
         effort: "high"
