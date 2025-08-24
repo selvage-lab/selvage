@@ -8,7 +8,7 @@
   <a href="https://pypi.org/project/selvage/"><img alt="PyPI" src="https://img.shields.io/pypi/v/selvage"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.10+-blue">
-  <img alt="AI Models" src="https://img.shields.io/badge/AI-GPT--4o%20%7C%20Claude%20%7C%20Gemini-green">
+  <img alt="AI Models" src="https://img.shields.io/badge/AI-GPT--5%20%7C%20Claude%20%7C%20Gemini-green">
 </p>
 
 <!-- TODO: 데모 GIF 추가 -->
@@ -23,8 +23,8 @@
 동료의 리뷰를 기다리며 작업이 늦어지거나, 퇴근 무렵 쌓인 리뷰 요청에 발목 잡힌 경험이 있으신가요?  
 Selvage는 이런 코드 리뷰 병목 현상을 해결하는 AI 기반 도구입니다.
 
-Selvage는 최첨단 AI 모델(OpenAI GPT, Anthropic Claude, Google Gemini 등)을 활용하여 Git diff를 분석하는 커맨드 라인 도구입니다.  
-Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드를 분석하여 피드백을 즉시 제공합니다.  
+Selvage는 **OpenRouter 하나의 API 키로 모든 최첨단 AI 모델**(OpenAI GPT-5, Anthropic Claude, Google Gemini 등)에 접근할 수 있는 혁신적인 Git diff 분석 도구입니다.  
+복잡한 여러 API 키 관리 없이, 단일 설정으로 다양한 AI 모델을 자유롭게 선택하여 코드 변경사항 리뷰를 받을 수 있습니다.  
 이를 통해 코드 품질 향상, 잠재적 버그 조기 발견, 보안 강화는 물론, 개발자 생산성까지 크게 향상시킬 수 있습니다.
 
 <details>
@@ -32,9 +32,6 @@ Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드
 
 - [✨ 주요 기능](#-주요-기능)
 - [🚀 빠른 시작](#-빠른-시작)
-  - [설치 방법](#설치-방법)
-  - [설정](#설정)
-  - [리뷰 실행하기](#리뷰-실행하기)
 - [🌐 지원 언어 및 모델](#-지원-언어-및-모델)
   - [지원 파일 형식](#지원-파일-형식)
   - [지원 AI 모델](#지원-ai-모델)
@@ -42,7 +39,7 @@ Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드
   - [Selvage 설정하기](#selvage-설정하기)
   - [코드 리뷰하기](#코드-리뷰하기)
   - [결과 확인하기](#결과-확인하기)
-- [📄 출력 형식](#-출력-형식)
+- [📄 리뷰 결과 저장 형식](#-리뷰-결과-저장-형식)
 - [🛠️ 고급 사용법](#️-고급-사용법)
 - [🤝 기여하기](#-기여하기)
 - [📜 라이선스](#-라이선스)
@@ -52,7 +49,7 @@ Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드
 
 ## ✨ 주요 기능
 
-- **🤖 다양한 AI 모델 지원**: OpenAI GPT-4o, Anthropic Claude Sonnet-4, Google Gemini 등 최신 LLM 모델 활용
+- **🤖 다양한 AI 모델 지원**: OpenAI GPT-5, Anthropic Claude Sonnet-4, Google Gemini 등 최신 LLM 모델 활용
 - **🔍 Git 워크플로우와 통합**: staged, unstaged, 특정 커밋/브랜치 간 변경사항 분석 지원
 - **🐛 포괄적 코드 검토**: 버그 및 논리 오류 탐지, 코드 품질 및 가독성 향상 제안
 - **🎯 최적화된 컨텍스트 분석**: Tree-sitter 기반 AST 분석을 통해 변경 라인이 속하는 가장 작은 코드 블록과 dependency statement를 자동 추출하여 상황에 따라 최적화된 컨텍스트 제공
@@ -118,7 +115,7 @@ export ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 export GEMINI_API_KEY="your_gemini_api_key_here"
 ```
 
-### 기본 모델 설정
+### 추가 설정 옵션
 
 ```bash
 # 기본 사용할 모델 설정
@@ -126,23 +123,12 @@ selvage config model claude-sonnet-4-thinking
 
 # 설정 확인
 selvage config list
+
+# 디버그 모드 활성화 (개발시 유용)
+selvage config debug-mode on
 ```
 
-### 다양한 리뷰 옵션
-
-```bash
-# 스테이징된 변경사항만 리뷰
-selvage review --staged
-
-# 특정 모델로 리뷰
-selvage review --model gemini-2.5-pro
-
-# 리뷰 후 웹 UI 열기
-selvage review --open-ui
-
-# 파일로만 저장 (터미널 출력 없음)
-selvage review --no-print
-```
+💡 **더 자세한 CLI 사용법**: [CLI 사용법](#️-cli-사용법) | [고급 사용법](#️-고급-사용법) 섹션을 참고하세요.
 
 </details>
 
@@ -172,7 +158,12 @@ selvage review --no-print
 
 ### 지원 AI 모델
 
-⭐ **OpenRouter API 키 하나로 아래 모든 모델을 사용할 수 있습니다!**
+🚀 **OpenRouter API 키 하나로 아래 모든 모델을 통합 관리하세요!**
+
+#### 🌟 OpenRouter 독점 모델 (OpenRouter API 키만 필요)
+
+- **qwen3-coder** (Qwen): ⭐ **추천** - 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
+- **kimi-k2** (Moonshot AI): 1T 파라미터 MoE 대용량 추론 모델 (128K 토큰)
 
 #### OpenAI 모델 (OpenRouter 또는 OpenAI API 키)
 
@@ -189,11 +180,6 @@ selvage review --no-print
 
 - **gemini-2.5-pro**: 대용량 컨텍스트 및 고급 추론 (1M+ 토큰)
 - **gemini-2.5-flash**: 응답 속도와 비용 효율성 최적화 (1M+ 토큰)
-
-#### OpenRouter를 통한 모델
-
-- **qwen3-coder** (Qwen): ⭐ **추천** - 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
-- **kimi-k2** (Moonshot AI): 1T 파라미터 MoE 대용량 추론 모델 (128K 토큰)
 
 ## ⌨️ CLI 사용법
 
