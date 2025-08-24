@@ -61,21 +61,44 @@ Selvage에게 코드 변경사항에 대한 리뷰를 요청하면, AI가 코드
 
 ## 🚀 빠른 시작
 
-### 설치 방법
-
-#### 기본 설치 (운영 환경)
+### 1. 설치
 
 ```bash
-# PyPI에서 설치
 pip install selvage
+```
 
-# 또는 개발 버전 설치
+### 2. API 키 설정
+
+[OpenRouter](https://openrouter.ai)에서 API 키를 발급받아 설정하세요:
+
+```bash
+export OPENROUTER_API_KEY="your_openrouter_api_key_here"
+```
+
+### 3. 코드 리뷰 시작
+
+```bash
+selvage review --model claude-sonnet-4-thinking
+```
+
+🎉 **완료!** 리뷰 결과가 터미널에 바로 출력됩니다.
+
+**💡 더 많은 옵션:** [다양한 리뷰 옵션](#다양한-리뷰-옵션) | [CLI 사용법](#️-cli-사용법) | [고급 사용법](#️-고급-사용법)
+
+---
+
+<details>
+<summary><strong>💡 고급 설정 (선택사항)</strong></summary>
+
+### 개발 버전 설치
+
+```bash
 git clone https://github.com/anomie7/selvage.git
 cd selvage
 pip install -e .
 ```
 
-#### 개발 환경 설치
+### 개발 환경 설치
 
 ```bash
 # 개발 의존성 포함 설치 (pytest, build 등)
@@ -85,32 +108,17 @@ pip install -e .[dev]
 pip install -e .[dev,e2e]
 ```
 
-### 설정
+### 개별 Provider API 키 사용
 
-#### 1. API 키 설정
-
-**환경 변수로 설정**
-
-터미널 세션용:
+OpenRouter 대신 각 provider API 키를 개별 설정할 수도 있습니다:
 
 ```bash
 export OPENAI_API_KEY="your_openai_api_key_here"
 export ANTHROPIC_API_KEY="your_anthropic_api_key_here"
 export GEMINI_API_KEY="your_gemini_api_key_here"
-export OPENROUTER_API_KEY="your_openrouter_api_key_here"
 ```
 
-영구 설정 (zsh 사용자):
-
-```bash
-echo 'export OPENAI_API_KEY="your_api_key_here"' >> ~/.zshrc
-echo 'export ANTHROPIC_API_KEY="your_api_key_here"' >> ~/.zshrc
-echo 'export GEMINI_API_KEY="your_api_key_here"' >> ~/.zshrc
-echo 'export OPENROUTER_API_KEY="your_api_key_here"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-#### 2. 기본 모델 설정 (선택사항)
+### 기본 모델 설정
 
 ```bash
 # 기본 사용할 모델 설정
@@ -120,26 +128,23 @@ selvage config model claude-sonnet-4-thinking
 selvage config list
 ```
 
-### 리뷰 실행하기
+### 다양한 리뷰 옵션
 
 ```bash
-# 현재 워킹 디렉토리의 변경사항 리뷰
-selvage review
-
 # 스테이징된 변경사항만 리뷰
 selvage review --staged
 
 # 특정 모델로 리뷰
 selvage review --model gemini-2.5-pro
 
-# 리뷰 후 자동으로 UI 열기 (터미널 출력 비활성화)
+# 리뷰 후 웹 UI 열기
 selvage review --open-ui
 
-# 터미널에 출력하지 않고 파일로만 저장
+# 파일로만 저장 (터미널 출력 없음)
 selvage review --no-print
 ```
 
-리뷰 결과는 기본적으로 터미널에 출력되며 자동으로 파일에도 저장됩니다. `--open-ui` 옵션으로 UI를 열거나 `--no-print` 옵션으로 터미널 출력을 비활성화할 수 있습니다.
+</details>
 
 ## 🌐 지원 언어 및 모델
 
@@ -167,26 +172,27 @@ selvage review --no-print
 
 ### 지원 AI 모델
 
-#### OpenAI 모델
+⭐ **OpenRouter API 키 하나로 아래 모든 모델을 사용할 수 있습니다!**
 
-- **gpt-4o**: 고급 코드 분석 및 텍스트 처리 능력 (128K 컨텍스트)
-- **gpt-4.1**: 대용량 코드베이스 분석 지원 (1M+ 토큰 컨텍스트)
-- **o4-mini-high**: 높은 정확도의 추론 모델 (200K 컨텍스트)
-- **o4-mini**: 균형 잡힌 추론 모델 (별칭: o4-mini-medium) (200K 컨텍스트)
+#### OpenAI 모델 (OpenRouter 또는 OpenAI API 키)
 
-#### Anthropic 모델
+- **gpt-5**: 최신 고급 추론 모델 (400K 컨텍스트)
+- **gpt-5-high**: ⭐ **추천** - 높은 정확도의 추론 모델 (400K 컨텍스트)
+- **gpt-5-mini**: 경량화된 빠른 응답 모델 (400K 컨텍스트)
+
+#### Anthropic 모델 (OpenRouter 또는 Anthropic API 키)
 
 - **claude-sonnet-4**: 하이브리드 추론 모델로 고급 코딩 최적화 (200K 컨텍스트)
 - **claude-sonnet-4-thinking**: ⭐ **추천** - 확장 사고 프로세스 지원 (200K 컨텍스트)
 
-#### Google 모델
+#### Google 모델 (OpenRouter 또는 Google API 키)
 
-- **gemini-2.5-pro**: ⭐ **추천** - 대용량 컨텍스트 및 고급 추론 (1M+ 토큰)
-- **gemini-2.5-flash**: ⭐ **추천** - 응답 속도와 비용 효율성 최적화 (1M+ 토큰)
+- **gemini-2.5-pro**: 대용량 컨텍스트 및 고급 추론 (1M+ 토큰)
+- **gemini-2.5-flash**: 응답 속도와 비용 효율성 최적화 (1M+ 토큰)
 
 #### OpenRouter를 통한 모델
 
-- **qwen3-coder** (Qwen): 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
+- **qwen3-coder** (Qwen): ⭐ **추천** - 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
 - **kimi-k2** (Moonshot AI): 1T 파라미터 MoE 대용량 추론 모델 (128K 토큰)
 
 ## ⌨️ CLI 사용법
@@ -242,8 +248,12 @@ selvage review --target-commit abc1234 --model gemini-2.5-pro
 
 ### 결과 확인하기
 
+리뷰 결과는 **터미널에 바로 출력**되며, 동시에 파일로도 자동 저장됩니다.
+
+**추가적인 리뷰 관리 및 재확인**을 위해 웹 UI를 사용할 수 있습니다:
+
 ```bash
-# 저장된 리뷰 결과를 UI로 보기
+# 저장된 모든 리뷰 결과를 웹 UI로 관리
 selvage view
 
 # 다른 포트에서 UI 실행
@@ -256,25 +266,16 @@ selvage view --port 8502
 - 🎨 마크다운 형식 표시
 - 🗂️ JSON 구조화된 결과 보기
 
-## 📄 출력 형식
+## 📄 리뷰 결과 저장 형식
+
+리뷰 결과는 터미널 출력과 동시에 **구조화된 파일**로 저장됩니다:
+
+- **📋 Markdown 형식**: 사람이 읽기 편한 깔끔한 구조로 요약, 이슈 목록, 개선 제안 포함
+- **🔧 JSON 형식**: 프로그래밍 방식 처리 및 다른 도구와의 통합에 활용
 
 <p align="center">
   <img src="assets/demo-ui.png" width="100%" alt="Selvage UI Demo"/>
 </p>
-
-### Markdown (기본값)
-
-- 📖 사람이 읽기 편한 깔끔한 구조
-- 📝 요약, 이슈 목록, 개선 제안 포함
-- 🎯 중요도별 이슈 분류
-- 💡 실행 가능한 개선 방안 제시
-
-### JSON
-
-- 🔧 프로그래밍 방식으로 처리 용이
-- ⚙️ 구조화된 데이터 형식
-- 🔗 다른 도구와의 통합에 유용
-- 📊 자동화 파이프라인에 적합
 
 ## 🛠️ 고급 사용법
 
