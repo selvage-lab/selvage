@@ -7,7 +7,6 @@ import unittest
 from unittest.mock import patch
 
 from selvage.src.config import has_openrouter_api_key
-from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.llm_gateway.gateway_factory import GatewayFactory
 from selvage.src.models.model_provider import ModelProvider
 
@@ -159,55 +158,6 @@ class TestOpenRouterFirst(unittest.TestCase):
             # Then
             mock_gateway.assert_called_once()
             self.assertEqual(result, mock_gateway.return_value)
-
-    @patch("selvage.src.llm_gateway.gateway_factory.has_openai_api_key")
-    @patch("selvage.src.llm_gateway.gateway_factory.has_openrouter_api_key")
-    @patch("selvage.src.llm_gateway.gateway_factory.get_model_info")
-    def test_gateway_factory_byok_gpt5_with_openai_key(
-        self, mock_get_model_info, mock_has_openrouter_key, mock_has_openai_key
-    ):
-        """BYOK 필수 모델(gpt-5)에서 OpenAI API key가 있을 때 OpenAI Gateway 사용."""
-        # Given
-        mock_has_openrouter_key.return_value = True
-        mock_has_openai_key.return_value = True
-        mock_get_model_info.return_value = {
-            "provider": ModelProvider.OPENAI,
-            "openrouter_name": "openai/gpt-5",
-            "requires_byok": True,
-        }
-
-        with patch(
-            "selvage.src.llm_gateway.openai_gateway.OpenAIGateway"
-        ) as mock_gateway:
-            # When
-            result = GatewayFactory.create("gpt-5")
-
-            # Then
-            mock_gateway.assert_called_once()
-            self.assertEqual(result, mock_gateway.return_value)
-
-    @patch("selvage.src.llm_gateway.gateway_factory.has_openai_api_key")
-    @patch("selvage.src.llm_gateway.gateway_factory.has_openrouter_api_key")
-    @patch("selvage.src.llm_gateway.gateway_factory.get_model_info")
-    def test_gateway_factory_byok_gpt5_without_openai_key(
-        self, mock_get_model_info, mock_has_openrouter_key, mock_has_openai_key
-    ):
-        """BYOK 필수 모델(gpt-5)에서 OpenAI API key가 없을 때 에러 발생."""
-        # Given
-        mock_has_openrouter_key.return_value = True
-        mock_has_openai_key.return_value = False
-        mock_get_model_info.return_value = {
-            "provider": ModelProvider.OPENAI,
-            "openrouter_name": "openai/gpt-5",
-            "requires_byok": True,
-        }
-
-        # When & Then
-        with self.assertRaises(APIKeyNotFoundError) as context:
-            GatewayFactory.create("gpt-5")
-
-        self.assertIn("OpenAI API key가 필요합니다", str(context.exception))
-        self.assertIn("BYOK", str(context.exception))
 
     @patch("selvage.src.llm_gateway.gateway_factory.has_openrouter_api_key")
     @patch("selvage.src.llm_gateway.gateway_factory.get_model_info")

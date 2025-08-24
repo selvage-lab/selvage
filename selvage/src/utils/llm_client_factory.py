@@ -42,7 +42,7 @@ class LLMClientFactory:
             ValueError: 지원하지 않는 프로바이더인 경우
         """
         # OpenRouter First 로직
-        if not model_info.get("requires_byok", False) and has_openrouter_api_key():
+        if has_openrouter_api_key():
             openrouter_api_key = get_api_key(ModelProvider.OPENROUTER)
             return OpenRouterHTTPClient(api_key=openrouter_api_key)
 
