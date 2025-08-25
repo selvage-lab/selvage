@@ -1,12 +1,14 @@
 # 기여 가이드 (Contributing to Selvage)
 
+<p align="center">🌐 <a href="CONTRIBUTING_EN.md"><strong>English</strong></a></p>
+
 Selvage에 관심을 가지고 기여해주셔서 감사합니다! 저희는 커뮤니티의 참여를 소중하게 생각하며, 더 나은 AI 기반 코드 리뷰 도구를 만들기 위해 여러분의 도움을 환영합니다.
 
 본 문서는 Selvage에 기여하는 방법에 대한 가이드라인을 제공합니다. 기여하기 전에 잠시 시간을 내어 읽어보시면 원활한 협업에 도움이 될 것입니다.
 
 ## 🤝 기여 방법
 
-저희는 다양한 형태의 기여를 환영합니다. Selvage는 MIT 라이선스 하에 완전한 오픈소스 프로젝트로서, 커뮤니티의 자유로운 참여와 기여를 장려합니다.
+저희는 다양한 형태의 기여를 환영합니다. Selvage는 Apache-2.0 라이선스 하에 완전한 오픈소스 프로젝트로서, 커뮤니티의 자유로운 참여와 기여를 장려합니다.
 
 ### 🐛 버그 리포트 (Bug Reports)
 
@@ -95,14 +97,21 @@ ruff format .
 
 ### 3. 커밋 및 푸시
 
+모든 커밋에는 [Developer Certificate of Origin (DCO)](DCO)에 따라 Signed-off-by 라인이 포함되어야 합니다.
+
 ```bash
-# 의미있는 커밋 메시지로 커밋
+# DCO 템플릿 설정 (최초 1회)
+git config commit.template .gitmessage
+
+# 의미있는 커밋 메시지로 커밋 (-s 플래그 필수)
 git add .
-git commit -m "feat: add new feature for XYZ"
+git commit -s -m "feat: add new feature for XYZ"
 
 # 브랜치 푸시
 git push origin feat/your-feature-name
 ```
+
+**중요**: `-s` 플래그는 커밋에 자동으로 `Signed-off-by: Your Name <your.email@example.com>` 라인을 추가합니다. 이는 당신이 이 기여에 대한 권한이 있음을 인증하는 것입니다.
 
 ### 4. Pull Request 생성
 
@@ -127,6 +136,7 @@ GitHub에서 Pull Request를 생성할 때:
 **PR 체크리스트:**
 
 ```markdown
+- [ ] 모든 커밋이 DCO를 준수하고 Signed-off-by 라인을 포함합니다
 - [ ] 테스트를 추가했거나 기존 테스트가 통과합니다
 - [ ] 코드가 프로젝트의 스타일 가이드를 준수합니다
 - [ ] 문서를 업데이트했습니다 (필요한 경우)
@@ -201,7 +211,7 @@ Refs: feature/claude-sonnet-4-support
 
 ## 🌟 오픈소스 정신
 
-Selvage는 MIT 라이선스 하에 완전한 오픈소스 프로젝트입니다. 우리는 다음 가치를 추구합니다:
+Selvage는 Apache-2.0 라이선스 하에 완전한 오픈소스 프로젝트입니다. 우리는 다음 가치를 추구합니다:
 
 - **투명성**: 모든 개발 과정이 공개되고 투명합니다
 - **포용성**: 모든 배경의 기여자를 환영합니다

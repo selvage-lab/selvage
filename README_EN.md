@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/selvage/"><img alt="PyPI" src="https://img.shields.io/pypi/v/selvage"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.10+-blue">
   <img alt="AI Models" src="https://img.shields.io/badge/AI-GPT--5%20%7C%20Claude%20%7C%20Gemini-green">
 </p>
@@ -50,7 +50,8 @@ With smart context analysis (AST-based) that's accurate and cost-effective, plus
 - **🐛 Comprehensive Code Review**: Bug and logic error detection, code quality and readability improvement suggestions
 - **🎯 Optimized Context Analysis**: Automatic extraction of the smallest code blocks and dependency statements containing changed lines through Tree-sitter based AST analysis, providing contextually optimized information
 - **🔄 Automatic Multi-turn Processing**: Automatic prompt splitting when context limits are exceeded, supporting stable large-scale code reviews
-- **📖 Open Source**: Freely use and modify under MIT License
+- **📖 Open Source**: Freely use and modify under Apache-2.0 License
+
 ## 🚀 Quick Start
 
 ### 1. Installation
@@ -107,6 +108,7 @@ selvage review [OPTIONS]
 - `--model <model_name>`: AI model to use (e.g., claude-sonnet-4-thinking)
 - `--open-ui`: Automatically launch UI after review completion
 - `--no-print`: Don't output review results to terminal (terminal output enabled by default)
+
 #### Usage Examples
 
 ```bash
@@ -152,6 +154,7 @@ selvage view --port 8502
 ## 🌐 Supported Languages and Models
 
 ### Supported File Types
+
 - **Python** (`.py`)
 - **JavaScript** (`.js`)
 - **TypeScript** (`.ts`)
@@ -192,7 +195,7 @@ selvage view --port 8502
 - **gemini-2.5-pro**: Large context and advanced reasoning (1M+ tokens)
 - **gemini-2.5-flash**: Response speed and cost efficiency optimized (1M+ tokens)
 
-#### 🌟 OpenRouter Exclusive Models (OpenRouter API Key Only)
+#### 🌟 OpenRouter Provided Models (OpenRouter API Key Only)
 
 - **qwen3-coder** (Qwen): ⭐ **Recommended** - 480B parameter MoE coding-specialized model (1M+ tokens)
 - **kimi-k2** (Moonshot AI): 1T parameter MoE large-scale reasoning model (128K tokens)
@@ -330,7 +333,7 @@ Selvage is an open-source project and we always welcome your contributions! Bug 
 
 ## 📜 License
 
-Selvage is distributed under the [MIT License](LICENSE). This license permits commercial use, modification, and distribution, and can be used freely as long as license and copyright notices are included.
+Selvage is distributed under the [Apache License 2.0](LICENSE). This license permits commercial use, modification, and distribution, with comprehensive patent protection and trademark restrictions included.
 
 ## 📞 Contact and Community
 

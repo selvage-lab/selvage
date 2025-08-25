@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/selvage/"><img alt="PyPI" src="https://img.shields.io/pypi/v/selvage"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.10+-blue">
   <img alt="AI Models" src="https://img.shields.io/badge/AI-GPT--5%20%7C%20Claude%20%7C%20Gemini-green">
 </p>
@@ -50,7 +50,7 @@
 - **🐛 포괄적 코드 검토**: 버그 및 논리 오류 탐지, 코드 품질 및 가독성 향상 제안
 - **🎯 최적화된 컨텍스트 분석**: Tree-sitter 기반 AST 분석을 통해 변경 라인이 속하는 가장 작은 코드 블록과 dependency statement를 자동 추출하여 상황에 따라 최적화된 컨텍스트 제공
 - **🔄 자동 멀티턴 처리**: 컨텍스트 제한 초과 시 프롬프트를 자동 분할하여 안정적인 대용량 코드 리뷰 지원
-- **📖 오픈소스**: MIT 라이선스로 자유롭게 사용 및 수정 가능
+- **📖 오픈소스**: Apache-2.0 라이선스로 자유롭게 사용 및 수정 가능
 
 ## 🚀 빠른 시작
 
@@ -195,7 +195,7 @@ selvage view --port 8502
 - **gemini-2.5-pro**: 대용량 컨텍스트 및 고급 추론 (1M+ 토큰)
 - **gemini-2.5-flash**: 응답 속도와 비용 효율성 최적화 (1M+ 토큰)
 
-#### 🌟 OpenRouter 독점 모델 (OpenRouter API 키만 필요)
+#### 🌟 OpenRouter 제공 모델 (OpenRouter API 키만 필요)
 
 - **qwen3-coder** (Qwen): ⭐ **추천** - 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
 - **kimi-k2** (Moonshot AI): 1T 파라미터 MoE 대용량 추론 모델 (128K 토큰)
@@ -320,7 +320,7 @@ Selvage는 오픈소스 프로젝트이며, 여러분의 기여를 언제나 환
 
 ## 📜 라이선스
 
-Selvage는 [MIT License](LICENSE) 하에 배포됩니다. 이 라이선스는 상업적 이용, 수정, 배포를 허용하며, 라이선스 및 저작권 고지를 포함하는 한 자유롭게 사용할 수 있습니다.
+Selvage는 [Apache License 2.0](LICENSE) 하에 배포됩니다. 이 라이선스는 상업적 이용, 수정, 배포를 허용하며, 특허 보호 및 상표권 제한을 포함한 포괄적인 오픈소스 라이선스입니다.
 
 ## 📞 문의 및 커뮤니티
 
