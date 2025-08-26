@@ -32,6 +32,8 @@ class OpenRouterHTTPClient:
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
+                "HTTP-Referer": "https://selvage.me",
+                "X-Title": "Selvage",
             },
         )
 
