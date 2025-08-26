@@ -325,7 +325,7 @@ Selvage는 [Apache License 2.0](LICENSE) 하에 배포됩니다. 이 라이선�
 ## 📞 문의 및 커뮤니티
 
 - **🐛 버그 리포트 및 기능 요청**: [GitHub Issues](https://github.com/anomie7/selvage/issues)
-- **📧 직접 문의**: anomie7777@gmail.com
+- **📧 직접 문의**: contact@selvage.me
 
 ---
 
