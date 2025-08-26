@@ -28,8 +28,8 @@ With smart context analysis (AST-based) that's accurate and cost-effective, plus
 
 - [✨ Key Features](#-key-features)
 - [🚀 Quick Start](#-quick-start)
-- [🌐 Supported Languages and Models](#-supported-languages-and-models)
-  - [Supported File Types](#supported-file-types)
+- [🌐 Smart Context Analysis and Supported AI Models](#-smart-context-analysis-and-supported-ai-models)
+  - [Smart Context Analysis](#-smart-context-analysis)
   - [Supported AI Models](#supported-ai-models)
 - [⌨️ CLI Usage](#️-cli-usage)
   - [Configuring Selvage](#configuring-selvage)
@@ -37,6 +37,7 @@ With smart context analysis (AST-based) that's accurate and cost-effective, plus
   - [Viewing Results](#viewing-results)
 - [📄 Review Result Storage Format](#-review-result-storage-format)
 - [🛠️ Advanced Usage](#️-advanced-usage)
+  - [Troubleshooting](#troubleshooting)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
 - [📞 Contact and Community](#-contact-and-community)
@@ -91,6 +92,9 @@ selvage config list
 # Set default model
 selvage config model <model_name>
 
+# Set default language
+selvage config language <language_name>
+
 ```
 
 ### Code Review
@@ -108,6 +112,7 @@ selvage review [OPTIONS]
 - `--model <model_name>`: AI model to use (e.g., claude-sonnet-4-thinking)
 - `--open-ui`: Automatically launch UI after review completion
 - `--no-print`: Don't output review results to terminal (terminal output enabled by default)
+- `--skip-cache`: Perform new review without using cache
 
 #### Usage Examples
 
@@ -151,29 +156,45 @@ selvage view --port 8502
 - 🎨 Markdown format display
 - 🗂️ JSON structured result view
 
-## 🌐 Supported Languages and Models
+## 🌐 Smart Context Analysis and Supported AI Models
 
-### Supported File Types
+### 🎯 Smart Context Analysis
 
-- **Python** (`.py`)
-- **JavaScript** (`.js`)
-- **TypeScript** (`.ts`)
-- **Java** (`.java`)
-- **Kotlin** (`.kt`, `.kts`)
-- **Go** (`.go`)
-- **Ruby** (`.rb`)
-- **PHP** (`.php`)
-- **C#** (`.cs`)
-- **C/C++** (`.c`, `.cpp`, `.h`, `.hpp`)
-- **HTML** (`.html`)
-- **CSS/SCSS** (`.css`, `.scss`)
-- **Shell** (`.sh`, `.bash`)
-- **SQL** (`.sql`)
-- **Markdown** (`.md`)
-- **JSON** (`.json`)
-- **YAML** (`.yaml`, `.yml`)
-- **XML** (`.xml`)
-- Other text-based code files
+Selvage uses **Tree-sitter based AST analysis** to precisely extract only the code blocks related to changed lines, **ensuring both cost efficiency and review quality simultaneously**.
+
+#### How Smart Context Works
+
+- **Precise Extraction**: Extracts only the minimal function/class blocks containing changed lines + related dependencies (imports, etc.)
+- **Cost Optimization**: Dramatically reduces token usage by sending only necessary context instead of entire files
+- **Quality Assurance**: Maintains high review accuracy through AST-based precise code structure understanding
+
+#### Smart Context Automatic Application
+
+Selvage analyzes file size and change scope to **automatically select the most efficient review method**:
+
+```
+🎯 Small Changes           → Fast and accurate analysis with Smart Context
+📄 Small Files            → Complete context understanding with full file analysis
+📋 Partial Edits in Large Files → Focused analysis of related code with Smart Context
+📚 Large Changes in Big Files   → Comprehensive review with full file analysis
+```
+
+> 💡 **Automatic Optimization**: The optimal analysis method for each situation is automatically applied without any manual configuration.
+
+#### Supported Languages (AST-based)
+
+- **Python**, **JavaScript**, **TypeScript**, **Java**, **Kotlin**
+
+#### Full Language Support
+
+- **All Programming Languages**: Go, Ruby, PHP, C#, C/C++, Rust, Swift, Dart, etc.
+- **Markup & Configuration Files**: HTML, CSS, Markdown, JSON, YAML, XML, etc.
+- **Scripts & Others**: Shell, SQL, Dockerfile, other text-based files
+
+> 🚀 **Universal context extraction method** provides **excellent code review quality** for all languages.  
+> AST-based supported languages are continuously expanding.
+
+---
 
 ### Supported AI Models
 
@@ -241,19 +262,6 @@ selvage review --staged --model claude-sonnet-4-thinking
 selvage review --target-branch main --model claude-sonnet-4-thinking
 ```
 
-#### CI/CD Pipeline Integration
-
-```bash
-# Automated code review in GitHub Actions
-selvage review --staged --no-print --model gemini-2.5-flash
-
-# Final verification of release branch
-selvage review --target-branch release/v1.2.0 --model claude-sonnet-4-thinking --open-ui
-
-# Large-scale refactoring review (changes across multiple commits)
-selvage review --target-commit baseline-commit --model gemini-2.5-pro
-```
-
 ### Large-scale Code Review
 
 ```bash
@@ -269,6 +277,42 @@ Long Context Mode runs automatically, so just wait for it to complete.
 ```bash
 # Use economical models for small changes
 selvage review --model gemini-2.5-flash
+```
+
+### Troubleshooting
+
+#### Common Errors
+
+**API Key Error**
+
+```bash
+# Check environment variable
+echo $OPENROUTER_API_KEY
+
+# Permanent setup (Linux/macOS)
+echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Model not found Error**
+
+```bash
+# Check available model list
+selvage models
+
+# Use correct model name
+selvage review --model claude-sonnet-4-thinking
+```
+
+**Network Connection Error**
+
+```bash
+# Retry ignoring cache
+selvage review --skip-cache
+
+# Check detailed info with debug mode
+selvage config debug-mode on
+selvage review
 ```
 
 ## 💡 Advanced Settings (For Developers/Contributors)
@@ -338,7 +382,7 @@ Selvage is distributed under the [Apache License 2.0](LICENSE). This license per
 ## 📞 Contact and Community
 
 - **🐛 Bug Reports and Feature Requests**: [GitHub Issues](https://github.com/anomie7/selvage/issues)
-- **📧 Direct Contact**: anomie7777@gmail.com
+- **📧 Direct Contact**: contact@selvage.me
 
 ---
 
