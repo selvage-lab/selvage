@@ -156,9 +156,9 @@ selvage view --port 8502
 - 🎨 마크다운 형식 표시
 - 🗂️ JSON 구조화된 결과 보기
 
-## 🌐 Smart Context 분석 및 지원 AI 모델
+## 🌐 Smart Context 추출 및 지원 AI 모델
 
-### 🎯 Smart Context 분석
+### 🎯 Smart Context 추출
 
 Selvage는 **Tree-sitter 기반 AST 분석**을 통해 변경된 라인과 관련된 코드 블록만 정확히 추출하여, **비용 효율성과 리뷰 품질을 동시에 보장**합니다.
 
@@ -181,18 +181,16 @@ Selvage는 파일 크기와 변경 범위를 분석하여 **가장 효율적인 
 
 > 💡 **자동 최적화**: 별도 설정 없이 상황에 맞는 최적의 분석 방식이 자동 적용됩니다.
 
-#### 지원 언어 (AST 기반)
+#### Smart Context 지원 언어
 
 - **Python**, **JavaScript**, **TypeScript**, **Java**, **Kotlin**
 
-#### 전체 언어 지원
+#### 범용 컨텍스트 추출 지원 언어
 
-- **모든 프로그래밍 언어**: Go, Ruby, PHP, C#, C/C++, Rust, Swift, Dart 등
-- **마크업 & 설정 파일**: HTML, CSS, Markdown, JSON, YAML, XML 등
-- **스크립트 & 기타**: Shell, SQL, Dockerfile, 기타 텍스트 기반 파일
+- **주요 프로그래밍 언어**: Go, Ruby, PHP, C#, C/C++, Rust, Swift, Dart 등
 
-> 🚀 **범용 컨텍스트 추출 방식**으로 모든 언어에서 **우수한 코드 리뷰 품질**을 제공합니다.  
-> AST 기반 지원 언어는 지속적으로 확장하고 있습니다.
+> 🚀 **범용 컨텍스트 추출 방식**으로 주요 프로그래밍 언어에서 **우수한 코드 리뷰 품질**을 제공합니다.  
+> Smart Context 지원 언어는 지속적으로 추가하고 있습니다.
 
 ---
 
