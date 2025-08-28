@@ -102,14 +102,14 @@ class TestSelvageConfigManagement:
         verify_selvage_installation(container)  # 다시 호출
 
         # 유효한 모델명으로 설정
-        exit_code, output = container.exec("selvage config model gpt-4o")
+        exit_code, output = container.exec("selvage config model gpt-5")
         assert exit_code == 0
 
         # 설정 확인
         exit_code, output = container.exec("selvage config list")
         assert exit_code == 0
         output_str = output.decode("utf-8", errors="ignore")
-        assert "gpt-4o" in output_str
+        assert "gpt-5" in output_str
 
     def test_config_language_setting(self, testpypi_container) -> None:
         """언어 설정이 정상적으로 작동하는지 테스트."""
