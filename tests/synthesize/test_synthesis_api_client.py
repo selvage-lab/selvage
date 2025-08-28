@@ -26,7 +26,7 @@ class TestSynthesisAPIClient:
     def sample_model_info(self) -> ModelInfoDict:
         """테스트용 모델 정보 생성"""
         return {
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
             "aliases": [],
             "description": "테스트 모델",
             "provider": ModelProvider.OPENAI,
@@ -34,7 +34,7 @@ class TestSynthesisAPIClient:
             "thinking_mode": False,
             "pricing": {"input": 2.5, "output": 10.0, "description": "test"},
             "context_limit": 128000,
-            "openrouter_name": "openai/gpt-4o",
+            "openrouter_name": "openai/gpt-5",
         }
 
     def test_initialization(self, api_client: SynthesisAPIClient) -> None:
@@ -90,7 +90,7 @@ class TestSynthesisAPIClient:
         assert result is not None
         assert result.summary == "통합된 요약입니다."
         assert cost is not None
-        assert cost.model == "gpt-4o"  # sample_model_info의 full_name 사용
+        assert cost.model == "gpt-5"  # sample_model_info의 full_name 사용
 
     @patch("selvage.src.multiturn.synthesis_api_client.get_api_key")
     def test_execute_synthesis_no_api_key(
@@ -130,7 +130,7 @@ class TestSynthesisAPIClient:
         )
 
         # Then: OpenAI 형식의 파라미터 생성
-        assert params["model"] == "gpt-4o"
+        assert params["model"] == "gpt-5"
         assert params["messages"] == messages
         assert params["max_completion_tokens"] == 5000
         assert params["reasoning_effort"] == "medium"
@@ -255,11 +255,11 @@ class TestSynthesisAPIClient:
         # Given: OpenAI 응답과 비용 계산 Mock
         mock_response = Mock()
         mock_response.usage = Mock()
-        mock_cost_estimator.return_value = EstimatedCost.get_zero_cost("gpt-4o")
+        mock_cost_estimator.return_value = EstimatedCost.get_zero_cost("gpt-5")
 
         # When: 비용 계산
         cost = api_client._calculate_synthesis_cost(
-            ModelProvider.OPENAI, mock_response, "gpt-4o"
+            ModelProvider.OPENAI, mock_response, "gpt-5"
         )
 
         # Then: 비용 계산기가 호출되어야 함

@@ -231,7 +231,7 @@ class ReviewRequest(BaseModel):
 4. **model**: 사용할 LLM 모델 식별자
 
    ```python
-   "gpt-4o"  # OpenAI의 GPT-4o 모델 사용
+   "gpt-5"  # OpenAI의 GPT-5 모델 사용
    ```
 
 5. **repo_path**: Git 저장소 경로

@@ -24,7 +24,7 @@ class TokenUtils:
 
     @staticmethod
     def count_tokens(
-        review_prompt: ReviewPromptWithFileContent, model: str = "gpt-4o"
+        review_prompt: ReviewPromptWithFileContent, model: str = "gpt-5"
     ) -> int:
         """텍스트의 토큰 수를 계산합니다.
 

@@ -251,7 +251,7 @@ class TestReviewSynthesizerLLMIntegration:
     def sample_model_info(self) -> ModelInfoDict:
         """테스트용 모델 정보 생성"""
         return {
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
             "aliases": [],
             "description": "테스트 모델",
             "provider": ModelProvider.OPENAI,
@@ -259,7 +259,7 @@ class TestReviewSynthesizerLLMIntegration:
             "thinking_mode": False,
             "pricing": {"input": 2.5, "output": 10.0, "description": "test"},
             "context_limit": 128000,
-            "openrouter_name": "openai/gpt-4o",
+            "openrouter_name": "openai/gpt-5",
         }
 
     @pytest.fixture
@@ -271,7 +271,7 @@ class TestReviewSynthesizerLLMIntegration:
                 recommendations=["함수명 개선", "에러 처리 추가"],
                 issues=[],
             ),
-            estimated_cost=EstimatedCost.get_zero_cost("gpt-4o"),
+            estimated_cost=EstimatedCost.get_zero_cost("gpt-5"),
         )
 
         result2 = ReviewResult.get_success_result(
@@ -280,7 +280,7 @@ class TestReviewSynthesizerLLMIntegration:
                 recommendations=["에러 처리 추가", "주석 추가"],  # 중복 있음
                 issues=[],
             ),
-            estimated_cost=EstimatedCost.get_zero_cost("gpt-4o"),
+            estimated_cost=EstimatedCost.get_zero_cost("gpt-5"),
         )
 
         return [result1, result2]
@@ -337,13 +337,13 @@ class TestReviewSynthesizerLLMIntegration:
     def test_api_client_initialization(self) -> None:
         """API 클라이언트 초기화 테스트"""
         # Given & When: ReviewSynthesizer 생성
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # Then: API 클라이언트와 프롬프트 매니저가 초기화되어야 함
         assert synthesizer.api_client is not None
         assert synthesizer.prompt_manager is not None
-        assert synthesizer.model_name == "gpt-4o"
-        assert synthesizer.api_client.model_name == "gpt-4o"
+        assert synthesizer.model_name == "gpt-5"
+        assert synthesizer.api_client.model_name == "gpt-5"
 
     def test_prompt_manager_functionality(self) -> None:
         """프롬프트 매니저 기능 테스트"""
@@ -369,9 +369,9 @@ class TestReviewSynthesizerLLMIntegration:
     ) -> None:
         """Fallback 합성 - 단일 결과 테스트: LLM 합성이 시도되지만 실패할 때 fallback 로직이 올바르게 작동하는지 검증"""
         # Given: API 클라이언트의 합성이 실패하도록 설정 (None 반환)
-        mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-4o"))
+        mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-5"))
         single_result = [sample_review_results[0]]
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # When: 전체 합성 실행 (LLM 합성 시도 → 실패 → fallback 동작)
         result = synthesizer.synthesize_review_results(single_result)
@@ -395,8 +395,8 @@ class TestReviewSynthesizerLLMIntegration:
     ) -> None:
         """Fallback 합성 - 다중 결과 테스트: LLM 합성이 시도되지만 실패할 때 가장 긴 summary 선택 로직 검증"""
         # Given: API 클라이언트의 합성이 실패하도록 설정 (None 반환)
-        mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-4o"))
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-5"))
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # When: 전체 합성 실행 (LLM 합성 시도 → 실패 → fallback 동작)
         result = synthesizer.synthesize_review_results(sample_review_results)
@@ -426,10 +426,10 @@ class TestReviewSynthesizerLLMIntegration:
                     recommendations=["권장사항1"],
                     issues=[],
                 ),
-                estimated_cost=EstimatedCost.get_zero_cost("gpt-4o"),
+                estimated_cost=EstimatedCost.get_zero_cost("gpt-5"),
             )
         ]
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # When: 전체 합성 실행 (fallback 모드로 동작)
         result = synthesizer.synthesize_review_results(empty_results)
@@ -468,7 +468,7 @@ class TestReviewSynthesizerLLMIntegration:
     ) -> None:
         """OpenAI 프로바이더 요청 파라미터 생성 테스트"""
 
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
         messages = [
             {"role": "system", "content": "test system"},
             {"role": "user", "content": "test user"},
@@ -480,7 +480,7 @@ class TestReviewSynthesizerLLMIntegration:
         )
 
         # Then: OpenAI 파라미터 확인
-        assert params["model"] == "gpt-4o"
+        assert params["model"] == "gpt-5"
         assert params["messages"] == messages
         assert params["max_completion_tokens"] == 5000  # SynthesisConfig.MAX_TOKENS
         assert params["reasoning_effort"] == "medium"
@@ -689,7 +689,7 @@ class TestReviewSynthesizerEndToEndMock:
         """OpenAI 프로바이더 end-to-end Mock 성공 시나리오 테스트 (실제 데이터 기반)"""
         # Given: OpenAI 환경 설정
         mock_model_info = {
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
             "provider": ModelProvider.OPENAI,
             "max_tokens": 20000,
         }
@@ -712,7 +712,7 @@ class TestReviewSynthesizerEndToEndMock:
             mock_raw_response,
         )
 
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # When: 리뷰 결과 합성 실행 (성공한 결과만 필터링됨)
         result = synthesizer.synthesize_review_results(integration_review_results)

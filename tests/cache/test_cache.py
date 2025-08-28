@@ -14,7 +14,7 @@ def cache_info_fixture() -> CacheKeyInfo:
     """캐시 키 정보 픽스처"""
     return CacheKeyInfo(
         diff_content="test diff content",
-        model="gpt-4o",
+        model="gpt-5",
     )
 
 
@@ -26,7 +26,7 @@ def review_request_fixture() -> ReviewRequest:
         diff_content="test diff content",
         processed_diff=diff_result,
         file_paths=["test.py"],
-        model="gpt-4o",
+        model="gpt-5",
         repo_path="/test",
     )
 
@@ -74,7 +74,7 @@ def test_cache_save_and_hit(
     review_response_fixture: ReviewResponse,
 ):
     """캐시 저장 및 캐시 히트를 테스트합니다."""
-    estimated_cost = EstimatedCost.get_zero_cost("gpt-4o")
+    estimated_cost = EstimatedCost.get_zero_cost("gpt-5")
 
     # 캐시에 저장
     cache_manager_fixture.save_review_to_cache(
@@ -103,11 +103,11 @@ def test_cache_key_different_for_different_inputs():
     """다른 입력에 대해 다른 캐시 키가 생성되는지 테스트합니다."""
     cache_info_1 = CacheKeyInfo(
         diff_content="test diff content 1",
-        model="gpt-4o",
+        model="gpt-5",
     )
     cache_info_2 = CacheKeyInfo(
         diff_content="test diff content 2",
-        model="gpt-4o",
+        model="gpt-5",
     )
 
     cache_key_1 = CacheKeyGenerator.generate_cache_key(cache_info_1)

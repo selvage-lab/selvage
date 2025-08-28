@@ -199,7 +199,7 @@ class TestReviewSynthesizerRealIntegration:
     ) -> None:
         """실제 API 비용 추적 통합 테스트"""
         # Given: 저렴한 모델로 비용 추적 테스트
-        model_name = "gpt-4o-mini"
+        model_name = "gpt-5-mini"
         synthesizer = ReviewSynthesizer(model_name)
 
         # When: 실제 API 호출

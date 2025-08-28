@@ -92,14 +92,14 @@ class TestOpenRouterFirst(unittest.TestCase):
         mock_has_key.return_value = True
         mock_get_model_info.return_value = {
             "provider": ModelProvider.OPENAI,
-            "openrouter_name": "openai/gpt-4o",
+            "openrouter_name": "openai/gpt-5",
         }
 
         with patch(
             "selvage.src.llm_gateway.openrouter_gateway.OpenRouterGateway"
         ) as mock_gateway:
             # When
-            result = GatewayFactory.create("gpt-4o")
+            result = GatewayFactory.create("gpt-5")
 
             # Then
             mock_gateway.assert_called_once()
@@ -135,7 +135,7 @@ class TestOpenRouterFirst(unittest.TestCase):
             "selvage.src.llm_gateway.openai_gateway.OpenAIGateway"
         ) as mock_gateway:
             # When
-            result = GatewayFactory.create("gpt-4o")
+            result = GatewayFactory.create("gpt-5")
 
             # Then
             mock_gateway.assert_called_once()

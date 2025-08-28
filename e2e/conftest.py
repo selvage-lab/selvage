@@ -1,6 +1,8 @@
 """End-to-End 테스트를 위한 pytest 설정 및 fixture들."""
 
+import subprocess
 import pytest
+from pathlib import Path
 
 
 def pytest_configure(config):
@@ -21,6 +23,65 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "cross_platform: marks tests that should run on multiple platforms"
     )
+
+
+def pytest_sessionstart(session):
+    """테스트 세션 시작 시 Docker 이미지 업데이트를 확인합니다."""
+    # Docker 이미지가 존재하는지 확인
+    try:
+        result = subprocess.run(
+            ["docker", "images", "-q", "selvage-testpypi:latest"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        if not result.stdout.strip():
+            print("🚀 TestPyPI Docker image not found. Building...")
+            _build_testpypi_image()
+        else:
+            # 이미지가 24시간 이상 오래된 경우 재빌드
+            creation_time = subprocess.run(
+                ["docker", "images", "--format", "{{.CreatedAt}}", "selvage-testpypi:latest"],
+                capture_output=True,
+                text=True,
+                check=True
+            ).stdout.strip()
+            
+            print(f"📦 TestPyPI Docker image found (created: {creation_time})")
+            
+            # 선택사항: 주기적 재빌드 로직
+            # 현재는 수동으로 재빌드하도록 메시지만 출력
+            print("💡 최신 selvage 버전을 원하면 다음 명령어를 실행하세요:")
+            print("   ./scripts/build_testpypi_image.sh")
+            
+    except subprocess.CalledProcessError as e:
+        print(f"⚠️  Docker image check failed: {e}")
+
+
+def _build_testpypi_image():
+    """TestPyPI Docker 이미지를 빌드합니다."""
+    try:
+        project_root = Path(__file__).parent.parent
+        build_script = project_root / "scripts" / "build_testpypi_image.sh"
+        
+        if build_script.exists():
+            subprocess.run([str(build_script)], check=True, cwd=project_root)
+        else:
+            # 빌드 스크립트가 없으면 직접 빌드
+            timestamp = subprocess.run(["date", "+%s"], capture_output=True, text=True).stdout.strip()
+            subprocess.run([
+                "docker", "build",
+                "--no-cache",
+                "--build-arg", f"CACHEBUST={timestamp}",
+                "-t", "selvage-testpypi:latest",
+                "-f", "e2e/dockerfiles/testpypi/Dockerfile",
+                "."
+            ], check=True, cwd=project_root)
+            
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to build TestPyPI Docker image: {e}")
+        raise
 
 
 # E2E 테스트에서는 필터링을 무효화
