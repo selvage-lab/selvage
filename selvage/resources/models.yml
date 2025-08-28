@@ -45,7 +45,6 @@ models:
     provider: "openai"
     params:
       reasoning_effort: "medium"
-      temperature: 0.0
     thinking_mode: false
     pricing:
       input: 0.25 # $0.25/1M tokens (공식)
