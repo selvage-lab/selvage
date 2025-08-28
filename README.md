@@ -57,9 +57,31 @@
 
 ### 1. 설치
 
+#### 권장 방법 (uv 사용)
 ```bash
+# uv 설치 (한 번만 실행)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Selvage 설치
+uv tool install selvage
+```
+
+#### 대안 방법 (pipx 사용)
+```bash
+# pipx 설치 (macOS)
+brew install pipx
+
+# Selvage 설치
+pipx install selvage
+```
+
+#### 전통적 방법 (pip)
+```bash
+# ⚠️ 일부 환경에서 externally-managed-environment 에러 발생 가능
 pip install selvage
 ```
+
+**macOS/Linux 사용자**: `pip install` 시 에러가 발생하면 위의 uv 또는 pipx 방법을 사용해주세요.
 
 ### 2. API 키 설정
 
@@ -279,9 +301,26 @@ selvage review --model gemini-2.5-flash
 
 ### 문제 해결
 
-#### 자주 발생하는 오류
+#### 설치 관련 오류
 
-**API 키 오류**
+**`externally-managed-environment` 에러 (macOS/Linux)**
+
+```bash
+# 해결 방법 1: uv 사용 (권장)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv tool install selvage
+
+# 해결 방법 2: pipx 사용
+brew install pipx  # macOS
+pipx install selvage
+
+# 해결 방법 3: 가상환경 사용
+python3 -m venv ~/.selvage-env
+source ~/.selvage-env/bin/activate
+pip install selvage
+```
+
+#### API 키 오류
 
 ```bash
 # 환경변수 확인
@@ -320,6 +359,19 @@ selvage review
 
 ### 개발 버전 설치
 
+#### uv 사용 (권장)
+```bash
+git clone https://github.com/anomie7/selvage.git
+cd selvage
+
+# 모든 개발 의존성 자동 설치
+uv sync --dev --extra e2e
+
+# 실행
+uv run selvage --help
+```
+
+#### 기존 pip 사용
 ```bash
 git clone https://github.com/anomie7/selvage.git
 cd selvage
@@ -328,6 +380,19 @@ pip install -e .
 
 ### 개발 환경 설치
 
+#### uv 방식 (권장)
+```bash
+# 개발 의존성만
+uv sync --dev
+
+# E2E 테스트 환경 포함
+uv sync --dev --extra e2e
+
+# 실행
+uv run pytest tests/
+```
+
+#### pip 방식
 ```bash
 # 개발 의존성 포함 설치 (pytest, build 등)
 pip install -e .[dev]
