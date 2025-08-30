@@ -15,7 +15,9 @@ WORKDIR /app
 RUN pip install --upgrade pip
 
 # TestPyPI에서 selvage 설치 (의존성 포함)
-RUN pip install --index-url https://test.pypi.org/simple/ \
+# ARG를 사용해서 빌드 시마다 캐시 무력화
+ARG CACHEBUST=1
+RUN pip install --no-cache-dir --index-url https://test.pypi.org/simple/ \
     --extra-index-url https://pypi.org/simple selvage
 
 # 컨테이너가 계속 실행되도록 설정

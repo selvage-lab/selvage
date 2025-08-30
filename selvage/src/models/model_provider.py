@@ -54,13 +54,3 @@ class ModelProvider(Enum):
             ModelProvider.OPENROUTER: "OPENROUTER_API_KEY",
         }
         return env_vars[self]
-
-    def get_api_key_command_name(self) -> str:
-        """해당 provider의 API 키 설정 명령어 이름을 반환합니다."""
-        command_names = {
-            ModelProvider.OPENAI: "openai",
-            ModelProvider.ANTHROPIC: "claude",
-            ModelProvider.GOOGLE: "google",
-            ModelProvider.OPENROUTER: "openrouter",
-        }
-        return command_names[self]

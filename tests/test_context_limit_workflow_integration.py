@@ -110,13 +110,14 @@ class DataProcessor_{index}:
 tester = ContextLimitWorkflowTester()
 
 
+@pytest.mark.integration
 def test_openai_context_limit_workflow():
     """OpenAI API의 context limit 에러를 실제 워크플로우로 검증합니다."""
     if not os.getenv("OPENAI_API_KEY"):
         pytest.skip("OPENAI_API_KEY not found")
 
-    model_name = "gpt-4o"
-    context_limit = 128000
+    model_name = "gpt-5"
+    context_limit = 1000000
 
     print("\\n=== OpenAI Context Limit 워크플로우 테스트 ===")
     print(f"모델: {model_name}")
@@ -152,8 +153,9 @@ def test_openai_context_limit_workflow():
             "Context limit 초과 시 success=False여야 합니다"
         )
         assert review_result.error_response is not None, "에러 응답이 있어야 합니다"
+        # 에러 타입 검증 - context limit 에러로 엄격하게 식별
         assert review_result.error_response.error_type == "context_limit_exceeded", (
-            f"에러 타입이 'context_limit_exceeded'이어야 합니다. "
+            f"에러 타입이 'context_limit_exceeded'여야 합니다. "
             f"실제: {review_result.error_response.error_type}"
         )
 
@@ -163,13 +165,14 @@ def test_openai_context_limit_workflow():
         pytest.fail(f"예상치 못한 예외 발생: {e}")
 
 
+@pytest.mark.integration
 def test_anthropic_context_limit_workflow():
     """Anthropic API의 context limit 에러를 실제 워크플로우로 검증합니다."""
     if not os.getenv("ANTHROPIC_API_KEY"):
         pytest.skip("ANTHROPIC_API_KEY not found")
 
     model_name = "claude-sonnet-4"
-    context_limit = 200000
+    context_limit = 2000000
 
     print("\\n=== Anthropic Context Limit 워크플로우 테스트 ===")
     print(f"모델: {model_name}")
@@ -200,13 +203,14 @@ def test_anthropic_context_limit_workflow():
                 f"   error_message: {review_result.error_response.error_message[:100]}..."
             )
 
-        # 검증: 실패해야 하고, context limit 에러로 식별되어야 함
+        # 검증: 실패해야 하고, 에러 응답이 있어야 함
         assert review_result.success is False, (
             "Context limit 초과 시 success=False여야 합니다"
         )
         assert review_result.error_response is not None, "에러 응답이 있어야 합니다"
+        # 에러 타입 검증 - context limit 에러로 엄격하게 식별
         assert review_result.error_response.error_type == "context_limit_exceeded", (
-            f"에러 타입이 'context_limit_exceeded'이어야 합니다. "
+            f"에러 타입이 'context_limit_exceeded'여야 합니다. "
             f"실제: {review_result.error_response.error_type}"
         )
 
@@ -216,6 +220,7 @@ def test_anthropic_context_limit_workflow():
         pytest.fail(f"예상치 못한 예외 발생: {e}")
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "model_name,context_limit",
     [
@@ -257,13 +262,14 @@ def test_openrouter_context_limit_workflow(model_name, context_limit):
                 f"   error_message: {review_result.error_response.error_message[:100]}..."
             )
 
-        # 검증: 실패해야 하고, context limit 에러로 식별되어야 함
+        # 검증: 실패해야 하고, 에러 응답이 있어야 함
         assert review_result.success is False, (
             "Context limit 초과 시 success=False여야 합니다"
         )
         assert review_result.error_response is not None, "에러 응답이 있어야 합니다"
+        # 에러 타입 검증 - context limit 에러로 엄격하게 식별
         assert review_result.error_response.error_type == "context_limit_exceeded", (
-            f"에러 타입이 'context_limit_exceeded'이어야 합니다. "
+            f"에러 타입이 'context_limit_exceeded'여야 합니다. "
             f"실제: {review_result.error_response.error_type}"
         )
 
@@ -273,6 +279,7 @@ def test_openrouter_context_limit_workflow(model_name, context_limit):
         pytest.fail(f"예상치 못한 예외 발생: {e}")
 
 
+@pytest.mark.integration
 def test_google_context_limit_workflow():
     """Google Gemini API의 context limit 에러를 실제 워크플로우로 검증합니다."""
     if not os.getenv("GEMINI_API_KEY"):
@@ -316,9 +323,9 @@ def test_google_context_limit_workflow():
         )
         assert review_result.error_response is not None, "에러 응답이 있어야 합니다"
 
-        # Google Gemini는 context limit 초과 시 quota_exceeded로 분류됨
-        assert review_result.error_response.error_type == "quota_exceeded", (
-            f"Google Gemini의 에러 타입이 'quota_exceeded'여야 합니다. "
+        # 에러 타입 검증 - context limit 에러로 엄격하게 식별
+        assert review_result.error_response.error_type == "context_limit_exceeded", (
+            f"에러 타입이 'context_limit_exceeded'여야 합니다. "
             f"실제: {review_result.error_response.error_type}"
         )
 

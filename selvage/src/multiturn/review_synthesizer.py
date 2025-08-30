@@ -151,10 +151,7 @@ class ReviewSynthesizer:
 
         except Exception as e:
             console.error(f"Summary LLM 합성 중 예외 발생: {e}")
-            return SummarySynthesisResult(
-                summary=None,
-                estimated_cost=EstimatedCost.get_zero_cost(self.model_name),
-            )
+            raise e
 
     def _fallback_summary(self, successful_results: list[ReviewResult]) -> str:
         """fallback summary 생성 로직"""

@@ -13,7 +13,7 @@ from selvage.src.multiturn.multiturn_review_executor import MultiturnReviewExecu
 from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 
 
-@pytest.mark.skip(reason="Skipping integration tests for now")
+@pytest.mark.integration
 class TestMultiturnReviewExecutorIntegration:
     """개선된 MultiturnReviewExecutor 통합 테스트"""
 
@@ -62,7 +62,7 @@ class TestMultiturnReviewExecutorIntegration:
         max_tokens = int(get_model_context_limit(model_name))
         return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
 
-    @pytest.fixture(params=["kimi-k2"])
+    @pytest.fixture(params=["gpt-5-mini"])
     def model_name(self, request) -> str:
         """테스트할 모델들"""
         return request.param
@@ -77,7 +77,6 @@ class TestMultiturnReviewExecutorIntegration:
         """MultiturnReviewExecutor 인스턴스"""
         return MultiturnReviewExecutor()
 
-    @pytest.mark.integration
     @pytest.mark.slow
     def test_multiturn_review_300k_preloaded(
         self,
@@ -92,7 +91,7 @@ class TestMultiturnReviewExecutorIntegration:
         # 토큰 정보는 픽스처에서 주입됨
         token_info = token_info_300k
 
-        print(f"\\n=== {model_name} 300K 토큰 테스트 (미리 로드됨) ===")
+        print(f"\n=== {model_name} 300K 토큰 테스트 (미리 로드됨) ===")
         print(f"User prompts count: {len(large_300k_prompt.user_prompts)}")
 
         try:

@@ -1,5 +1,25 @@
 # Change Log
 
+## [0.1.7] - 2025-08-24
+
+### Added
+
+#### feat: OpenRouter First 접근법 및 API 안정성 개선
+
+**핵심 변경사항**
+
+- **OpenRouter 우선 사용 방식 도입**: API 키 하나로 모든 AI 모델 접근 가능한 OpenRouter First 접근법으로 전환
+- **새로운 GPT-5 모델 지원**: gpt-5, gpt-5-high, gpt-5-mini 모델 추가로 고급 추론 및 다양한 성능 옵션 제공
+- **API 응답 처리 강화**: LLMResponse 타입에 ChatCompletion 추가 및 다양한 응답 형식 지원
+- **환경변수 우선 설정**: CLI 플래그 제거하고 환경변수 단독 사용으로 설정 방식 단순화
+
+**세부 구현사항**
+
+- **JSON 파싱 에러 처리**: JSONParsingError 클래스 리팩터링 및 응답 텍스트 자르기 기능 추가
+- **재시도 로직 강화**: tenacity 기반 재시도 메커니즘 개선 및 예외 처리 방식 개선
+- **에러 패턴 확장**: OpenAI, Anthropic context limit 및 OpenRouter 관련 에러 패턴 추가
+- **API 키 검증 개선**: 환경변수 기반 설정 검증 로직 및 사용자 안내 메시지 개선
+
 ## [0.1.6] - 2025-08-15
 
 ### Added

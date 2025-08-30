@@ -42,9 +42,10 @@ def should_enable_console_logging() -> bool:
         bool: 콘솔 로깅 활성화 여부
     """
     try:
-        from selvage.src.config import get_default_debug_mode
+        from selvage.src.utils.base_console import BaseConsole
 
-        return get_default_debug_mode()
+        console = BaseConsole()
+        return console.is_debug_mode()
     except ImportError:
         # 순환 임포트 방지를 위한 fallback
         return False
@@ -53,19 +54,20 @@ def should_enable_console_logging() -> bool:
 class TimedSizeRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
     """날짜별 로테이션과 크기별 로테이션을 동시에 지원하는 핸들러.
 
-    이 핸들러는 TimedRotatingFileHandler를 상속받아 크기 기반 로테이션 기능을 추가합니다.
+    이 핸들러는 TimedRotatingFileHandler를 상속받아
+    크기 기반 로테이션 기능을 추가합니다.
     """
 
     def __init__(
         self,
-        filename,
-        when="midnight",
-        interval=1,
-        backupCount=0,
-        maxBytes=0,
-        *args,
-        **kwargs,
-    ):
+        filename: str,
+        when: str = "midnight",
+        interval: int = 1,
+        backupCount: int = 0,  # noqa: N803
+        maxBytes: int = 0,  # noqa: N803
+        *args: object,
+        **kwargs: object,
+    ) -> None:
         """핸들러를 초기화합니다.
 
         Args:
@@ -76,9 +78,9 @@ class TimedSizeRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
             maxBytes: 파일 최대 크기 (바이트 단위, 0이면 크기 제한 없음)
         """
         super().__init__(filename, when, interval, backupCount, *args, **kwargs)
-        self.maxBytes = maxBytes
+        self.maxBytes = maxBytes  # noqa: N803
 
-    def shouldRollover(self, record):
+    def shouldRollover(self, record: logging.LogRecord) -> bool:  # noqa: N802
         """로테이션이 필요한지 확인합니다.
 
         시간 기반 로테이션 조건과 크기 기반 로테이션 조건을 모두 확인합니다.

@@ -74,7 +74,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_success(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -91,7 +91,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_with_tilde(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -114,7 +114,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_relative_path(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -137,7 +137,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_failure(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -152,7 +152,7 @@ class TestReviewLogDirConfig(unittest.TestCase):
 
     @patch("selvage.src.config.save_config")
     @patch("selvage.src.config.load_config")
-    @patch("selvage.src.config.console")
+    @patch("selvage.src.utils.base_console.console")
     def test_set_default_review_log_dir_save_failure(
         self, mock_console, mock_load_config, mock_save_config
     ) -> None:
@@ -266,12 +266,13 @@ class TestCLIConfigReviewLogDir(unittest.TestCase):
             mock_get_api_key.side_effect = APIKeyNotFoundError(ModelProvider.OPENAI)
 
             with patch("selvage.cli.get_default_model", return_value=None):
-                with patch("selvage.cli.get_default_debug_mode", return_value=False):
+                with patch("selvage.cli.console.is_debug_mode", return_value=False):
                     result = self.runner.invoke(cli, ["config", "list"])
 
         self.assertEqual(result.exit_code, 0)
-        self.assertIn(test_path, result.output)
-        self.assertIn("리뷰 로그 저장 디렉토리", result.output)
+        # ANSI 색상 코드로 인해 경로가 분할될 수 있으므로 부분적으로 확인
+        self.assertIn("/test/review/log", result.output)
+        self.assertIn("리뷰 로그 디렉토리", result.output)
 
 
 class TestCLIReviewLogDirOption(unittest.TestCase):
@@ -302,7 +303,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": ModelProvider.OPENAI,
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
         }
 
         # ReviewRequest Mock 생성
@@ -311,7 +312,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
             diff_content="test diff",
             processed_diff=diff_result,
             file_paths=["test.py"],
-            model="gpt-4o",
+            model="gpt-5",
             repo_path="/test/repo",
         )
 
@@ -333,7 +334,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
         with open(log_path, encoding="utf-8") as f:
             log_data = json.load(f)
 
-        self.assertEqual(log_data["model"]["name"], "gpt-4o")
+        self.assertEqual(log_data["model"]["name"], "gpt-5")
         self.assertEqual(log_data["status"], "SUCCESS")
 
     @patch("selvage.cli.get_model_info")
@@ -349,7 +350,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": ModelProvider.OPENAI,
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
         }
 
         # ReviewRequest Mock 생성
@@ -358,7 +359,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
             diff_content="test diff",
             processed_diff=diff_result,
             file_paths=["test.py"],
-            model="gpt-4o",
+            model="gpt-5",
             repo_path="/test/repo",
         )
 

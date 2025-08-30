@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from selvage.src.diff_parser.models.diff_result import DiffResult
 from selvage.src.utils.base_console import console
@@ -19,6 +19,8 @@ class IssueSeverityEnum(str, Enum):
 class StructuredReviewIssue(BaseModel):
     """Structured Outputs용 코드 리뷰 이슈 모델"""
 
+    model_config = ConfigDict(extra="forbid")
+
     type: str
     file: str | None
     description: str
@@ -31,10 +33,31 @@ class StructuredReviewIssue(BaseModel):
 class StructuredReviewResponse(BaseModel):
     """Structured Outputs용 코드 리뷰 응답 모델"""
 
+    model_config = ConfigDict(extra="forbid")
+
     issues: list[StructuredReviewIssue]
     summary: str
     score: float | None
     recommendations: list[str]
+
+
+class StructuredSynthesisResponse(BaseModel):
+    """Synthesis result structured output model"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    summary: str = Field(
+        description="Integrated review summary combining chunk content from a holistic perspective",  # noqa: E501
+        min_length=1,
+    )
+    recommendations: list[str] = Field(
+        description="Refined recommendation list with duplicates removed and priorities sorted",  # noqa: E501
+        min_length=0,
+    )
+    synthesis_quality: str = Field(
+        description="Synthesis quality indicator (excellent/good/fair)",
+        pattern="^(excellent|good|fair)$",
+    )
 
 
 class ReviewRequest(BaseModel):
@@ -191,30 +214,7 @@ class SummarySynthesisResponse(BaseModel):
 
     summary: str = Field(
         description="통합된 리뷰 요약. 각 청크의 summary를 종합",
-        min_length=10,
-    )
-
-
-class RecommendationSynthesisResponse(BaseModel):
-    """Recommendations 전용 합성 응답 모델"""
-
-    recommendations: list[str] = Field(
-        description="정제된 권장사항 목록. 중복 제거 및 우선순위 정렬 완료", min_items=0
-    )
-
-
-class StructuredSynthesisResponse(BaseModel):
-    """합성 결과 전용 Structured Outputs 모델 (기존 호환성 유지)"""
-
-    summary: str = Field(
-        description="통합된 리뷰 요약. 각 청크의 내용을 종합",
-        min_length=10,
-    )
-    recommendations: list[str] = Field(
-        description="정제된 권장사항 목록. 중복 제거 및 우선순위 정렬 완료", min_items=0
-    )
-    synthesis_quality: str = Field(
-        description="합성 품질 지표", pattern="^(excellent|good|fair)$"
+        min_length=1,
     )
 
 

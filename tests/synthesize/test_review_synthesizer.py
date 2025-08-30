@@ -4,8 +4,12 @@ import json
 from typing import Any
 from unittest.mock import Mock, patch
 
+import anthropic
+import instructor
 import pytest
+from google import genai
 
+from selvage.src.llm_gateway.openrouter.http_client import OpenRouterHTTPClient
 from selvage.src.model_config import ModelInfoDict
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_result import ReviewResult
@@ -15,6 +19,7 @@ from selvage.src.utils.token.models import (
     ReviewIssue,
     ReviewResponse,
     StructuredSynthesisResponse,
+    SummarySynthesisResponse,
 )
 
 
@@ -169,7 +174,7 @@ class TestReviewSynthesizer:
             ReviewResult.get_error_result(
                 error=Exception("Test error"),
                 model="test-model",
-                provider="test-provider",
+                provider=ModelProvider.OPENAI,
             )
         ]
 
@@ -246,7 +251,7 @@ class TestReviewSynthesizerLLMIntegration:
     def sample_model_info(self) -> ModelInfoDict:
         """테스트용 모델 정보 생성"""
         return {
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
             "aliases": [],
             "description": "테스트 모델",
             "provider": ModelProvider.OPENAI,
@@ -254,7 +259,7 @@ class TestReviewSynthesizerLLMIntegration:
             "thinking_mode": False,
             "pricing": {"input": 2.5, "output": 10.0, "description": "test"},
             "context_limit": 128000,
-            "openrouter_name": "openai/gpt-4o",
+            "openrouter_name": "openai/gpt-5",
         }
 
     @pytest.fixture
@@ -266,7 +271,7 @@ class TestReviewSynthesizerLLMIntegration:
                 recommendations=["함수명 개선", "에러 처리 추가"],
                 issues=[],
             ),
-            estimated_cost=EstimatedCost.get_zero_cost("gpt-4o"),
+            estimated_cost=EstimatedCost.get_zero_cost("gpt-5"),
         )
 
         result2 = ReviewResult.get_success_result(
@@ -275,7 +280,7 @@ class TestReviewSynthesizerLLMIntegration:
                 recommendations=["에러 처리 추가", "주석 추가"],  # 중복 있음
                 issues=[],
             ),
-            estimated_cost=EstimatedCost.get_zero_cost("gpt-4o"),
+            estimated_cost=EstimatedCost.get_zero_cost("gpt-5"),
         )
 
         return [result1, result2]
@@ -299,10 +304,10 @@ class TestReviewSynthesizerLLMIntegration:
 
     def test_structured_synthesis_response_validation(self) -> None:
         """StructuredSynthesisResponse 유효성 검증 테스트"""
-        # Given: 최소 길이 미만의 summary
+        # Given: 빈 문자열 summary (min_length=1 미만)
         with pytest.raises(ValueError):
             StructuredSynthesisResponse(
-                summary="짧음",  # min_length=10 미만
+                summary="",  # min_length=1 미만
                 recommendations=[],
                 synthesis_quality="good",
             )
@@ -315,60 +320,83 @@ class TestReviewSynthesizerLLMIntegration:
                 synthesis_quality="invalid_value",  # pattern 불일치
             )
 
+    def test_structured_synthesis_response_short_summary(self) -> None:
+        """StructuredSynthesisResponse 짧은 요약 허용 테스트"""
+        # Given: 짧은 요약 (min_length=1 이상)
+        short_summaries = ["OK", "Good", "Pass", "No issues", "Minor changes"]
+
+        for summary in short_summaries:
+            # When & Then: 짧은 요약도 정상 생성되어야 함
+            response = StructuredSynthesisResponse(
+                summary=summary,
+                recommendations=[],
+                synthesis_quality="good",
+            )
+            assert response.summary == summary
+
     def test_api_client_initialization(self) -> None:
         """API 클라이언트 초기화 테스트"""
         # Given & When: ReviewSynthesizer 생성
-        synthesizer = ReviewSynthesizer("gpt-4o")
-        
+        synthesizer = ReviewSynthesizer("gpt-5")
+
         # Then: API 클라이언트와 프롬프트 매니저가 초기화되어야 함
         assert synthesizer.api_client is not None
         assert synthesizer.prompt_manager is not None
-        assert synthesizer.model_name == "gpt-4o"
-        assert synthesizer.api_client.model_name == "gpt-4o"
+        assert synthesizer.model_name == "gpt-5"
+        assert synthesizer.api_client.model_name == "gpt-5"
 
     def test_prompt_manager_functionality(self) -> None:
         """프롬프트 매니저 기능 테스트"""
         # Given: ReviewSynthesizer 인스턴스
         synthesizer = ReviewSynthesizer("test-model")
-        
+
         # When: 프롬프트 매니저를 통한 프롬프트 조회
         summary_prompt = synthesizer.prompt_manager.get_summary_synthesis_prompt()
-        system_prompt = synthesizer.prompt_manager.get_system_prompt_for_task("summary_synthesis")
-        
+        system_prompt = synthesizer.prompt_manager.get_system_prompt_for_task(
+            "summary_synthesis"
+        )
+
         # Then: 프롬프트가 정상적으로 반환되어야 함
         assert summary_prompt is not None
         assert len(summary_prompt) > 0
         assert system_prompt == summary_prompt
 
-    @patch("selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis")
+    @patch(
+        "selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis"
+    )
     def test_fallback_synthesis_single_result(
         self, mock_llm_synthesis: Mock, sample_review_results: list[ReviewResult]
     ) -> None:
         """Fallback 합성 - 단일 결과 테스트: LLM 합성이 시도되지만 실패할 때 fallback 로직이 올바르게 작동하는지 검증"""
         # Given: API 클라이언트의 합성이 실패하도록 설정 (None 반환)
-        mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-4o"))
+        mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-5"))
         single_result = [sample_review_results[0]]
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # When: 전체 합성 실행 (LLM 합성 시도 → 실패 → fallback 동작)
         result = synthesizer.synthesize_review_results(single_result)
 
         # Then: API 클라이언트의 합성이 시도되었는지 확인
         mock_llm_synthesis.assert_called_once()
-        
+
         # Then: fallback 로직이 올바르게 작동하여 단일 결과가 그대로 반환되어야 함
         assert result.success is True
         assert result.review_response.summary == "첫 번째 청크: 함수가 추가되었습니다."
-        assert result.review_response.recommendations == ["함수명 개선", "에러 처리 추가"]
+        assert result.review_response.recommendations == [
+            "함수명 개선",
+            "에러 처리 추가",
+        ]
 
-    @patch("selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis")
+    @patch(
+        "selvage.src.multiturn.synthesis_api_client.SynthesisAPIClient.execute_synthesis"
+    )
     def test_fallback_synthesis_multiple_results(
         self, mock_llm_synthesis: Mock, sample_review_results: list[ReviewResult]
     ) -> None:
         """Fallback 합성 - 다중 결과 테스트: LLM 합성이 시도되지만 실패할 때 가장 긴 summary 선택 로직 검증"""
         # Given: API 클라이언트의 합성이 실패하도록 설정 (None 반환)
-        mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-4o"))
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        mock_llm_synthesis.return_value = (None, EstimatedCost.get_zero_cost("gpt-5"))
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # When: 전체 합성 실행 (LLM 합성 시도 → 실패 → fallback 동작)
         result = synthesizer.synthesize_review_results(sample_review_results)
@@ -398,10 +426,10 @@ class TestReviewSynthesizerLLMIntegration:
                     recommendations=["권장사항1"],
                     issues=[],
                 ),
-                estimated_cost=EstimatedCost.get_zero_cost("gpt-4o"),
+                estimated_cost=EstimatedCost.get_zero_cost("gpt-5"),
             )
         ]
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # When: 전체 합성 실행 (fallback 모드로 동작)
         result = synthesizer.synthesize_review_results(empty_results)
@@ -430,15 +458,17 @@ class TestReviewSynthesizerLLMIntegration:
         assert synthesis_data["task"] == "summary_synthesis"
         assert len(synthesis_data["summaries"]) == 2
         assert synthesis_data["summaries"][0] == "첫 번째 청크: 함수가 추가되었습니다."
-        assert synthesis_data["summaries"][1] == "두 번째 청크: 로직이 전면적으로 개선되었습니다."
+        assert (
+            synthesis_data["summaries"][1]
+            == "두 번째 청크: 로직이 전면적으로 개선되었습니다."
+        )
 
     def test_provider_specific_params_openai(
         self, sample_model_info: ModelInfoDict
     ) -> None:
         """OpenAI 프로바이더 요청 파라미터 생성 테스트"""
-        from selvage.src.utils.token.models import SummarySynthesisResponse
 
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
         messages = [
             {"role": "system", "content": "test system"},
             {"role": "user", "content": "test user"},
@@ -446,18 +476,17 @@ class TestReviewSynthesizerLLMIntegration:
 
         # When: API 클라이언트를 통한 파라미터 생성
         params = synthesizer.api_client._create_request_params(
-            messages, sample_model_info, SummarySynthesisResponse
+            messages, sample_model_info, SummarySynthesisResponse, instructor.Instructor
         )
 
         # Then: OpenAI 파라미터 확인
-        assert params["model"] == "gpt-4o"
+        assert params["model"] == "gpt-5"
         assert params["messages"] == messages
-        assert params["max_tokens"] == 5000  # SynthesisConfig.MAX_TOKENS
-        assert params["temperature"] == 0.1
+        assert params["max_completion_tokens"] == 5000  # SynthesisConfig.MAX_TOKENS
+        assert params["reasoning_effort"] == "medium"
 
     def test_provider_specific_params_anthropic(self) -> None:
         """Anthropic 프로바이더 요청 파라미터 생성 테스트"""
-        from selvage.src.utils.token.models import SummarySynthesisResponse
 
         synthesizer = ReviewSynthesizer("claude-sonnet-4")
         anthropic_model_info = {
@@ -472,7 +501,10 @@ class TestReviewSynthesizerLLMIntegration:
 
         # When: API 클라이언트를 통한 파라미터 생성
         params = synthesizer.api_client._create_request_params(
-            messages, anthropic_model_info, SummarySynthesisResponse
+            messages,
+            anthropic_model_info,
+            SummarySynthesisResponse,
+            anthropic.Anthropic,
         )
 
         # Then: Anthropic 파라미터 확인
@@ -486,7 +518,6 @@ class TestReviewSynthesizerLLMIntegration:
 
     def test_provider_specific_params_google(self) -> None:
         """Google 프로바이더 요청 파라미터 생성 테스트"""
-        from selvage.src.utils.token.models import SummarySynthesisResponse
 
         synthesizer = ReviewSynthesizer("gemini-2.5-pro")
         google_model_info = {
@@ -501,31 +532,22 @@ class TestReviewSynthesizerLLMIntegration:
 
         # When: API 클라이언트를 통한 파라미터 생성
         params = synthesizer.api_client._create_request_params(
-            messages, google_model_info, SummarySynthesisResponse
+            messages, google_model_info, SummarySynthesisResponse, genai.Client
         )
 
         # Then: Google 파라미터 확인
         assert params["model"] == "gemini-2.5-pro"
 
-        # contents 형식 변환 확인 (system → user 변환)
-        expected_contents = [
-            {
-                "role": "user",
-                "parts": [{"text": "System: test system prompt"}],
-            },
-            {
-                "role": "user",
-                "parts": [{"text": "test user message"}],
-            },
-        ]
+        # contents 형식 변환 확인 (단일 문자열로 결합)
+        expected_contents = "test user message"
         assert params["contents"] == expected_contents
 
-        # Google Gemini API에서는 generation_config를 직접 파라미터로 전달하지 않음
-        assert "generation_config" not in params
+        # generation_config에 system_instruction과 response_schema가 올바르게 설정되었는지 확인
+        assert params["config"].system_instruction == "test system prompt"
+        assert params["config"].response_schema == SummarySynthesisResponse
 
     def test_provider_specific_params_openrouter(self) -> None:
         """OpenRouter 프로바이더 요청 파라미터 생성 테스트"""
-        from selvage.src.utils.token.models import SummarySynthesisResponse
 
         synthesizer = ReviewSynthesizer("kimi-k2")
         openrouter_model_info = {
@@ -541,7 +563,10 @@ class TestReviewSynthesizerLLMIntegration:
 
         # When: API 클라이언트를 통한 파라미터 생성
         params = synthesizer.api_client._create_request_params(
-            messages, openrouter_model_info, SummarySynthesisResponse
+            messages,
+            openrouter_model_info,
+            SummarySynthesisResponse,
+            OpenRouterHTTPClient,
         )
 
         # Then: OpenRouter 파라미터 확인
@@ -565,7 +590,7 @@ class TestReviewSynthesizerLLMIntegration:
         assert "$defs" in schema or "properties" in schema  # Pydantic schema 구조 확인
 
         # usage 설정 확인
-        assert params["usage"]["include_usage"] is True
+        assert params["usage"]["include"] is True
 
 
 class TestReviewSynthesizerEndToEndMock:
@@ -630,7 +655,7 @@ class TestReviewSynthesizerEndToEndMock:
                 result = ReviewResult.get_error_result(
                     error=Exception(chunk_data["error_info"]["error_message"]),
                     model=chunk_data["estimated_cost"]["model"],
-                    provider=chunk_data["error_info"]["provider"],
+                    provider=ModelProvider.OPENAI,
                 )
 
             results.append(result)
@@ -664,7 +689,7 @@ class TestReviewSynthesizerEndToEndMock:
         """OpenAI 프로바이더 end-to-end Mock 성공 시나리오 테스트 (실제 데이터 기반)"""
         # Given: OpenAI 환경 설정
         mock_model_info = {
-            "full_name": "gpt-4o",
+            "full_name": "gpt-5",
             "provider": ModelProvider.OPENAI,
             "max_tokens": 20000,
         }
@@ -687,7 +712,7 @@ class TestReviewSynthesizerEndToEndMock:
             mock_raw_response,
         )
 
-        synthesizer = ReviewSynthesizer("gpt-4o")
+        synthesizer = ReviewSynthesizer("gpt-5")
 
         # When: 리뷰 결과 합성 실행 (성공한 결과만 필터링됨)
         result = synthesizer.synthesize_review_results(integration_review_results)
@@ -816,9 +841,9 @@ class TestReviewSynthesizerEndToEndMock:
         assert result.review_response.summary is not None
         assert len(result.review_response.recommendations) > 0
 
-        # 재시도 확인: 
+        # 재시도 확인:
         # 실제로는 _call_openai_api의 try-catch에서 예외가 잡혀서 instructor의 재시도가 동작하지 않음
-        # mock.side_effect = Exception으로 설정하면 첫 번째 호출에서 예외가 발생하고, 
+        # mock.side_effect = Exception으로 설정하면 첫 번째 호출에서 예외가 발생하고,
         # _call_openai_api의 except 블록이 이를 잡아서 None을 반환하므로 재시도가 일어나지 않음
         # 따라서 실제로는 1회만 호출됨 (이것이 현재 구현의 실제 동작)
         assert (

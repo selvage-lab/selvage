@@ -1,0 +1,22 @@
+# <type>: <subject> (50 characters or less)
+#
+# Types: feat, fix, docs, style, refactor, test, chore
+# Examples:
+#   feat: add support for new AI model
+#   fix: resolve API key validation issue
+#   docs: update README with new CLI options
+#   test: add unit tests for gateway factory
+
+# Blank line separates subject from body
+
+# Body: Explain what and why (optional)
+# - What was changed
+# - Why the change was necessary
+# - Impact of the change
+
+# Footer (optional):
+# Fixes: #123
+# Closes: #456
+# Co-authored-by: name <email>
+
+Signed-off-by:

@@ -58,7 +58,7 @@ def review_request() -> ReviewRequest:
                 )
             ]
         ),
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         repo_path=".",
     )
 
@@ -105,7 +105,7 @@ def multi_hunk_review_request() -> ReviewRequest:
                 )
             ]
         ),
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         repo_path=".",
     )
 
@@ -362,7 +362,7 @@ def new_file_review_request() -> ReviewRequest:
                 )
             ]
         ),
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         repo_path=".",
     )
 
@@ -435,7 +435,7 @@ def rewritten_file_review_request() -> ReviewRequest:
                 )
             ]
         ),
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         repo_path=".",
     )
 

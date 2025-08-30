@@ -78,7 +78,7 @@ class ReviewLogManager:
             "review_response": response_data,
             "status": status.value,
             "error": str(error) if error else None,
-            "prompt_version": "v3",
+            "prompt_version": "v4",
             "repo_path": review_request.repo_path,
         }
 

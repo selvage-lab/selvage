@@ -92,7 +92,7 @@ class ModelConfig:
             ) from e
 
     @classmethod
-    def _validate_yaml_data(cls, data: Any) -> None:
+    def _validate_yaml_data(cls, data: dict[str, Any]) -> None:
         """YAML 데이터의 구조와 내용을 검증합니다.
 
         Args:
@@ -141,7 +141,9 @@ class ModelConfig:
             valid_providers = [p.value for p in ModelProvider]
             if model_info["provider"] not in valid_providers:
                 raise ValueError(
-                    f"모델 '{model_name}'의 provider '{model_info['provider']}'가 유효하지 않습니다. 유효한 값: {valid_providers}"
+                    f"모델 '{model_name}'의 provider "
+                    f"'{model_info['provider']}'가 유효하지 않습니다. "
+                    f"유효한 값: {valid_providers}"
                 )
 
             # pricing 구조 검증

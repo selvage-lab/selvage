@@ -13,6 +13,12 @@ pytest tests/
 # Run E2E tests (requires testcontainers and docker)
 pytest e2e/
 
+# Build fresh TestPyPI Docker image (ensures latest selvage version)
+./scripts/build_testpypi_image.sh
+
+# Or rebuild manually with cache bypass
+docker build --no-cache --build-arg CACHEBUST=$(date +%s) -t selvage-testpypi:latest -f e2e/dockerfiles/testpypi/Dockerfile .
+
 # Run LLM evaluation tests
 pytest llm_eval/
 
@@ -64,11 +70,11 @@ selvage review --model claude-sonnet-4
 # Launch UI to view results
 selvage view
 
-# Set API keys
-selvage --set-openai-key
-selvage --set-claude-key
-selvage --set-gemini-key
-selvage --set-openrouter-key
+# Set API keys (환경변수)
+export OPENAI_API_KEY=your_openai_key
+export ANTHROPIC_API_KEY=your_claude_key
+export GEMINI_API_KEY=your_gemini_key
+export OPENROUTER_API_KEY=your_openrouter_key
 
 # Configure default model and language
 selvage config model claude-sonnet-4
@@ -139,7 +145,7 @@ Selvage is an LLM-based code review tool with a modular architecture:
 
 The tool supports multiple AI providers:
 
-- **OpenAI**: GPT-4o, GPT-4.1, o4-mini variants
+- **OpenAI**: GPT-5, GPT-5-mini variants
 - **Anthropic**: Claude Sonnet-4, Claude Sonnet-4-thinking
 - **Google**: Gemini 2.5 Pro, Gemini 2.5 Flash
 - **OpenRouter**: Gateway for accessing various models through OpenRouter API

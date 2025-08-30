@@ -20,59 +20,14 @@ def error_test_container():
     container.stop()
 
 
-def test_invalid_api_key_handling(error_test_container) -> None:
-    """잘못된 API 키로 리뷰 시도 시 에러 처리 테스트."""
-    container = error_test_container
-
-    # TestPyPI에서 selvage 설치
-    verify_selvage_installation(container)
-
-    # 테스트 저장소 생성 및 git init
-    exit_code, output = container.exec(
-        "bash -c 'mkdir -p /tmp/error_test_repo && cd /tmp/error_test_repo && git init'"
-    )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/error_test_repo && git config user.email test@example.com'"
-    )
-    assert exit_code == 0, "Git config should succeed"
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/error_test_repo && git config user.name \"Test User\"'"
-    )
-    assert exit_code == 0, "Git config should succeed"
-
-    # 테스트 파일 생성
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/error_test_repo && echo \"def test(): pass\" > test.py && git add test.py'"
-    )
-    assert exit_code == 0, "Test file creation should succeed"
-
-    # 잘못된 API 키로 리뷰 시도 (모델 지정하지 않으면 모델 설정 에러가 먼저 발생)
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/error_test_repo && selvage review --staged --model gemini-2.5-flash'"
-    )
-
-    # API 키 에러 처리 확인
-    output_str = output.decode("utf-8", errors="ignore").lower()
-
-    # TestPyPI 버전에서 segfault 발생하는 경우 테스트 스킵
-    if exit_code == 139:  # segfault
-        pytest.skip("TestPyPI version has segfault issue with invalid API key")
-
-    # 실제 에러 메시지 확인
-    assert any(
-        keyword in output_str
-        for keyword in [
-            "api_key_invalid",
-            "400 invalid_argument",
-            "api key not valid",
-            "invalid_argument",
-        ]
-    ), f"Should handle invalid API key error. Actual output: {output_str}"
+# API 키 관련 테스트는 e2e_api_key_scenarios.py로 이관되었습니다.
+# 잘못된 API 키 처리 테스트는 새로운 파일에서 더 상세하게 다룹니다.
+def test_invalid_api_key_handling_deprecated():
+    """
+    이 테스트는 e2e_api_key_scenarios.py로 이관되었습니다.
+    더 포괄적인 API 키 관련 테스트는 새로운 파일에서 확인하세요.
+    """
+    pytest.skip("This test has been moved to e2e_api_key_scenarios.py for better organization")
 
 
 def test_not_config_default_model_handling(error_test_container) -> None:

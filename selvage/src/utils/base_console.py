@@ -50,7 +50,7 @@ class BaseConsole:
         else:
             self.logger.error(f"ERROR: {message}")
 
-    def print(self, *args: Any, **kwargs: Any) -> None:
+    def print(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
         """Rich 콘솔의 print 메서드를 래핑합니다."""
         self.console.print(*args, **kwargs)
 
@@ -59,6 +59,15 @@ class BaseConsole:
         """진행 상황을 스피너와 함께 표시합니다."""
         with self.console.status(message, spinner="dots") as status:
             yield status
+
+    def is_debug_mode(self) -> bool:
+        """디버그 모드 여부 확인"""
+        try:
+            from selvage.src.config import get_default_debug_mode
+
+            return get_default_debug_mode()
+        except (ImportError, Exception):
+            return False
 
 
 # 전역 콘솔 인스턴스 (기본 기능만)

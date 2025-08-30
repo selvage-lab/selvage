@@ -1,10 +1,13 @@
 """selvage CLI 기본 기능 Container 기반 End-to-End 테스트."""
 
+import os
+
 import pytest
 from testcontainers.core.generic import DockerContainer
 
 from e2e.helpers import verify_selvage_installation
 from selvage.src.config import get_api_key
+from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.models.model_provider import ModelProvider
 
 
@@ -15,9 +18,14 @@ def testpypi_container():
     container.with_command("bash -c 'while true; do sleep 1; done'")
 
     # API 키 설정 (필요한 경우)
-    gemini_api_key = get_api_key(ModelProvider.GOOGLE)
-    if gemini_api_key:
+    try:
+        gemini_api_key = get_api_key(ModelProvider.GOOGLE)
         container.with_env("GEMINI_API_KEY", gemini_api_key)
+    except APIKeyNotFoundError:
+        # API 키가 없으면 환경변수에서 가져오기 시도
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if gemini_api_key:
+            container.with_env("GEMINI_API_KEY", gemini_api_key)
 
     container.start()
 
@@ -94,14 +102,14 @@ class TestSelvageConfigManagement:
         verify_selvage_installation(container)  # 다시 호출
 
         # 유효한 모델명으로 설정
-        exit_code, output = container.exec("selvage config model gpt-4o")
+        exit_code, output = container.exec("selvage config model gpt-5")
         assert exit_code == 0
 
         # 설정 확인
         exit_code, output = container.exec("selvage config list")
         assert exit_code == 0
         output_str = output.decode("utf-8", errors="ignore")
-        assert "gpt-4o" in output_str
+        assert "gpt-5" in output_str
 
     def test_config_language_setting(self, testpypi_container) -> None:
         """언어 설정이 정상적으로 작동하는지 테스트."""
