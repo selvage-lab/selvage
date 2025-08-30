@@ -12,7 +12,7 @@ Selvage에 관심을 가지고 기여해주셔서 감사합니다! 저희는 커
 
 ### 🐛 버그 리포트 (Bug Reports)
 
-버그를 발견하셨다면 언제든지 [GitHub Issues](https://github.com/anomie7/selvage/issues)를 통해 알려주세요.
+버그를 발견하셨다면 언제든지 [GitHub Issues](https://github.com/selvage-lab/selvage/issues)를 통해 알려주세요.
 
 **이슈 작성 시 포함해주실 정보:**
 
@@ -26,7 +26,7 @@ Selvage에 관심을 가지고 기여해주셔서 감사합니다! 저희는 커
 
 ### ✨ 기능 제안 (Feature Requests)
 
-새로운 기능이나 개선 아이디어가 있다면 [GitHub Issues](https://github.com/anomie7/selvage/issues)를 통해 제안해주세요.
+새로운 기능이나 개선 아이디어가 있다면 [GitHub Issues](https://github.com/selvage-lab/selvage/issues)를 통해 제안해주세요.
 
 **제안 시 포함해주실 정보:**
 
@@ -220,7 +220,7 @@ Selvage는 Apache-2.0 라이선스 하에 완전한 오픈소스 프로젝트입
 
 ## 📞 소통 채널
 
-- **이슈 및 토론**: [GitHub Issues](https://github.com/anomie7/selvage/issues)
+- **이슈 및 토론**: [GitHub Issues](https://github.com/selvage-lab/selvage/issues)
 - **직접 문의**: anomie7777@gmail.com
 - **코드 기여**: Pull Request를 통한 기여
 

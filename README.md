@@ -58,6 +58,7 @@
 ### 1. 설치
 
 #### 권장 방법 (uv 사용)
+
 ```bash
 # uv 설치 (한 번만 실행)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -67,6 +68,7 @@ uv tool install selvage
 ```
 
 #### 대안 방법 (pipx 사용)
+
 ```bash
 # pipx 설치 (macOS)
 brew install pipx
@@ -76,6 +78,7 @@ pipx install selvage
 ```
 
 #### 전통적 방법 (pip)
+
 ```bash
 # ⚠️ 일부 환경에서 externally-managed-environment 에러 발생 가능
 pip install selvage
@@ -360,8 +363,9 @@ selvage review
 ### 개발 버전 설치
 
 #### uv 사용 (권장)
+
 ```bash
-git clone https://github.com/anomie7/selvage.git
+git clone https://github.com/selvage-lab/selvage.git
 cd selvage
 
 # 모든 개발 의존성 자동 설치
@@ -372,8 +376,9 @@ uv run selvage --help
 ```
 
 #### 기존 pip 사용
+
 ```bash
-git clone https://github.com/anomie7/selvage.git
+git clone https://github.com/selvage-lab/selvage.git
 cd selvage
 pip install -e .
 ```
@@ -381,6 +386,7 @@ pip install -e .
 ### 개발 환경 설치
 
 #### uv 방식 (권장)
+
 ```bash
 # 개발 의존성만
 uv sync --dev
@@ -393,6 +399,7 @@ uv run pytest tests/
 ```
 
 #### pip 방식
+
 ```bash
 # 개발 의존성 포함 설치 (pytest, build 등)
 pip install -e .[dev]
@@ -432,7 +439,7 @@ Selvage는 오픈소스 프로젝트이며, 여러분의 기여를 언제나 환
 
 **기여 방법:**
 
-- 🐛 [GitHub Issues](https://github.com/anomie7/selvage/issues)에서 버그 리포트 또는 기능 제안
+- 🐛 [GitHub Issues](https://github.com/selvage-lab/selvage/issues)에서 버그 리포트 또는 기능 제안
 - 🔧 Pull Request를 통한 코드 기여
 - 📚 문서 개선 및 번역
 
@@ -444,7 +451,7 @@ Selvage는 [Apache License 2.0](LICENSE) 하에 배포됩니다. 이 라이선�
 
 ## 📞 문의 및 커뮤니티
 
-- **🐛 버그 리포트 및 기능 요청**: [GitHub Issues](https://github.com/anomie7/selvage/issues)
+- **🐛 버그 리포트 및 기능 요청**: [GitHub Issues](https://github.com/selvage-lab/selvage/issues)
 - **📧 직접 문의**: contact@selvage.me
 
 ---

@@ -12,7 +12,7 @@ We welcome various forms of contributions. Selvage is a completely open-source p
 
 ### 🐛 Bug Reports
 
-If you discover a bug, please report it anytime through [GitHub Issues](https://github.com/anomie7/selvage/issues).
+If you discover a bug, please report it anytime through [GitHub Issues](https://github.com/selvage-lab/selvage/issues).
 
 **Information to include when creating an issue:**
 
@@ -26,7 +26,7 @@ If you discover a bug, please report it anytime through [GitHub Issues](https://
 
 ### ✨ Feature Requests
 
-If you have ideas for new features or improvements, please suggest them through [GitHub Issues](https://github.com/anomie7/selvage/issues).
+If you have ideas for new features or improvements, please suggest them through [GitHub Issues](https://github.com/selvage-lab/selvage/issues).
 
 **Information to include in proposals:**
 
@@ -228,7 +228,7 @@ Selvage is a completely open-source project under the Apache-2.0 license. We pur
 
 ## 📞 Communication Channels
 
-- **Issues and Discussions**: [GitHub Issues](https://github.com/anomie7/selvage/issues)
+- **Issues and Discussions**: [GitHub Issues](https://github.com/selvage-lab/selvage/issues)
 - **Direct Contact**: anomie7777@gmail.com
 - **Code Contributions**: Contributions through Pull Requests
 

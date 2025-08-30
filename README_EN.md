@@ -323,7 +323,7 @@ selvage review
 ### Development Version Installation
 
 ```bash
-git clone https://github.com/anomie7/selvage.git
+git clone https://github.com/selvage-lab/selvage.git
 cd selvage
 pip install -e .
 ```
@@ -369,7 +369,7 @@ Selvage is an open-source project and we always welcome your contributions! Bug 
 
 **How to Contribute:**
 
-- 🐛 Bug reports or feature suggestions on [GitHub Issues](https://github.com/anomie7/selvage/issues)
+- 🐛 Bug reports or feature suggestions on [GitHub Issues](https://github.com/selvage-lab/selvage/issues)
 - 🔧 Code contributions through Pull Requests
 - 📚 Documentation improvements and translations
 
@@ -381,7 +381,7 @@ Selvage is distributed under the [Apache License 2.0](LICENSE). This license per
 
 ## 📞 Contact and Community
 
-- **🐛 Bug Reports and Feature Requests**: [GitHub Issues](https://github.com/anomie7/selvage/issues)
+- **🐛 Bug Reports and Feature Requests**: [GitHub Issues](https://github.com/selvage-lab/selvage/issues)
 - **📧 Direct Contact**: contact@selvage.me
 
 ---
