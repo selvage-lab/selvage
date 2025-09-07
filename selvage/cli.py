@@ -201,36 +201,39 @@ def config_list() -> None:
 
         if has_api_key(provider):
             console.print(
-                f"{provider_display} API 키: [bold green]환경변수[/bold green] {env_var_name}에서 설정됨 ✓",
+                (
+                    f"{provider_display} API Key: "
+                    f"[bold green]Set from env var[/bold green] {env_var_name} ✓"
+                ),
                 style="green",
             )
         else:
-            console.print(f"{provider_display} API 키: 설정되지 않음", style="red")
+            console.print(f"{provider_display} API Key: Not set", style="red")
             console.print(
-                f"  설정 방법: [green]export {env_var_name}=your_api_key[/green]"
+                f"  Setup: [green]export {env_var_name}=your_api_key[/green]"
             )
 
     console.print("")
 
     # 기본 설정들 표시
-    console.print("[bold]기본 설정[/bold]", style="cyan")
+    console.print("[bold]Default Settings[/bold]", style="cyan")
     default_model = get_default_model()
     if default_model:
-        console.print(f"기본 모델: {default_model}", style="green")
+        console.print(f"Default model: {default_model}", style="green")
     else:
-        console.print("기본 모델: 설정되지 않음", style="red")
+        console.print("Default model: Not set", style="red")
 
     default_language = get_default_language()
     if default_language:
-        console.print(f"기본 언어: {default_language}", style="green")
+        console.print(f"Default language: {default_language}", style="green")
     else:
-        console.print("기본 언어: 설정되지 않음", style="red")
+        console.print("Default language: Not set", style="red")
 
     default_debug_mode = console.is_debug_mode()
-    console.print(f"디버그 모드: {default_debug_mode}", style="green")
+    console.print(f"Debug mode: {default_debug_mode}", style="green")
 
     review_log_dir = get_default_review_log_dir()
-    console.print(f"리뷰 로그 디렉토리: {review_log_dir}", style="green")
+    console.print(f"Review log directory: {review_log_dir}", style="green")
 
 
 def _handle_context_limit_error(
@@ -271,36 +274,36 @@ def _handle_api_error(error_response: ErrorResponse) -> None:
 def _handle_openrouter_error(error: OpenRouterAPIError) -> None:
     """OpenRouter 관련 에러 처리"""
     if isinstance(error, OpenRouterAuthenticationError):
-        console.error("OpenRouter API 인증 오류")
-        console.info("해결 방법:")
-        console.print("  1. OPENROUTER_API_KEY 환경변수 확인")
-        console.print("  2. API 키 유효성 확인")
+        console.error("OpenRouter API authentication error")
+        console.info("Solutions:")
+        console.print("  1. Check OPENROUTER_API_KEY environment variable")
+        console.print("  2. Verify API key validity")
     elif isinstance(error, OpenRouterResponseError):
-        console.error(f"OpenRouter API 응답 구조 오류: {error}")
+        console.error(f"OpenRouter API response structure error: {error}")
         if error.missing_field:
-            console.error(f"누락된 필드: {error.missing_field}")
+            console.error(f"Missing field: {error.missing_field}")
         if console.is_debug_mode() and error.raw_response:
-            console.error(f"원본 응답: {error.raw_response}")
+            console.error(f"Raw response: {error.raw_response}")
     else:
-        console.error(f"OpenRouter API 오류: {error}")
+        console.error(f"OpenRouter API error: {error}")
 
 
 def _handle_json_parsing_error(error: JSONParsingError) -> None:
     """JSON 파싱 에러 처리"""
-    console.error("구조화된 응답 파싱에 실패했습니다")
-    console.error(f"오류: {error}")
+    console.error("Failed to parse structured response")
+    console.error(f"Error: {error}")
 
     if console.is_debug_mode():
-        console.error("디버그 정보:")
+        console.error("Debug information:")
         if error.parsing_error:
-            console.error(f"  파싱 오류: {error.parsing_error}")
+            console.error(f"  Parsing error: {error.parsing_error}")
         if error.raw_response:
-            console.error(f"  원본 응답 (일부): {error.raw_response}")
+            console.error(f"  Raw response (partial): {error.raw_response}")
 
 
 def _handle_unknown_error() -> None:
     """알 수 없는 에러 처리"""
-    console.error("알 수 없는 오류가 발생했습니다.")
+    console.error("An unknown error occurred.")
     raise Exception("Unknown error occurred")
 
 
@@ -363,8 +366,8 @@ def review_code(
 
     api_key = get_api_key(provider)
     if not api_key:
-        console.error(f"{provider.get_display_name()} API 키가 설정되지 않았습니다.")
-        console.info("환경변수로 API 키를 설정해주세요:")
+        console.error(f"{provider.get_display_name()} API key is not set.")
+        console.info("Please set API key as environment variable:")
         console.print(
             f"  [green]export {provider.get_env_var_name()}=YOUR_API_KEY[/green]"
         )
@@ -439,7 +442,7 @@ def review_code(
                     estimated_cost=estimated_cost,
                 )
 
-                console.success("캐시된 리뷰 결과를 사용했습니다! (API 비용 절약)")
+                console.success("Used cached review result! (API cost saved)")
             else:
                 # 캐시 미스: 새로운 리뷰 수행 후 캐시에 저장
                 log_id = ReviewLogManager.generate_log_id(model)
@@ -470,13 +473,13 @@ def review_code(
             estimated_cost=estimated_cost,
         )
 
-        console.success("코드 리뷰가 완료되었습니다!")
+        console.success("Code review completed!")
     except UnsupportedModelError:
         # UnsupportedModelError는 이미 명확한 메시지가 표시되었으므로
         # 추가 메시지 없이 종료
         return
     except Exception as e:
-        console.error(f"코드 리뷰 중 오류가 발생했습니다: {str(e)}", exception=e)
+        console.error(f"Error occurred during code review: {str(e)}", exception=e)
         error_log_id = ReviewLogManager.generate_log_id(model)
         log_path = ReviewLogManager.save(
             review_prompt,
@@ -495,7 +498,7 @@ def review_code(
 
     # UI 자동 실행
     if open_ui:
-        console.info("리뷰 결과 UI를 시작합니다...")
+        console.info("Starting review result UI...")
         handle_view_command(port)
 
 
@@ -503,16 +506,16 @@ def handle_view_command(port: int) -> None:
     """UI 보기 명령을 처리합니다."""
     try:
         console.info(
-            f"Streamlit UI를 시작합니다. 브라우저에서 "
-            f"[blue]http://localhost:{port}[/blue]으로 접속하세요..."
+            f"Starting Streamlit UI. Please access "
+            f"[blue]http://localhost:{port}[/blue] in your browser..."
         )
         # 포트 설정
         os.environ["STREAMLIT_SERVER_PORT"] = str(port)
         # UI 실행
         run_app()
     except ImportError as e:
-        console.error("Streamlit 라이브러리가 설치되어 있지 않습니다.", exception=e)
-        console.info("다음 명령어로 설치하세요: [green]pip install streamlit[/green]")
+        console.error("Streamlit library is not installed.", exception=e)
+        console.info("Install with: [green]pip install streamlit[/green]")
         return
 
 
@@ -684,10 +687,10 @@ def main() -> None:
     try:
         cli()
     except KeyboardInterrupt:
-        console.info("\n프로그램이 사용자에 의해 중단되었습니다.")
+        console.info("\nProgram was interrupted by user.")
         sys.exit(1)
     except Exception as e:
-        console.error(f"오류 발생: {str(e)}", exception=e)
+        console.error(f"Error occurred: {str(e)}", exception=e)
         sys.exit(1)
 
 

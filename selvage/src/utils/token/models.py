@@ -199,7 +199,7 @@ class ReviewResponse(BaseModel):
 
         # 요청 또는 네트워크 오류인 경우
         if isinstance(error, requests.RequestException):
-            raise Exception(f"API 호출 중 오류 발생: {str(error)}") from error
+            raise Exception(f"Error occurred during API call: {str(error)}") from error
 
         # 기타 예외 처리 (토큰 제한, 파싱 오류 등)
         return ReviewResponse(

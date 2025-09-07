@@ -44,7 +44,7 @@ class JSONParsingError(LLMGatewayError):
         truncated_response = cls._truncate_response(raw_response)
 
         return cls(
-            message=f"{api_name} 응답 파싱 실패: {str(source_error)}",
+            message=f"{api_name} response parsing failed: {str(source_error)}",
             raw_response=truncated_response,
             parsing_error=source_error,
         )

@@ -124,7 +124,8 @@ class ContextExtractor:
                 "import_statement",
                 "import_declaration",
                 "call_expression",  # require() 호출
-                "lexical_declaration",  # const, let, var 선언 (require 포함 여부를 동적으로 체크)
+                # const, let, var 선언 (require 포함 여부를 동적으로 체크)
+                "lexical_declaration",
                 "variable_declaration",  # var 선언
             }
         ),
@@ -134,7 +135,8 @@ class ContextExtractor:
                 "import_declaration",
                 "import_require_clause",
                 "call_expression",  # require() 호출
-                "lexical_declaration",  # const, let, var 선언 (require 포함 여부를 동적으로 체크)
+                # const, let, var 선언 (require 포함 여부를 동적으로 체크)
+                "lexical_declaration",
                 "variable_declaration",  # var 선언
             }
         ),
@@ -186,7 +188,7 @@ class ContextExtractor:
             # 무의미한 변경 필터링 객체
             self._filter = MeaninglessChangeFilter()
         except Exception as e:
-            raise ValueError(f"언어 '{language}' 초기화 실패: {e}") from e
+            raise ValueError(f"Failed to initialize language '{language}': {e}") from e
 
     @classmethod
     def get_supported_languages(cls) -> list[str]:
@@ -232,7 +234,7 @@ class ContextExtractor:
         try:
             code_bytes = file_content.encode("utf-8")
         except UnicodeEncodeError as e:
-            raise ValueError(f"파일 인코딩 오류: {e}") from e
+            raise ValueError(f"File encoding error: {e}") from e
 
         # 2. 1줄 무의미 변경 필터링
         meaningful_ranges = self._filter.filter_meaningful_ranges_with_file_content(
@@ -249,7 +251,7 @@ class ContextExtractor:
             if tree.root_node.has_error:
                 logger.warning("파싱 경고: 구문 오류 감지됨")
         except Exception as e:
-            raise ValueError(f"파싱 실패: {e}") from e
+            raise ValueError(f"Parsing failed: {e}") from e
 
         # 4. 변경 범위의 각 라인에 대해 최소 블록들 찾기
         context_blocks: set[Node] = set()
@@ -305,7 +307,7 @@ class ContextExtractor:
                 else:
                     context_blocks.append((node_text, node))
             except UnicodeDecodeError:
-                logger.error(f"노드 텍스트 디코딩 실패: {node.start_point}")
+                logger.error(f"Failed to decode node text: {node.start_point}")
                 continue
 
         # 의존성 블록 포맷팅

@@ -57,7 +57,7 @@ class ErrorPatternParser:
             msg = "패키지 리소스에서 error_patterns.yml을 찾을 수 없습니다"
             raise FileNotFoundError(msg) from e
         except yaml.YAMLError as e:
-            raise ValueError(f"패턴 설정 파일 파싱 실패: {e}") from e
+            raise ValueError(f"Pattern configuration file parsing failed: {e}") from e
 
     def parse_error(
         self, provider: ModelProvider, error: Exception

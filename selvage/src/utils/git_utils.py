@@ -41,14 +41,17 @@ class GitDiffUtility:
         # 경로 유효성 검증
         path = Path(repo_path)
         if not path.exists() or not (path / ".git").exists():
-            raise ValueError(f"오류: 유효한 Git 저장소 경로를 지정하세요: {repo_path}")
+            raise ValueError(
+                f"Error: Please specify a valid Git repository path: {repo_path}"
+            )
 
     @classmethod
-    def from_args(cls, args) -> "GitDiffUtility":
+    def from_args(cls, args: object) -> "GitDiffUtility":
         """명령줄 인수에서 GitDiffUtility 인스턴스를 생성합니다.
 
         Args:
-            args: 명령줄 인수 객체 (repo_path, staged, target_commit, target_branch 속성 포함)
+            args: 명령줄 인수 객체 (repo_path, staged, target_commit,
+                  target_branch 속성 포함)
 
         Returns:
             GitDiffUtility: 초기화된 유틸리티 인스턴스
@@ -98,8 +101,13 @@ class GitDiffUtility:
             cmd.append(f"{self.target}..HEAD")
 
         try:
-            process_result = subprocess.run(
-                cmd, capture_output=True, text=True, check=True, encoding="utf-8"
+            process_result = subprocess.run(  # noqa: S603
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+                encoding="utf-8",
+                shell=False,
             )
             return process_result.stdout
         except subprocess.CalledProcessError as e:
@@ -110,7 +118,8 @@ class GitDiffUtility:
             return ""
         except Exception as e:
             console.error(
-                f"Git diff 처리 중 예상치 못한 오류 발생: {e}\n실행된 명령어: {' '.join(cmd)}",
+                f"Git diff 처리 중 예상치 못한 오류 발생: {e}\n"
+                f"실행된 명령어: {' '.join(cmd)}",
                 exception=e,
             )
             return ""

@@ -105,14 +105,14 @@ class ModelConfig:
         """
         # 기본 구조 검증
         if not isinstance(data, dict):
-            raise ValueError("YAML 데이터가 dictionary 형태가 아닙니다")
+            raise ValueError("YAML data is not in dictionary format")
 
         if "models" not in data:
-            raise ValueError("YAML에 'models' 키가 없습니다")
+            raise ValueError("YAML does not have 'models' key")
 
         models = data["models"]
         if not isinstance(models, dict):
-            raise ValueError("'models' 값이 dictionary 형태가 아닙니다")
+            raise ValueError("'models' value is not in dictionary format")
 
         # 각 모델 정보 검증
         required_fields = [
@@ -171,7 +171,7 @@ class ModelConfig:
         """
         # 타입 체커를 위한 방어 코드
         if self._config is None:
-            raise RuntimeError("모델 설정이 초기화되지 않았습니다")
+            raise RuntimeError("Model configuration is not initialized")
 
         # 정식 이름으로 시도
         if model_name in self._config:
@@ -192,7 +192,7 @@ class ModelConfig:
         """
         # 타입 체커를 위한 방어 코드
         if self._config is None:
-            raise RuntimeError("모델 설정이 초기화되지 않았습니다")
+            raise RuntimeError("Model configuration is not initialized")
 
         alias_names = [
             alias
@@ -288,7 +288,7 @@ class ModelConfig:
         """
         # 타입 체커를 위한 방어 코드
         if self._config is None:
-            raise RuntimeError("모델 설정이 초기화되지 않았습니다")
+            raise RuntimeError("Model configuration is not initialized")
 
         # 내부 _config의 사본을 반환하여 외부에서 수정할 수 없도록 보호
         return self._config.copy()

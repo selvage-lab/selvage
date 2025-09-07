@@ -70,7 +70,7 @@ class OpenRouterResponse(BaseModel):
         try:
             return cls.model_validate(response_data)
         except Exception as e:
-            console.error(f"OpenRouter 응답 파싱 오류: {e}")
-            console.error(f"원본 응답: {response_data}")
+            console.error(f"OpenRouter response parsing error: {e}")
+            console.error(f"Raw response: {response_data}")
             # 빈 응답 반환 (기본값들로 구성)
             return cls()

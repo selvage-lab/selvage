@@ -166,7 +166,7 @@ class ReviewSynthesizer:
         ]
 
         if not summaries:
-            return "리뷰 결과를 합성할 수 없습니다."
+            return "Cannot synthesize review results."
         elif len(summaries) == 1:
             return summaries[0]
         else:

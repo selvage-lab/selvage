@@ -37,4 +37,4 @@ class SynthesisPromptManager:
         elif task == "recommendation_synthesis":
             return self.get_recommendation_synthesis_prompt()
         else:
-            raise ValueError(f"지원하지 않는 작업 타입: {task}")
+            raise ValueError(f"Unsupported task type: {task}")

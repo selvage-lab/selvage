@@ -19,9 +19,9 @@ class LineRange:
     def __post_init__(self) -> None:
         """유효성 검증을 수행합니다."""
         if self.start_line < 1 or self.end_line < 1:
-            raise ValueError("라인 번호는 1 이상이어야 합니다")
+            raise ValueError("Line number must be 1 or greater")
         if self.start_line > self.end_line:
-            raise ValueError("시작 라인이 끝 라인보다 클 수 없습니다")
+            raise ValueError("Start line cannot be greater than end line")
 
     def contains(self, line: int) -> bool:
         """지정된 라인이 이 범위에 포함되는지 확인합니다."""

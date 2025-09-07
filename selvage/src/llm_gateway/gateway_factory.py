@@ -51,4 +51,4 @@ class GatewayFactory:
 
             return OpenRouterGateway(model_info=model_info)
         else:
-            raise ValueError(f"지원하지 않는 provider: {provider}")
+            raise ValueError(f"Unsupported provider: {provider}")

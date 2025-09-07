@@ -7,8 +7,11 @@ from selvage.src.utils.token.models import ReviewResponse
 
 
 class ReviewFormatter:
-    """리뷰 결과를 다양한 형식으로 변환하는 클래스\n
-    이 클래스는 리뷰 응답을 마크다운, HTML 등 다양한 출력 형식으로 변환하는 기능을 제공합니다."""
+    """리뷰 결과를 다양한 형식으로 변환하는 클래스.
+
+    이 클래스는 리뷰 응답을 마크다운, HTML 등 다양한 출력 형식으로
+    변환하는 기능을 제공합니다.
+    """
 
     def format(self, review: ReviewResponse, output_format: str = "markdown") -> str:
         """리뷰 결과를 지정된 형식으로 변환합니다.
@@ -28,13 +31,15 @@ class ReviewFormatter:
         elif output_format == "html":
             return self.to_html(review)
         else:
-            raise ValueError(f"지원하지 않는 출력 형식: {output_format}")
+            raise ValueError(f"Unsupported output format: {output_format}")
 
     @staticmethod
     def _format_code_block(
         code: str | None, header: str, language: str | None = None
     ) -> list[str]:
-        """마크다운 코드 블록을 포맷합니다. 코드가 이미 백틱으로 감싸져 있으면 그대로 사용합니다.
+        """마크다운 코드 블록을 포맷합니다.
+
+        코드가 이미 백틱으로 감싸져 있으면 그대로 사용합니다.
 
         Args:
             code: 포맷할 코드 문자열
@@ -137,7 +142,8 @@ class ReviewFormatter:
             "<meta charset='UTF-8'>",
             "<title>코드 리뷰 결과</title>",
             "<style>",
-            "body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }",
+            "body { font-family: Arial, sans-serif; line-height: 1.6; "
+            "max-width: 800px; margin: 0 auto; padding: 20px; }",
             "h1 { color: #333; }",
             "h2 { color: #444; border-bottom: 1px solid #eee; padding-bottom: 5px; }",
             "h3 { color: #555; }",
@@ -145,11 +151,13 @@ class ReviewFormatter:
             ".info {  }",
             ".warning {  }",
             ".error {  }",
-            ".file-info { font-family: monospace; background-color: #eee; padding: 3px 5px; border-radius: 3px; }",
+            ".file-info { font-family: monospace; background-color: #eee; "
+            "padding: 3px 5px; border-radius: 3px; }",
             ".recommendations { padding: 10px; border-radius: 5px; }",
             "</style>",
             "<style>",
-            "pre { background-color: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }",
+            "pre { background-color: #f5f5f5; padding: 10px; "
+            "border-radius: 5px; overflow-x: auto; }",
             "code { font-family: 'Courier New', Courier, monospace; }",
             "</style>",
             "</head>",
@@ -177,12 +185,17 @@ class ReviewFormatter:
                 html_lines.append(f"<h3>{i}. {severity_emoji} {issue.type}</h3>")
                 language = None
                 if issue.file:
-                    file_info = f"<strong>파일</strong>: <span class='file-info'>{issue.file}</span>"
+                    file_info = (
+                        "<strong>파일</strong>: "
+                        f"<span class='file-info'>{issue.file}</span>"
+                    )
                     if issue.line_number:
                         file_info += f", <strong>라인</strong>: {issue.line_number}"
                     html_lines.append(f"<p>{file_info}</p>")
+                    html_lines.append(
+                        f"<p><strong>설명</strong>: {issue.description}</p>"
+                    )
                     language = detect_language_from_filename(issue.file)
-                html_lines.append(f"<p><strong>설명</strong>: {issue.description}</p>")
 
                 if issue.suggestion:
                     html_lines.append(
@@ -193,14 +206,16 @@ class ReviewFormatter:
                 if issue.target_code:
                     html_lines.append("<p><strong>리뷰 대상 코드</strong>:</p>")
                     html_lines.append(
-                        f"<pre><code class='language-{language}'>{html.escape(issue.target_code)}</code></pre>"
+                        f"<pre><code class='language-{language}'>"
+                        f"{html.escape(issue.target_code)}</code></pre>"
                     )
 
                 # 개선된 코드 추가
                 if issue.suggested_code:
                     html_lines.append("<p><strong>개선된 코드</strong>:</p>")
                     html_lines.append(
-                        f"<pre><code class='language-{language}'>{html.escape(issue.suggested_code)}</code></pre>"
+                        f"<pre><code class='language-{language}'>"
+                        f"{html.escape(issue.suggested_code)}</code></pre>"
                     )
 
                 html_lines.append("</div>")

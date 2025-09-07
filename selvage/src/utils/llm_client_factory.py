@@ -66,4 +66,4 @@ class LLMClientFactory:
         elif provider == ModelProvider.OPENROUTER:
             return OpenRouterHTTPClient(api_key=api_key)
         else:
-            raise ValueError(f"지원하지 않는 LLM 프로바이더입니다: {provider}")
+            raise ValueError(f"Unsupported LLM provider: {provider}")

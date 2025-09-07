@@ -73,7 +73,7 @@ def parse_git_diff(diff_text: str, repo_path: str) -> DiffResult:
         DiffParsingError: diff가 비어있거나 유효하지 않은 형식인 경우
     """
     if not diff_text:
-        raise DiffParsingError("빈 diff가 제공되었습니다.")
+        raise DiffParsingError("Empty diff provided.")
 
     file_diffs = _PATTERN_DIFF_SPLIT.split(diff_text)
     result = DiffResult()
@@ -84,7 +84,7 @@ def parse_git_diff(diff_text: str, repo_path: str) -> DiffResult:
             result.files.append(file_diff)
 
     if not result.files:
-        raise DiffParsingError("유효하지 않은 diff 형식입니다.")
+        raise DiffParsingError("Invalid diff format.")
 
     return result
 

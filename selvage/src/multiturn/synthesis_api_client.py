@@ -84,7 +84,7 @@ class SynthesisAPIClient:
             if structured_response is None:
                 console.error(f"LLM response parsing failed: {self.model_name}")
                 raise JSONParsingError(
-                    message=f"LLM 응답 파싱 실패: {self.model_name}",
+                    message=f"LLM response parsing failed: {self.model_name}",
                     raw_response="",
                     parsing_error=None,
                 )
@@ -126,7 +126,7 @@ class SynthesisAPIClient:
         elif provider == ModelProvider.OPENROUTER:
             return self._call_openrouter_api(client, params, response_model)
         else:
-            raise ValueError(f"지원하지 않는 프로바이더: {provider}")
+            raise ValueError(f"Unsupported provider: {provider}")
 
     def _call_openai_api(
         self,
@@ -349,7 +349,7 @@ class SynthesisAPIClient:
 
             return params
         else:
-            raise ValueError(f"지원하지 않는 프로바이더: {provider}")
+            raise ValueError(f"Unsupported provider: {provider}")
 
     def _calculate_synthesis_cost(
         self,

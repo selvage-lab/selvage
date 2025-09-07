@@ -60,9 +60,11 @@ class OpenRouterHTTPClient:
                     f"OpenRouter API 응답이 유효한 JSON이 아닙니다: {json_error}"
                 )
                 if console.is_debug_mode():
-                    console.error(f"응답 상태코드: {response.status_code}")
-                    console.error(f"응답 헤더: {response.headers}")
-                    console.error(f"응답 내용 (처음 1000자): {response.text[:1000]}")
+                    console.error(f"Response status code: {response.status_code}")
+                    console.error(f"Response headers: {response.headers}")
+                    console.error(
+                        f"Response content (first 1000 chars): {response.text[:1000]}"
+                    )
 
                 # JSON 파싱 에러도 에러 패턴 분석으로 처리
                 try:
@@ -86,8 +88,8 @@ class OpenRouterHTTPClient:
             except Exception as inner_e:
                 console.debug(f"응답 텍스트 추출 실패: {inner_e}")
 
-            console.error(f"OpenRouter API 호출 오류: {e}")
-            console.error(f"응답 내용: {error_detail}")
+            console.error(f"OpenRouter API call error: {e}")
+            console.error(f"Response content: {error_detail}")
 
             # 에러 패턴 분석을 통한 구조화된 에러 처리
             try:
@@ -100,35 +102,37 @@ class OpenRouterHTTPClient:
 
             raise
         except httpx.RequestError as e:
-            console.error(f"OpenRouter API 네트워크 오류: {e}")
+            console.error(f"OpenRouter API network error: {e}")
             raise
 
     def _handle_structured_error(self, error_result: ErrorParsingResult) -> None:
         """구조화된 에러 결과를 기반으로 사용자 친화적인 메시지를 출력합니다."""
         if error_result.error_type == "byok_required":
-            console.error("\n[BYOK 필수 모델 감지]")
+            console.error("\n[BYOK Required Model Detected]")
             console.error(
                 "이 모델은 OpenRouter에서 BYOK(Bring Your Own Key)가 필요합니다."
             )
-            console.error("해결 방법:")
+            console.error("Solutions:")
             console.error(
                 "1. OpenRouter BYOK 설정: https://openrouter.ai/settings/integrations"
             )
-            console.error("2. OPENAI_API_KEY 환경변수 설정하여 직접 OpenAI 사용")
+            console.error(
+                "2. Set OPENAI_API_KEY environment variable to use OpenAI directly"
+            )
 
             # 대안 모델 제안 (패턴에서 추출된 경우)
             if error_result.additional_token_info:
                 alt1 = error_result.additional_token_info.get("alternative_model_1")
                 alt2 = error_result.additional_token_info.get("alternative_model_2")
                 if alt1 or alt2:
-                    console.error("3. 대안 모델 사용:")
+                    console.error("3. Use alternative models:")
                     if alt1:
                         console.error(f"   - {alt1}")
                     if alt2:
                         console.error(f"   - {alt2}")
 
         elif error_result.error_type == "context_limit_exceeded":
-            console.error("\n[컨텍스트 한계 초과]")
+            console.error("\n[Context Limit Exceeded]")
             if error_result.token_info:
                 if error_result.token_info.max_tokens:
                     console.error(

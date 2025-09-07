@@ -173,7 +173,7 @@ def load_file_content(filename: str, repo_path: str) -> str:
         file_path = get_file_path(filename, repo_path)
 
         if not os.path.exists(file_path):
-            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {filename}")
+            raise FileNotFoundError(f"File not found: {filename}")
 
         # 무시해야 할 파일인지 확인 (파일 확장자 및 이름 기준)
         if is_ignore_file(
@@ -191,11 +191,11 @@ def load_file_content(filename: str, repo_path: str) -> str:
 
     except (FileNotFoundError, PermissionError) as e:
         # FileNotFoundError와 PermissionError는 그대로 다시 발생시킴
-        console.error(f"파일 접근 오류: {str(e)}", exception=e)
+        console.error(f"File access error: {str(e)}", exception=e)
         raise e
     except Exception as e:
         # 그 외 예외는 좀 더 구체적인 메시지와 함께 Exception으로 다시 발생시킴
-        console.error(f"파일 처리 오류: {str(e)}", exception=e)
+        console.error(f"File processing error: {str(e)}", exception=e)
         import traceback
 
         error_msg = f"파일 '{filename}' 읽기 오류: {str(e)}\\n{traceback.format_exc()}"

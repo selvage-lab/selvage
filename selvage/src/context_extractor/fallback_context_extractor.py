@@ -86,13 +86,13 @@ class FallbackContextExtractor:
 
         # 1. 파일 내용 검증
         if not file_content:
-            raise ValueError("파일 내용이 비어있습니다")
+            raise ValueError("File content is empty")
 
         try:
             code_text = file_content
             lines = code_text.splitlines()
         except Exception as e:
-            raise ValueError(f"파일 내용 처리 오류: {e}") from e
+            raise ValueError(f"File content processing error: {e}") from e
 
         # 2. 1줄 무의미 변경 필터링
         meaningful_ranges = self._filter.filter_meaningful_ranges_with_lines(
