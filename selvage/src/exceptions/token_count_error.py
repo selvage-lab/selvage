@@ -15,4 +15,6 @@ class TokenCountError(Exception):
     ) -> None:
         self.model = model
         self.original_error = original_error
-        super().__init__(f"[{model}] 토큰 계산 중 오류 발생: {message}")
+        super().__init__(
+            f"[{model}] Error occurred during token calculation: {message}"
+        )

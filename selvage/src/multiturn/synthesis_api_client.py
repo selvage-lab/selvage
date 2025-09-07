@@ -82,7 +82,7 @@ class SynthesisAPIClient:
             )
 
             if structured_response is None:
-                console.error(f"LLM 응답 파싱 실패: {self.model_name}")
+                console.error(f"LLM response parsing failed: {self.model_name}")
                 raise JSONParsingError(
                     message=f"LLM 응답 파싱 실패: {self.model_name}",
                     raw_response="",
@@ -97,7 +97,7 @@ class SynthesisAPIClient:
             return structured_response, estimated_cost
 
         except Exception as e:
-            console.error(f"LLM 합성 중 예외 발생: {e}")
+            console.error(f"Exception occurred during LLM synthesis: {e}")
             return None, EstimatedCost.get_zero_cost(self.model_name)
 
     def _load_model_info(self) -> ModelInfoDict:
@@ -145,7 +145,7 @@ class SynthesisAPIClient:
             )
             return structured_response, raw_response
         except Exception as e:
-            console.error(f"OpenAI API 호출 실패: {e}")
+            console.error(f"OpenAI API call failed: {e}")
             return None, None
 
     def _call_google_api(
@@ -163,7 +163,7 @@ class SynthesisAPIClient:
             )
             return structured_response, raw_response
         except Exception as e:
-            console.error(f"Google API 호출 실패: {e}")
+            console.error(f"Google API call failed: {e}")
             return None, None
 
     def _call_anthropic_api(
@@ -198,7 +198,7 @@ class SynthesisAPIClient:
                 )
                 return structured_response, raw_response
         except Exception as e:
-            console.error(f"Anthropic API 호출 실패: {e}")
+            console.error(f"Anthropic API call failed: {e}")
             return None, None
 
     def _call_openrouter_api(
@@ -225,7 +225,7 @@ class SynthesisAPIClient:
                 )
                 return structured_response, raw_response_data
         except Exception as e:
-            console.error(f"OpenRouter API 호출 실패: {e}")
+            console.error(f"OpenRouter API call failed: {e}")
             return None, None
 
     def _create_request_params(
@@ -376,10 +376,10 @@ class SynthesisAPIClient:
                     raw_api_response, model_name
                 )
             else:
-                console.warning(f"지원하지 않는 프로바이더입니다: {provider}")
+                console.warning(f"Unsupported provider: {provider}")
 
         except Exception as e:
-            console.error(f"합성 비용 계산 중 오류 발생: {e}")
+            console.error(f"Error occurred while calculating synthesis cost: {e}")
 
         # 오류 발생 시 또는 usage 정보가 없는 경우 0 비용 반환
         return EstimatedCost.get_zero_cost(model_name)
@@ -394,7 +394,7 @@ class SynthesisAPIClient:
             )
         else:
             console.warning(
-                f"OpenAI 응답에서 usage 정보를 찾을 수 없습니다: {model_name}"
+                f"Cannot find usage information in OpenAI response: {model_name}"
             )
             return EstimatedCost.get_zero_cost(model_name)
 
@@ -408,7 +408,7 @@ class SynthesisAPIClient:
             )
         else:
             console.warning(
-                f"Anthropic 응답에서 usage 정보를 찾을 수 없습니다: {model_name}"
+                f"Cannot find usage information in Anthropic response: {model_name}"
             )
             return EstimatedCost.get_zero_cost(model_name)
 
@@ -425,7 +425,8 @@ class SynthesisAPIClient:
             )
         else:
             console.warning(
-                f"Google 응답에서 usage_metadata 정보를 찾을 수 없습니다: {model_name}"
+                "Cannot find usage_metadata information in Google response: "
+                f"{model_name}"
             )
             return EstimatedCost.get_zero_cost(model_name)
 
@@ -444,6 +445,6 @@ class SynthesisAPIClient:
             return CostEstimator.estimate_cost_from_openai_usage(model_name, usage)
         else:
             console.warning(
-                f"OpenRouter 응답에서 usage 정보를 찾을 수 없습니다: {model_name}"
+                f"Cannot find usage information in OpenRouter response: {model_name}"
             )
             return EstimatedCost.get_zero_cost(model_name)

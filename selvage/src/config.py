@@ -47,7 +47,9 @@ def load_config() -> configparser.ConfigParser:
             # 설정 파일이 손상된 경우 기본 설정으로 진행
             from selvage.src.utils.base_console import console
 
-            console.warning(f"설정 파일이 손상되어 기본 설정을 사용합니다: {e}")
+            console.warning(
+                f"Configuration file is corrupted, using default settings: {e}"
+            )
             config = configparser.ConfigParser()
 
     # 기본 섹션이 없으면 추가
@@ -87,12 +89,17 @@ def get_api_key(provider: ModelProvider) -> str:
     if not api_key:
         from selvage.src.utils.base_console import console
 
-        console.error(f"API 키가 없습니다: {provider.get_display_name()}")
-        console.info("환경변수로 API 키를 설정하세요:")
+        console.error(f"API key is missing: {provider.get_display_name()}")
+        console.info("Please set API key as environment variable:")
         console.info(f"  export {env_var_name}=your_api_key")
         raise APIKeyNotFoundError(provider)
 
     return api_key
+
+
+def has_api_key(provider: ModelProvider) -> bool:
+    """API 키가 설정되어 있는지 확인합니다."""
+    return bool(os.getenv(provider.get_env_var_name()))
 
 
 def get_default_review_log_dir() -> Path:
@@ -132,12 +139,14 @@ def set_default_review_log_dir(log_dir: str) -> bool:
 
         from selvage.src.utils.base_console import console
 
-        console.success(f"리뷰 로그 디렉토리가 {log_path}로 설정되었습니다.")
+        console.success(f"Review log directory has been set to {log_path}.")
         return True
     except Exception as e:
         from selvage.src.utils.base_console import console
 
-        console.error(f"리뷰 로그 디렉토리 설정 중 오류 발생: {str(e)}", exception=e)
+        console.error(
+            f"Error occurred while setting review log directory: {str(e)}", exception=e
+        )
         return False
 
 
@@ -162,7 +171,9 @@ def set_default_model(model_name: str) -> bool:
     except Exception as e:
         from selvage.src.utils.base_console import console
 
-        console.error(f"기본 모델 설정 중 오류 발생: {str(e)}", exception=e)
+        console.error(
+            f"Error occurred while setting default model: {str(e)}", exception=e
+        )
         return False
 
 
@@ -187,7 +198,7 @@ def set_default_debug_mode(debug_mode: bool) -> bool:
     except Exception as e:
         from selvage.src.utils.base_console import console
 
-        console.error(f"debug_mode 설정 중 오류 발생: {str(e)}", exception=e)
+        console.error(f"Error occurred while setting debug_mode: {str(e)}", exception=e)
         return False
 
 
@@ -241,5 +252,7 @@ def set_default_language(language: str) -> bool:
     except Exception as e:
         from selvage.src.utils.base_console import console
 
-        console.error(f"기본 언어 설정 중 오류 발생: {str(e)}", exception=e)
+        console.error(
+            f"Error occurred while setting default language: {str(e)}", exception=e
+        )
         return False

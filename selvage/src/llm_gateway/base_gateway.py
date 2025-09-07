@@ -177,8 +177,8 @@ class BaseGateway(abc.ABC):
 
         # usage 정보가 없는 경우 빈 응답 반환
         console.warning(
-            f"Usage 정보를 찾을 수 없습니다: {provider} 모델 {model_name}. "
-            "0 비용으로 출력합니다."
+            f"Cannot find usage information: {provider} model {model_name}. "
+            "Outputting with 0 cost."
         )
         return EstimatedCost.get_zero_cost(model_name)
 
@@ -194,7 +194,7 @@ class BaseGateway(abc.ABC):
         try:
             return self._review_code_with_retry(review_prompt)
         except RetryError as e:
-            console.error(f"재시도 한계 초과: {str(e)}", exception=e)
+            console.error(f"Retry limit exceeded: {str(e)}", exception=e)
             # RetryError를 ReviewResult로 변환
             return ReviewResult.get_error_result(
                 e, self.get_model_name(), self.get_provider()
@@ -257,7 +257,8 @@ class BaseGateway(abc.ABC):
                     )
                 except Exception as parse_error:
                     console.error(
-                        f"응답 파싱 오류: {str(parse_error)}", exception=parse_error
+                        f"Response parsing error: {str(parse_error)}",
+                        exception=parse_error,
                     )
                     # 파싱 오류를 JSONParsingError로 변환하여 재시도 가능하도록 함
                     raise JSONParsingError.from_parsing_exception(
@@ -286,7 +287,8 @@ class BaseGateway(abc.ABC):
                     raise
                 except Exception as parse_error:
                     console.error(
-                        f"응답 파싱 오류: {str(parse_error)}", exception=parse_error
+                        f"Response parsing error: {str(parse_error)}",
+                        exception=parse_error,
                     )
                     # 기타 파싱 오류를 JSONParsingError로 변환하여 재시도 가능하도록 함
                     raise JSONParsingError.from_parsing_exception(
@@ -305,11 +307,15 @@ class BaseGateway(abc.ABC):
             )
 
         except (ConnectionError, TimeoutError, ValueError, JSONParsingError) as e:
-            console.error(f"리뷰 요청 중 오류 발생: {str(e)}", exception=e)
+            console.error(
+                f"Error occurred during review request: {str(e)}", exception=e
+            )
             # 재시도 가능 예외는 재전파하여 tenacity가 처리하도록 함
             raise
         except Exception as e:
-            console.error(f"리뷰 요청 중 오류 발생: {str(e)}", exception=e)
+            console.error(
+                f"Error occurred during review request: {str(e)}", exception=e
+            )
             return ReviewResult.get_error_result(
                 e, self.get_model_name(), self.get_provider()
             )

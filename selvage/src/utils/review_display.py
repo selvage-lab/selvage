@@ -56,7 +56,7 @@ def _load_review_log(log_path: str) -> dict | None:
         with open(log_path, encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError):
-        console.error(f"리뷰 로그 파일을 읽을 수 없습니다: {log_path}")
+        console.error(f"Cannot read review log file: {log_path}")
         return None
 
 
@@ -135,7 +135,7 @@ def _create_syntax_block(code: str, filename: str = "") -> Syntax:
 def _create_recommendations_panel(recommendations: list) -> Panel:
     """추천사항을 패널로 생성합니다."""
     if not recommendations:
-        content = "[dim]추천사항이 없습니다.[/dim]"
+        content = "[dim]No recommendations available.[/dim]"
     else:
         content_lines = []
         for i, rec in enumerate(recommendations, 1):
@@ -144,7 +144,7 @@ def _create_recommendations_panel(recommendations: list) -> Panel:
 
     return Panel(
         content,
-        title="[bold green]추천사항[/bold green]",
+        title="[bold green]Recommendations[/bold green]",
         border_style="green",
         padding=(1, 2),
     )
@@ -173,17 +173,19 @@ class ProgressDisplay:
             BarColumn(),
             transient=False,
         )
-        self.task = self.progress.add_task("코드 분석 및 리뷰 생성 중...", total=100)
+        self.task = self.progress.add_task(
+            "Analyzing code and generating review...", total=100
+        )
         self.live = None
         self.stop_progress = threading.Event()
         self.progress_thread = None
-        self.current_message = "코드 분석 및 리뷰 생성 중..."
+        self.current_message = "Analyzing code and generating review..."
         self._panel = None
 
     def _create_panel(self) -> Panel:
         """현재 모드에 맞는 패널을 생성합니다."""
-        title = Text("Selvage : 코드 리뷰도 엣지있게!", style="bold cyan")
-        model_info = Text(f"모델: {self.model}", style="dim")
+        title = Text("Selvage : Code reviews with an edge!", style="bold cyan")
+        model_info = Text(f"Model: {self.model}", style="dim")
 
         content = Group(
             Align.center(title),
@@ -195,7 +197,7 @@ class ProgressDisplay:
 
         return Panel(
             content,
-            title="[bold]코드 리뷰 진행 중[/bold]",
+            title="[bold]Code Review in Progress[/bold]",
             border_style="blue",
             width=70,
             padding=(1, 2),
@@ -301,7 +303,7 @@ class ReviewDisplay:
 
         panel = Panel.fit(
             content,
-            title="[bold]리뷰 AI 모델[/bold]",
+            title="[bold]Review AI Model[/bold]",
             border_style="cyan",
         )
         self.console.print(panel)
@@ -312,12 +314,14 @@ class ReviewDisplay:
         # 경로를 간단하게 표시 (홈 디렉토리는 ~ 로 표시)
         simplified_path = _shorten_path(log_path)
 
-        # Panel 내용 구성
-        content = f"[bold green]저장 완료[/bold green]\n[dim]{simplified_path}[/dim]"
+        # Panel content composition
+        content = (
+            f"[bold green]Save Complete[/bold green]\n[dim]{simplified_path}[/dim]"
+        )
 
         panel = Panel.fit(
             content,
-            title="[bold]결과 저장[/bold]",
+            title="[bold]Result Saved[/bold]",
             border_style="green",
         )
         self.console.print(panel)
@@ -338,21 +342,20 @@ class ReviewDisplay:
         # 경로를 간단하게 표시
         simplified_path = _shorten_path(log_path)
 
-        # 통합 Panel 내용 구성
+        # Integrated Panel content composition
         content = (
-            f"[bold cyan]모델:[/bold cyan] [white]{model_info['full_name']}[/white]\n"
+            f"[bold cyan]Model:[/bold cyan] [white]{model_info['full_name']}[/white]\n"
             f"[dim]{model_info['description']}[/dim]\n\n"
-            f"[bold yellow]비용:[/bold yellow] "
+            f"[bold yellow]Cost:[/bold yellow] "
             f"[white]{estimated_cost.total_cost_usd}[/white] "
             f"[dim]({token_info})[/dim]\n"
-            f"[dim]※ 추정 비용이므로 각 AI 서비스에서 정확한 비용을 "
-            f"확인하세요.[/dim]\n\n"
-            f"[bold green]저장:[/bold green] [white]{simplified_path}[/white]"
+            "[dim]* Estimated cost. Check exact cost from each AI service.[/dim]\n\n"
+            f"[bold green]Saved:[/bold green] [white]{simplified_path}[/white]"
         )
 
         panel = Panel(
             Align.center(content),
-            title="[bold]코드 리뷰 완료[/bold]",
+            title="[bold]Code Review Complete[/bold]",
             border_style="cyan",
             width=80,
             padding=(1, 2),
@@ -369,7 +372,7 @@ class ReviewDisplay:
 
         review_response = log_data.get("review_response")
         if not review_response:
-            console.error("리뷰 응답 데이터가 없습니다.")
+            console.error("No review response data available.")
             return
 
         model_info = log_data.get("model", {})
@@ -381,22 +384,22 @@ class ReviewDisplay:
         issues = review_response.get("issues", [])
         recommendations = review_response.get("recommendations", [])
 
-        # 요약 패널 생성
-        summary_content = f"[bold cyan]모델:[/bold cyan] {model_name}\n\n"
+        # Summary panel creation
+        summary_content = f"[bold cyan]Model:[/bold cyan] {model_name}\n\n"
         summary_content += (
-            f"[bold yellow]전체 점수:[/bold yellow] {score}/10\n\n" if score else ""
+            f"[bold yellow]Overall Score:[/bold yellow] {score}/10\n\n" if score else ""
         )
-        summary_content += f"[bold red]발견된 이슈:[/bold red] {len(issues)}개\n\n"
+        summary_content += f"[bold red]Issues Found:[/bold red] {len(issues)}\n\n"
         summary_content += (
-            f"[bold green]추천사항:[/bold green] {len(recommendations)}개\n\n"
+            f"[bold green]Recommendations:[/bold green] {len(recommendations)}\n\n"
         )
 
         if summary:
-            summary_content += f"[bold white]요약:[/bold white]\n{summary}"
+            summary_content += f"[bold white]Summary:[/bold white]\n{summary}"
 
         summary_panel = Panel(
             summary_content,
-            title="[bold]리뷰 결과 요약[/bold]",
+            title="[bold]Review Result Summary[/bold]",
             border_style="cyan",
             padding=(1, 2),
         )
@@ -409,7 +412,7 @@ class ReviewDisplay:
 
             # 이슈 정보 출력
             if issues:
-                self.console.print("[bold cyan]이슈 상세 정보[/bold cyan]\n")
+                self.console.print("[bold cyan]Issue Details[/bold cyan]\n")
                 for i, issue in enumerate(issues, 1):
                     severity = issue.get("severity", "INFO").upper()
                     # file과 file_name 둘 다 확인
@@ -420,15 +423,15 @@ class ReviewDisplay:
                     target_code = issue.get("target_code", "")
                     suggested_code = issue.get("suggested_code", "")
 
-                    # 이슈 내용 구성 (항목 간 간격 증가)
-                    issue_content = f"[bold]심각도:[/bold] {severity}\n\n"
-                    issue_content += f"[bold]파일:[/bold] {file_name}"
+                    # Issue content composition (increased spacing between items)
+                    issue_content = f"[bold]Severity:[/bold] {severity}\n\n"
+                    issue_content += f"[bold]File:[/bold] {file_name}"
                     if line_number:
-                        issue_content += f" (라인 {line_number})"
-                    issue_content += f"\n\n[bold]설명:[/bold]\n{description}"
+                        issue_content += f" (line {line_number})"
+                    issue_content += f"\n\n[bold]Description:[/bold]\n{description}"
 
                     if suggestion:
-                        issue_content += f"\n\n[bold]제안:[/bold]\n{suggestion}"
+                        issue_content += f"\n\n[bold]Suggestion:[/bold]\n{suggestion}"
 
                     border_style = (
                         "red"
@@ -455,7 +458,7 @@ class ReviewDisplay:
                             )
                             current_panel = Panel(
                                 current_syntax,
-                                title="[bold red]현재 코드[/bold red]",
+                                title="[bold red]Current Code[/bold red]",
                                 border_style="red",
                                 padding=(0, 1),
                             )
@@ -468,7 +471,7 @@ class ReviewDisplay:
                             )
                             suggested_panel = Panel(
                                 suggested_syntax,
-                                title="[bold green]개선된 코드[/bold green]",
+                                title="[bold green]Improved Code[/bold green]",
                                 border_style="green",
                                 padding=(0, 1),
                             )
@@ -476,7 +479,7 @@ class ReviewDisplay:
 
                     self.console.print()  # 이슈 사이 간격
             else:
-                self.console.print("[bold green]발견된 이슈가 없습니다![/bold green]")
+                self.console.print("[bold green]No issues found![/bold green]")
 
             # 추천사항 출력
             if recommendations:
@@ -517,11 +520,11 @@ class ReviewDisplay:
             transient=False,
         )
 
-        task = progress.add_task("코드 분석 및 리뷰 생성 중...", total=100)
+        task = progress.add_task("Analyzing code and generating review...", total=100)
 
         # Panel을 한 번만 생성하여 고정
-        title = Text("Selvage : 코드 리뷰도 엣지있게!", style="bold cyan")
-        model_info = Text(f"모델: {model}", style="dim")
+        title = Text("Selvage : Code reviews with an edge!", style="bold cyan")
+        model_info = Text(f"Model: {model}", style="dim")
 
         content = Group(
             Align.center(title),
@@ -533,7 +536,7 @@ class ReviewDisplay:
 
         panel = Panel(
             content,
-            title="[bold]코드 리뷰 진행 중[/bold]",
+            title="[bold]Code Review in Progress[/bold]",
             border_style="blue",
             width=70,
             padding=(1, 2),
@@ -579,11 +582,11 @@ class ReviewDisplay:
             all_models_config = model_config.get_all_models_config()
 
             if not all_models_config:
-                console.error("모델 설정을 로드할 수 없습니다.")
+                console.error("Cannot load model configuration.")
                 return
 
             # 제목 출력
-            self.console.print("\n[bold cyan]사용 가능한 AI 모델 목록[/bold cyan]\n")
+            self.console.print("\n[bold cyan]Available AI Model List[/bold cyan]\n")
 
             # 프로바이더별로 그룹화
             providers_data = {}
@@ -610,10 +613,10 @@ class ReviewDisplay:
                     header_style="bold magenta",
                     border_style="blue",
                 )
-                table.add_column("모델명", style="cyan", no_wrap=True)
-                table.add_column("별칭", style="green")
-                table.add_column("설명", style="white")
-                table.add_column("컨텍스트", style="yellow", justify="right")
+                table.add_column("Model Name", style="cyan", no_wrap=True)
+                table.add_column("Aliases", style="green")
+                table.add_column("Description", style="white")
+                table.add_column("Context", style="yellow", justify="right")
 
                 # 모델 정보 추가
                 for model_key, model_info in providers_data[provider]:
@@ -633,16 +636,17 @@ class ReviewDisplay:
 
             # 사용법 안내
             self.console.print(
-                "[dim]사용법: [/dim][bold]selvage review --model "
-                "<모델명 또는 별칭>[/bold]"
+                "[dim]Usage: [/dim][bold]selvage review --model "
+                "<model_name_or_alias>[/bold]"
             )
             self.console.print(
-                "[dim]기본 모델 설정: [/dim][bold]selvage config model <모델명>[/bold]"
+                "[dim]Default model setting: [/dim]"
+                "[bold]selvage config model <model_name>[/bold]"
             )
 
         except Exception as e:
             console.error(
-                f"모델 목록을 가져오는 중 오류가 발생했습니다: {str(e)}", exception=e
+                f"Error occurred while retrieving model list: {str(e)}", exception=e
             )
 
 

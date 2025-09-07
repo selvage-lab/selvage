@@ -29,7 +29,7 @@ class GoogleGateway(BaseGateway):
         """
         api_key = get_api_key(ModelProvider.GOOGLE)
         if not api_key:
-            console.error("Google API 키를 찾을 수 없습니다")
+            console.error("Cannot find Google API key")
             raise APIKeyNotFoundError(ModelProvider.GOOGLE)
         return api_key
 
@@ -43,7 +43,7 @@ class GoogleGateway(BaseGateway):
             InvalidModelProviderError: Google 모델이 아닌 경우
         """
         if model_info["provider"] != ModelProvider.GOOGLE:
-            console.warning(f"{model_info['full_name']}은(는) Google 모델이 아닙니다.")
+            console.warning(f"{model_info['full_name']} is not a Google model.")
             raise InvalidModelProviderError(
                 model_info["full_name"], ModelProvider.GOOGLE
             )

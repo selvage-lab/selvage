@@ -30,7 +30,7 @@ class ClaudeGateway(BaseGateway):
         """
         api_key = get_api_key(ModelProvider.ANTHROPIC)
         if not api_key:
-            console.error("Anthropic API 키를 찾을 수 없습니다")
+            console.error("Cannot find Anthropic API key")
             raise APIKeyNotFoundError(ModelProvider.ANTHROPIC)
         return api_key
 
@@ -44,7 +44,7 @@ class ClaudeGateway(BaseGateway):
             InvalidModelProviderError: Claude 모델이 아닌 경우
         """
         if model_info["provider"] != ModelProvider.ANTHROPIC:
-            console.warning(f"{model_info['full_name']}은(는) Claude 모델이 아닙니다.")
+            console.warning(f"{model_info['full_name']} is not a Claude model.")
             raise InvalidModelProviderError(
                 model_info["full_name"], ModelProvider.ANTHROPIC
             )

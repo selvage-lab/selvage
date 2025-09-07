@@ -8,4 +8,4 @@ class UnsupportedModelError(Exception):
 
     def __init__(self, model_name: str) -> None:
         self.model_name = model_name
-        super().__init__(f"지원되지 않는 모델입니다: {model_name}")
+        super().__init__(f"Unsupported model: {model_name}")

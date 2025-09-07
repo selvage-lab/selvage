@@ -138,7 +138,9 @@ def determine_file_format(file_path: Path) -> str:
                 return "json"
             return "txt"
         except Exception as e:
-            console.error(f"파일 형식 결정 중 오류 발생: {e}", exception=e)
+            console.error(
+                f"Error occurred while determining file format: {e}", exception=e
+            )
             return "txt"
 
     return file_suffix if file_suffix in ["json", "log", "html", "txt"] else "txt"
@@ -525,7 +527,7 @@ def extract_repo_path_from_file(file_path: Path) -> str | None:
             data = json.load(f)
         return data.get("repo_path")
     except Exception as e:
-        console.error(f"파일 {file_path}에서 repo_path 추출 중 오류: {e}")
+        console.error(f"Error extracting repo_path from file {file_path}: {e}")
         return None
 
 
@@ -754,7 +756,9 @@ def run_app() -> None:
         port,
     ]
 
-    subprocess.run(cmd, check=False)
+    # 보안을 위해 shell=False를 명시적으로 지정
+    # cmd는 하드코딩된 안전한 값들로 구성됨 (Streamlit 실행용)
+    subprocess.run(cmd, check=False, shell=False)  # noqa: S603
 
 
 # Streamlit 앱으로 직접 실행될 경우

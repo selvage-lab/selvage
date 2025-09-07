@@ -86,7 +86,9 @@ class ModelConfig:
             cls._config = models
 
         except Exception as e:
-            console.error(f"모델 설정 파일을 찾을 수 없습니다: {file_ref}", exception=e)
+            console.error(
+                f"Cannot find model configuration file: {file_ref}", exception=e
+            )
             raise FileNotFoundError(
                 f"모델 설정 파일을 찾을 수 없습니다: {file_ref}"
             ) from e

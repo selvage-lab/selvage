@@ -17,5 +17,5 @@ class InvalidModelProviderError(LLMGatewayError):
         self.model_name = model_name
         self.expected_provider = expected_provider
         super().__init__(
-            f"{model_name}은(는) {expected_provider.get_display_name()} 모델이 아닙니다."
+            f"{model_name} is not a {expected_provider.get_display_name()} model."
         )

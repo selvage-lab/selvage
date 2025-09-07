@@ -16,11 +16,11 @@ class UnsupportedLanguageError(ContextExtractionError):
 
     def __init__(self, language: str) -> None:
         self.language = language
-        super().__init__(f"지원하지 않는 프로그래밍 언어입니다: {language}")
+        super().__init__(f"Unsupported programming language: {language}")
 
 
 class TreeSitterError(ContextExtractionError):
     """Tree-sitter 관련 오류가 발생할 때의 예외"""
 
     def __init__(self, message: str) -> None:
-        super().__init__(f"Tree-sitter 오류: {message}")
+        super().__init__(f"Tree-sitter error: {message}")

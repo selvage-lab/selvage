@@ -66,10 +66,14 @@ class ReviewSynthesizer:
                 synthesized_summary = summary_result.summary
                 summary_synthesis_cost = summary_result.estimated_cost
             else:
-                console.warning("Summary LLM 합성 실패. fallback으로 처리됩니다.")
+                console.warning(
+                    "Summary LLM synthesis failed. Processing with fallback."
+                )
                 synthesized_summary = self._fallback_summary(successful_results)
         except Exception as e:
-            console.warning(f"Summary LLM 합성 실패: {e}. fallback으로 처리됩니다.")
+            console.warning(
+                f"Summary LLM synthesis failed: {e}. Processing with fallback."
+            )
             synthesized_summary = self._fallback_summary(successful_results)
 
         # 3. Recommendations 합성 (단순 합산)
@@ -150,7 +154,7 @@ class ReviewSynthesizer:
             )
 
         except Exception as e:
-            console.error(f"Summary LLM 합성 중 예외 발생: {e}")
+            console.error(f"Exception occurred during Summary LLM synthesis: {e}")
             raise e
 
     def _fallback_summary(self, successful_results: list[ReviewResult]) -> str:

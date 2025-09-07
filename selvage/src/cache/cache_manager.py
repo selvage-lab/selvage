@@ -69,11 +69,11 @@ class CacheManager:
                 cache_file.unlink(missing_ok=True)
                 return None
 
-            console.info("[green]캐시 적중![/green] 저장된 리뷰 결과를 사용합니다.")
+            console.info("[green]Cache hit![/green] Using cached review result.")
             return cache_entry.review_response, cache_entry.estimated_cost
 
         except Exception as e:
-            console.warning(f"캐시 조회 중 오류 발생: {str(e)}")
+            console.warning(f"Error occurred during cache lookup: {str(e)}")
             return None
 
     def save_review_to_cache(
@@ -121,28 +121,28 @@ class CacheManager:
                 )
 
             console.info(
-                f"리뷰 결과를 캐시에 저장했습니다. "
-                f"(유효기간: {self.cache_ttl_hours}시간)"
+                f"Review result saved to cache. "
+                f"(Valid for: {self.cache_ttl_hours} hours)"
             )
 
         except Exception as e:
-            console.warning(f"캐시 저장 중 오류 발생: {str(e)}")
+            console.warning(f"Error occurred while saving cache: {str(e)}")
 
     def clear_cache(self) -> None:
         """모든 캐시를 삭제합니다."""
         try:
             if not self.cache_dir.exists():
-                console.info("삭제할 캐시가 없습니다.")
+                console.info("No cache to delete.")
                 return
 
             cache_files = list(self.cache_dir.glob("*.json"))
             for cache_file in cache_files:
                 cache_file.unlink(missing_ok=True)
 
-            console.success(f"캐시 {len(cache_files)}개를 삭제했습니다.")
+            console.success(f"Deleted {len(cache_files)} cache files.")
 
         except Exception as e:
-            console.error(f"캐시 삭제 중 오류 발생: {str(e)}")
+            console.error(f"Error occurred while deleting cache: {str(e)}")
 
     def cleanup_expired_cache(self) -> None:
         """만료된 캐시들을 정리합니다."""
@@ -170,7 +170,7 @@ class CacheManager:
                     expired_count += 1
 
             if expired_count > 0:
-                console.info(f"만료된 캐시 {expired_count}개를 정리했습니다.")
+                console.info(f"Cleaned up {expired_count} expired cache files.")
 
         except Exception as e:
-            console.warning(f"캐시 정리 중 오류 발생: {str(e)}")
+            console.warning(f"Error occurred during cache cleanup: {str(e)}")

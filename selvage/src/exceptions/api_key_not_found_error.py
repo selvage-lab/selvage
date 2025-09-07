@@ -20,8 +20,8 @@ class APIKeyNotFoundError(LLMGatewayError):
         elif provider:
             env_var = provider.get_env_var_name()
             super().__init__(
-                f"{provider.value} API 키가 제공되지 않았습니다. "
-                f"{env_var} 환경변수를 설정하세요."
+                f"{provider.value} API key not provided. "
+                f"Please set the {env_var} environment variable."
             )
         else:
-            super().__init__("API 키가 제공되지 않았습니다.")
+            super().__init__("API key not provided.")

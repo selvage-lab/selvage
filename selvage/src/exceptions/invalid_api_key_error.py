@@ -16,6 +16,4 @@ class InvalidAPIKeyError(LLMGatewayError):
     def __init__(self, provider: "ModelProvider", reason: str) -> None:
         self.provider = provider
         self.reason = reason
-        super().__init__(
-            f"{provider.get_display_name()} API 키가 유효하지 않습니다: {reason}"
-        )
+        super().__init__(f"{provider.get_display_name()} API key is invalid: {reason}")

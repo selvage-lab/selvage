@@ -61,8 +61,8 @@ class OpenRouterGateway(BaseGateway):
         """
         api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
-            console.error("OpenRouter API 키를 찾을 수 없습니다")
-            console.info("환경변수 OPENROUTER_API_KEY를 설정하세요:")
+            console.error("Cannot find OpenRouter API key")
+            console.info("Please set environment variable OPENROUTER_API_KEY:")
             console.print("  export OPENROUTER_API_KEY=your_openrouter_api_key")
             raise APIKeyNotFoundError(ModelProvider.OPENROUTER)
         return api_key
@@ -83,8 +83,7 @@ class OpenRouterGateway(BaseGateway):
         # 2. openrouter_name 필드가 있는 모델은 허용
         if not model_info.get("openrouter_name"):
             console.warning(
-                f"{model_info['full_name']}은(는) OpenRouter에서 "
-                "지원하지 않는 모델입니다."
+                f"{model_info['full_name']} is not supported by OpenRouter."
             )
             raise InvalidModelProviderError(
                 model_info["full_name"], ModelProvider.OPENROUTER
@@ -95,12 +94,12 @@ class OpenRouterGateway(BaseGateway):
             # Claude 모델이 아닌 경우 thinking 모드 지원하지 않음
             if model_info["provider"] != ModelProvider.ANTHROPIC:
                 console.error(
-                    f"OpenRouter는 {model_info['full_name']}의 thinking 모드를 "
-                    "지원하지 않습니다"
+                    "OpenRouter does not support thinking mode for "
+                    f"{model_info['full_name']}"
                 )
-                console.info("해결 방법:")
-                console.print("  1. claude-sonnet-4 사용")
-                console.print("  2. ANTHROPIC_API_KEY 환경 변수 설정")
+                console.info("Solutions:")
+                console.print("  1. Use claude-sonnet-4")
+                console.print("  2. Set ANTHROPIC_API_KEY environment variable")
                 raise UnsupportedModelError(
                     f"OpenRouter는 {model_info['full_name']}의 thinking 모드를 "
                     "지원하지 않습니다"
@@ -199,7 +198,7 @@ class OpenRouterGateway(BaseGateway):
         try:
             return self._review_code_with_retry(review_prompt)
         except RetryError as e:
-            console.error(f"재시도 한계 초과: {str(e)}", exception=e)
+            console.error(f"Retry limit exceeded: {str(e)}", exception=e)
             # RetryError를 ReviewResult로 변환
             return ReviewResult.get_error_result(
                 e, self.get_model_name(), ModelProvider.OPENROUTER
@@ -297,10 +296,14 @@ class OpenRouterGateway(BaseGateway):
             TimeoutError,
             JSONParsingError,
         ) as e:
-            console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
+            console.error(
+                f"Error occurred during OpenRouter API call: {str(e)}", exception=e
+            )
             raise
         except Exception as e:
-            console.error(f"OpenRouter API 호출 중 오류 발생: {str(e)}", exception=e)
+            console.error(
+                f"Error occurred during OpenRouter API call: {str(e)}", exception=e
+            )
             return ReviewResult.get_error_result(
                 e, self.get_model_name(), ModelProvider.OPENROUTER
             )
@@ -318,10 +321,10 @@ class OpenRouterGateway(BaseGateway):
             OpenRouterResponseError: choices가 없는 경우
         """
         if not raw_api_response.choices:
-            error_msg = "OpenRouter API 응답에 choices가 없습니다"
+            error_msg = "OpenRouter API response has no choices"
             console.error(error_msg)
             if console.is_debug_mode():
-                console.error(f"원본 응답: {raw_response_data}")
+                console.error(f"Raw response: {raw_response_data}")
             raise OpenRouterResponseError(
                 error_msg, raw_response=raw_response_data, missing_field="choices"
             )
@@ -343,10 +346,10 @@ class OpenRouterGateway(BaseGateway):
         """
         response_text = raw_api_response.choices[0].message.content
         if not response_text:
-            error_msg = "OpenRouter API 응답에 content가 없습니다"
+            error_msg = "OpenRouter API response has no content"
             console.error(error_msg)
             if console.is_debug_mode():
-                console.error(f"원본 응답: {raw_response_data}")
+                console.error(f"Raw response: {raw_response_data}")
             raise OpenRouterResponseError(
                 error_msg, raw_response=raw_response_data, missing_field="content"
             )
@@ -365,8 +368,8 @@ class OpenRouterGateway(BaseGateway):
             OpenRouterResponseError: 구조화된 응답이 None인 경우
         """
         if structured_response is None:
-            error_msg = "OpenRouter API 응답에서 유효한 JSON을 파싱할 수 없습니다"
+            error_msg = "Cannot parse valid JSON from OpenRouter API response"
             console.error(error_msg)
             if console.is_debug_mode():
-                console.error(f"원본 응답: {response_text}")
+                console.error(f"Raw response: {response_text}")
             raise OpenRouterResponseError(error_msg)
