@@ -43,7 +43,7 @@ class CostEstimator:
                 "output": pricing_info["output"],
             }
         except UnsupportedModelError:
-            console.warning(f"지원되지 않는 모델입니다: {model_name}")
+            console.warning(f"Unsupported model: {model_name}")
             raise
 
     @staticmethod

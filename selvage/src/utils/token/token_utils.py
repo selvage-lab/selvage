@@ -194,7 +194,7 @@ class TokenUtils:
                     return response_dict[field]
 
             # 로그 기록 및 예외 처리
-            console.warning(f"응답에서 토큰 수를 찾을 수 없습니다: {response_dict}")
+            console.warning(f"Cannot find token count in response: {response_dict}")
             return 0
         except Exception as e:
             console.error(

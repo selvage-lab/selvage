@@ -106,7 +106,9 @@ class PromptGenerator:
                     except Exception as e:
                         if not isinstance(e, UnsupportedLanguageError):
                             # UnsupportedLanguageError가 아닌 다른 예외일 때만 경고
-                            console.warning(f"컨텍스트 추출 실패, fall back 사용: {e}")
+                            console.warning(
+                                f"Context extraction failed, using fallback: {e}"
+                            )
 
                         # 모든 예외에 대해 공통적으로 fall back 로직을 실행합니다.
                         contexts = FallbackContextExtractor().extract_contexts(
@@ -114,7 +116,9 @@ class PromptGenerator:
                         )
                         file_context = FileContextInfo.create_fallback_context(contexts)
                 elif not file.file_content:
-                    console.warning(f"파일 내용이 없습니다. 파일 경로: {file.filename}")
+                    console.warning(
+                        f"No file content available. File path: {file.filename}"
+                    )
                     file_context = FileContextInfo.create_full_context("")
                 elif file.is_entirely_new_content():
                     content = (

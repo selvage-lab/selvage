@@ -43,10 +43,10 @@ class JSONExtractor:
                         continue
 
             if structured_response is None:
-                console.warning("입력 문자열에서 유효한 JSON을 찾을 수 없습니다.")
+                console.warning("Cannot find valid JSON in input string.")
                 if last_parsing_error:
                     raise JSONParsingError(
-                        "JSON 파싱에 실패했습니다",
+                        "Failed to parse JSON",
                         raw_response=json_str[:500] + "..."
                         if len(json_str) > 500
                         else json_str,
@@ -56,11 +56,11 @@ class JSONExtractor:
         except JSONParsingError:
             raise  # JSONParsingError는 그대로 재발생
         except Exception as parse_error:
-            console.error(f"파싱 오류: {str(parse_error)}", exception=parse_error)
+            console.error(f"Parsing error: {str(parse_error)}", exception=parse_error)
             if console.is_debug_mode():
-                console.error(f"원본 응답: {json_str}")
+                console.error(f"Raw response: {json_str}")
             raise JSONParsingError(
-                f"예상치 못한 파싱 오류: {str(parse_error)}",
+                f"Unexpected parsing error: {str(parse_error)}",
                 raw_response=json_str,
                 parsing_error=parse_error,
             ) from parse_error

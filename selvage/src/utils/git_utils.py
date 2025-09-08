@@ -91,12 +91,12 @@ class GitDiffUtility:
             cmd.append("--cached")
         elif self.mode == GitDiffMode.TARGET_COMMIT:
             if not self.target or not self.target.strip():
-                console.error("오류: commit 값이 비어있습니다.")
+                console.error("Error: commit value is empty.")
                 return ""
             cmd.append(f"{self.target}..HEAD")
         elif self.mode == GitDiffMode.TARGET_BRANCH:
             if not self.target or not self.target.strip():
-                console.error("오류: branch 값이 비어있습니다.")
+                console.error("Error: branch value is empty.")
                 return ""
             cmd.append(f"{self.target}..HEAD")
 

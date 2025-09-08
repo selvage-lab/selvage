@@ -209,9 +209,7 @@ def config_list() -> None:
             )
         else:
             console.print(f"{provider_display} API Key: Not set", style="red")
-            console.print(
-                f"  Setup: [green]export {env_var_name}=your_api_key[/green]"
-            )
+            console.print(f"  Setup: [green]export {env_var_name}=your_api_key[/green]")
 
     console.print("")
 
@@ -386,7 +384,7 @@ def review_code(
     # Git diff 내용 가져오기
     diff_content = get_diff_content(repo_path, staged, target_commit, target_branch)
     if not diff_content:
-        console.warning("변경 사항이 없거나 diff를 가져올 수 없습니다.")
+        console.warning("No changes found or unable to retrieve diff.")
         return
 
     # repo_path 결정 - 사용자 입력 또는 프로젝트 루트
@@ -587,20 +585,20 @@ def review(
     exclusive_options = sum([staged, bool(target_commit), bool(target_branch)])
     if exclusive_options > 1:
         click.echo(
-            "오류: --staged, --target-commit, --target-branch 옵션은 "
-            "동시에 사용할 수 없습니다.",
+            "Error: --staged, --target-commit, --target-branch options "
+            "cannot be used simultaneously.",
             err=True,
         )
         return
 
     if not model:
-        console.warning("리뷰 모델을 지정하지 않았습니다.")
+        console.warning("Review model not specified.")
         message = (
-            "리뷰 모델을 지정해주세요. 사용 가능한 모델은 'selvage models' 명령어로 확인할 수 있습니다.\n\n"
-            "사용 예시:\n"
-            "  selvage review --model <모델명>\n"
-            "또는 기본 모델 설정:\n"
-            "  selvage config model <모델명>"
+            "Please specify a review model. Available models can be checked with 'selvage models' command.\n\n"
+            "Usage example:\n"
+            "  selvage review --model <model-name>\n"
+            "Or set default model:\n"
+            "  selvage config model <model-name>"
         )
         console.print(message)
         return

@@ -123,7 +123,7 @@ class ReviewIssue(BaseModel):
                 suggested_code=issue.suggested_code,
             )
         except Exception as e:
-            console.error(f"이슈 #{index + 1} 변환 중 오류: {str(e)}", exception=e)
+            console.error(f"Error converting issue #{index + 1}: {str(e)}", exception=e)
             raise
 
 
@@ -172,11 +172,11 @@ class ReviewResponse(BaseModel):
         Returns:
             ReviewResponse: 에러 메시지가 포함된 빈 리뷰 응답
         """
-        console.warning("응답이 비어있습니다")
+        console.warning("Response is empty")
         return ReviewResponse(
             issues=[],
-            summary="LLM 응답이 비어있거나 불완전합니다.",
-            recommendations=["다른 프롬프트나 모델을 사용해보세요."],
+            summary="LLM response is empty or incomplete.",
+            recommendations=["Try using different prompts or models."],
         )
 
     @staticmethod
