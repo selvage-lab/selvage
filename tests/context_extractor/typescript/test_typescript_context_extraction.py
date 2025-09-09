@@ -909,7 +909,7 @@ class TestEdgeCases:
 
     def test_reverse_line_ranges(self) -> None:
         """잘못된 범위 생성 시 예외 발생 테스트."""
-        with pytest.raises(ValueError, match="시작 라인이 끝 라인보다 클 수 없습니다"):
+        with pytest.raises(ValueError, match="Start line cannot be greater than end line"):
             LineRange(50, 30)
 
     def test_empty_line_ranges(

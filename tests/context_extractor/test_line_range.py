@@ -15,10 +15,10 @@ class TestLineRange:
 
     def test_invalid_line_range_creation(self):
         """잘못된 LineRange 객체 생성 시 예외 발생을 테스트한다."""
-        with pytest.raises(ValueError, match="라인 번호는 1 이상이어야 합니다"):
+        with pytest.raises(ValueError, match="Line number must be 1 or greater"):
             LineRange(0, 5)
 
-        with pytest.raises(ValueError, match="시작 라인이 끝 라인보다 클 수 없습니다"):
+        with pytest.raises(ValueError, match="Start line cannot be greater than end line"):
             LineRange(5, 3)
 
     def test_overlaps_detection(self):

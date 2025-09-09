@@ -246,7 +246,7 @@ class TestCLIConfigReviewLogDir(unittest.TestCase):
         result = self.runner.invoke(cli, ["config", "review-log-dir", "--help"])
 
         self.assertEqual(result.exit_code, 0)
-        self.assertIn("리뷰 로그 저장 디렉토리 설정", result.output)
+        self.assertIn("Review log save directory setting", result.output)
 
     @patch("selvage.cli.get_default_review_log_dir")
     def test_config_review_log_dir_in_config_list(
@@ -272,7 +272,7 @@ class TestCLIConfigReviewLogDir(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         # ANSI 색상 코드로 인해 경로가 분할될 수 있으므로 부분적으로 확인
         self.assertIn("/test/review/log", result.output)
-        self.assertIn("리뷰 로그 디렉토리", result.output)
+        self.assertIn("Review log directory", result.output)
 
 
 class TestCLIReviewLogDirOption(unittest.TestCase):
@@ -384,7 +384,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0)
         self.assertIn("--log-dir", result.output)
-        self.assertIn("로그 저장 디렉토리", result.output)
+        self.assertIn("Log save directory", result.output)
 
 
 if __name__ == "__main__":

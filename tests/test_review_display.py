@@ -172,15 +172,15 @@ class TestReviewDisplay:
         # ANSI 색상 코드가 포함된 텍스트에서 모델명 확인
         assert "claude-sonnet-4-20250514" in output
         assert "하이브리드 추론 모델로 고급 코딩 및 명령 수행 최적화" in output
-        assert "리뷰 AI 모델" in output
+        assert "Review AI Model" in output
 
     def test_log_saved_output_contains_path_info(self, review_display, mock_log_path):
         """log_saved 메서드가 경로 정보를 포함한 출력을 생성하는지 테스트."""
         output = capture_console_output(review_display.log_saved, mock_log_path)
 
         # 저장 완료 메시지와 파일명 확인
-        assert "저장 완료" in output
-        assert "결과 저장" in output
+        assert "Save Complete" in output
+        assert "Result Saved" in output
         # 경로가 축약되었더라도 파일명 일부는 포함되어 있어야 함
         assert "2024-01-15_code_revi" in output  # 축약되어도 파일명 일부는 남음
 
@@ -207,8 +207,8 @@ class TestReviewDisplay:
         assert "3.2k" in output  # output tokens (실제 출력에서 반올림된 값)
 
         # 로그 정보 확인
-        assert "저장" in output
-        assert "코드 리뷰 완료" in output
+        assert "Saved" in output
+        assert "Code Review Complete" in output
 
     def test_print_review_result_with_valid_log(self):
         """유효한 로그 파일로 리뷰 결과 출력 테스트."""
@@ -312,7 +312,7 @@ class TestReviewDisplay:
         try:
             output = capture_console_output(review_display.show_available_models)
             # 예시: 최소한 "사용 가능한 AI 모델 목록"과 같은 헤더 문자열이 포함되어 있는지 확인
-            assert "사용 가능한 AI 모델 목록" in output
+            assert "Available AI Model List" in output
         except FileNotFoundError:
             # models.yml 파일이 없는 경우를 예상하고 테스트를 건너뛸 수 있음
             pytest.skip(

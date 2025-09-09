@@ -228,8 +228,8 @@ class TestSynthesisAPIClient:
     def test_create_request_params_unsupported_provider(
         self, api_client: SynthesisAPIClient
     ) -> None:
-        """지원하지 않는 프로바이더 테스트"""
-        # Given: 지원하지 않는 프로바이더
+        """Unsupported provider 테스트"""
+        # Given: Unsupported provider
         unsupported_model_info = {
             "full_name": "unsupported-model",
             "provider": "UNSUPPORTED",  # type: ignore
@@ -237,7 +237,7 @@ class TestSynthesisAPIClient:
         messages = [{"role": "user", "content": "테스트"}]
 
         # When & Then: 예외 발생
-        with pytest.raises(ValueError, match="지원하지 않는 프로바이더"):
+        with pytest.raises(ValueError, match="Unsupported provider"):
             api_client._create_request_params(
                 messages,
                 unsupported_model_info,
@@ -286,13 +286,13 @@ class TestSynthesisAPIClient:
     def test_call_provider_api_unsupported(
         self, api_client: SynthesisAPIClient
     ) -> None:
-        """지원하지 않는 프로바이더 API 호출 테스트"""
-        # Given: 지원하지 않는 프로바이더
+        """Unsupported provider API 호출 테스트"""
+        # Given: Unsupported provider
         mock_client = Mock()
         params = {"test": "params"}
 
         # When & Then: 예외 발생
-        with pytest.raises(ValueError, match="지원하지 않는 프로바이더"):
+        with pytest.raises(ValueError, match="Unsupported provider"):
             api_client._call_provider_api(
                 "UNSUPPORTED",
                 mock_client,

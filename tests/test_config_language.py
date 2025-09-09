@@ -201,7 +201,7 @@ class TestLanguageCLI:
         result = self.runner.invoke(cli, ["config", "language", "--help"])
 
         assert result.exit_code == 0
-        assert "기본 언어 설정" in result.output
+        assert "Default language setting" in result.output
 
     @patch("selvage.cli.get_default_language")
     @patch("selvage.cli.console")
@@ -217,7 +217,7 @@ class TestLanguageCLI:
 
         assert result.exit_code == 0
         mock_get_default_language.assert_called_once()
-        mock_console.info.assert_any_call("현재 기본 언어: English")
+        mock_console.info.assert_any_call("Current default language: English")
 
     @patch("selvage.cli.set_default_language")
     @patch("selvage.cli.console")
@@ -231,7 +231,7 @@ class TestLanguageCLI:
 
         assert result.exit_code == 0
         mock_set_default_language.assert_called_once_with("English")
-        mock_console.success.assert_called_with("기본 언어가 English로 설정되었습니다.")
+        mock_console.success.assert_called_with("Default language has been set to English.")
 
     @patch("selvage.cli.set_default_language")
     @patch("selvage.cli.console")
@@ -245,7 +245,7 @@ class TestLanguageCLI:
 
         assert result.exit_code == 0
         mock_set_default_language.assert_called_once_with("Spanish")
-        mock_console.error.assert_called_with("기본 언어 설정에 실패했습니다.")
+        mock_console.error.assert_called_with("Failed to set default language.")
 
     @patch("selvage.cli.get_default_language")
     def test_config_language_in_config_list(self, mock_get_default_language):
@@ -270,4 +270,4 @@ class TestLanguageCLI:
 
         assert result.exit_code == 0
         assert "Japanese" in result.output
-        assert "기본 언어" in result.output
+        assert "Default language" in result.output

@@ -41,10 +41,10 @@ class TestCLIErrorHandling:
         _handle_openrouter_error(error)
 
         # 인증 오류 메시지와 해결 방법 출력 확인
-        mock_console.error.assert_any_call("OpenRouter API 인증 오류")
-        mock_console.info.assert_any_call("해결 방법:")
-        mock_console.print.assert_any_call("  1. OPENROUTER_API_KEY 환경변수 확인")
-        mock_console.print.assert_any_call("  2. API 키 유효성 확인")
+        mock_console.error.assert_any_call("OpenRouter API authentication error")
+        mock_console.info.assert_any_call("Solutions:")
+        mock_console.print.assert_any_call("  1. Check OPENROUTER_API_KEY environment variable")
+        mock_console.print.assert_any_call("  2. Verify API key validity")
 
     @patch("selvage.cli.console")
     def test_handle_openrouter_response_error_with_debug(self, mock_console):
@@ -64,10 +64,10 @@ class TestCLIErrorHandling:
 
         # 응답 구조 오류 메시지 확인
         mock_console.error.assert_any_call(
-            "OpenRouter API 응답 구조 오류: API 응답 구조 오류"
+            "OpenRouter API response structure error: API 응답 구조 오류"
         )
-        mock_console.error.assert_any_call("누락된 필드: choices")
-        mock_console.error.assert_any_call(f"원본 응답: {raw_response}")
+        mock_console.error.assert_any_call("Missing field: choices")
+        mock_console.error.assert_any_call(f"Raw response: {raw_response}")
 
     @patch("selvage.cli.console")
     def test_handle_openrouter_general_error(self, mock_console):
@@ -79,7 +79,7 @@ class TestCLIErrorHandling:
         # 특화 핸들러는 예외를 raise하지 않음 (로깅만 수행)
         _handle_openrouter_error(error)
 
-        mock_console.error.assert_any_call("OpenRouter API 오류: General API error")
+        mock_console.error.assert_any_call("OpenRouter API error: General API error")
 
     @patch("selvage.cli.console")
     def test_handle_json_parsing_error_with_debug(self, mock_console):
@@ -101,11 +101,11 @@ class TestCLIErrorHandling:
         _handle_json_parsing_error(error)
 
         # JSON 파싱 에러 메시지 확인
-        mock_console.error.assert_any_call("구조화된 응답 파싱에 실패했습니다")
-        mock_console.error.assert_any_call(f"오류: {error}")
-        mock_console.error.assert_any_call("디버그 정보:")
-        mock_console.error.assert_any_call(f"  파싱 오류: {parsing_error}")
-        mock_console.error.assert_any_call(f"  원본 응답 (일부): {raw_response}")
+        mock_console.error.assert_any_call("Failed to parse structured response")
+        mock_console.error.assert_any_call(f"Error: {error}")
+        mock_console.error.assert_any_call("Debug information:")
+        mock_console.error.assert_any_call(f"  Parsing error: {parsing_error}")
+        mock_console.error.assert_any_call(f"  Raw response (partial): {raw_response}")
 
     @patch("selvage.cli.console")
     def test_handle_json_parsing_error_without_debug(self, mock_console):
@@ -121,11 +121,11 @@ class TestCLIErrorHandling:
         _handle_json_parsing_error(error)
 
         # 기본 에러 메시지만 확인
-        mock_console.error.assert_any_call("구조화된 응답 파싱에 실패했습니다")
-        mock_console.error.assert_any_call(f"오류: {error}")
+        mock_console.error.assert_any_call("Failed to parse structured response")
+        mock_console.error.assert_any_call(f"Error: {error}")
         # 디버그 정보는 출력되지 않음
         assert not any(
-            call.args[0] == "디버그 정보:" for call in mock_console.error.call_args_list
+            call.args[0] == "Debug information:" for call in mock_console.error.call_args_list
         )
 
     def test_handle_api_error_calls_specific_handlers(self):
