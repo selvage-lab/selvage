@@ -11,7 +11,7 @@ class TestJSONParsingError:
 
     def test_basic_exception_creation(self):
         """기본 예외 생성 테스트"""
-        error_message = "JSON 파싱에 실패했습니다"
+        error_message = "Failed to parse JSON"
         error = JSONParsingError(error_message)
         
         assert str(error) == error_message
@@ -20,7 +20,7 @@ class TestJSONParsingError:
 
     def test_exception_with_raw_response(self):
         """raw_response가 있는 예외 테스트"""
-        error_message = "JSON 파싱에 실패했습니다"
+        error_message = "Failed to parse JSON"
         raw_response = '{"invalid": json}'
         
         error = JSONParsingError(error_message, raw_response=raw_response)
@@ -31,7 +31,7 @@ class TestJSONParsingError:
 
     def test_exception_with_parsing_error(self):
         """parsing_error가 있는 예외 테스트"""
-        error_message = "JSON 파싱에 실패했습니다"
+        error_message = "Failed to parse JSON"
         parsing_error = ValueError("Invalid JSON format")
         
         error = JSONParsingError(error_message, parsing_error=parsing_error)
@@ -42,7 +42,7 @@ class TestJSONParsingError:
 
     def test_exception_with_all_parameters(self):
         """모든 파라미터가 있는 예외 테스트"""
-        error_message = "JSON 파싱에 실패했습니다"
+        error_message = "Failed to parse JSON"
         raw_response = '{"malformed": json,}'
         parsing_error = SyntaxError("Unexpected token")
         

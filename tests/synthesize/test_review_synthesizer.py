@@ -436,7 +436,7 @@ class TestReviewSynthesizerLLMIntegration:
 
         # Then: 기본 메시지 반환 (문서 명세)
         assert result.success is True
-        assert result.review_response.summary == "리뷰 결과를 합성할 수 없습니다."
+        assert result.review_response.summary == "Cannot synthesize review results."
         assert result.review_response.recommendations == ["권장사항1"]
 
     def test_synthesis_message_creation_structure(

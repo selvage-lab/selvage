@@ -65,7 +65,7 @@ class TestJSONExtractor:
             JSONExtractor.validate_and_parse_json(json_str, SampleModel)
 
         error = exc_info.value
-        assert "JSON 파싱에 실패했습니다" in str(error)
+        assert "Failed to parse JSON" in str(error)
         assert error.raw_response == json_str
         assert error.parsing_error is not None
         assert isinstance(error.parsing_error, ValidationError)
@@ -102,7 +102,7 @@ class TestJSONExtractor:
             JSONExtractor.validate_and_parse_json(json_str, None)  # type: ignore
 
         error = exc_info.value
-        assert "예상치 못한 파싱 오류" in str(error)
+        assert "Unexpected parsing error" in str(error)
         assert error.raw_response == json_str
         assert error.parsing_error is not None
 
@@ -138,7 +138,7 @@ class TestJSONExtractor:
             JSONExtractor.validate_and_parse_json(json_str, SampleModel)
 
         error = exc_info.value
-        assert "JSON 파싱에 실패했습니다" in str(error)
+        assert "Failed to parse JSON" in str(error)
         assert error.raw_response is not None
         assert error.parsing_error is not None
 

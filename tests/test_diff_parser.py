@@ -133,14 +133,14 @@ def code_with_null_path_text():
 def test_parse_git_diff_empty():
     with pytest.raises(DiffParsingError) as excinfo:
         parse_git_diff("", repo_path=".")
-    assert "빈 diff가 제공되었습니다." in str(excinfo.value)
+    assert "Empty diff provided." in str(excinfo.value)
 
 
 def test_parse_git_diff_invalid():
     invalid_diff = "이것은 유효하지 않은 diff 형식입니다."
     with pytest.raises(DiffParsingError) as excinfo:
         parse_git_diff(invalid_diff, repo_path=".")
-    assert "유효하지 않은 diff 형식입니다." in str(excinfo.value)
+    assert "Invalid diff format." in str(excinfo.value)
 
 
 @patch("selvage.src.diff_parser.parser.load_file_content")

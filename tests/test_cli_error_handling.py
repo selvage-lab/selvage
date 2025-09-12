@@ -43,7 +43,9 @@ class TestCLIErrorHandling:
         # 인증 오류 메시지와 해결 방법 출력 확인
         mock_console.error.assert_any_call("OpenRouter API authentication error")
         mock_console.info.assert_any_call("Solutions:")
-        mock_console.print.assert_any_call("  1. Check OPENROUTER_API_KEY environment variable")
+        mock_console.print.assert_any_call(
+            "  1. Check OPENROUTER_API_KEY environment variable"
+        )
         mock_console.print.assert_any_call("  2. Verify API key validity")
 
     @patch("selvage.cli.console")
@@ -92,7 +94,7 @@ class TestCLIErrorHandling:
         parsing_error = ValueError("Invalid JSON")
         raw_response = "invalid json response"
         error = JSONParsingError(
-            "JSON 파싱에 실패했습니다",
+            "Failed to parse JSON",
             raw_response=raw_response,
             parsing_error=parsing_error,
         )
@@ -115,7 +117,7 @@ class TestCLIErrorHandling:
         # 디버그 모드 비활성화
         mock_console.is_debug_mode.return_value = False
 
-        error = JSONParsingError("JSON 파싱에 실패했습니다")
+        error = JSONParsingError("Failed to parse JSON")
 
         # 특화 핸들러는 예외를 raise하지 않음 (로깅만 수행)
         _handle_json_parsing_error(error)
@@ -125,7 +127,8 @@ class TestCLIErrorHandling:
         mock_console.error.assert_any_call(f"Error: {error}")
         # 디버그 정보는 출력되지 않음
         assert not any(
-            call.args[0] == "Debug information:" for call in mock_console.error.call_args_list
+            call.args[0] == "Debug information:"
+            for call in mock_console.error.call_args_list
         )
 
     def test_handle_api_error_calls_specific_handlers(self):
