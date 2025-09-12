@@ -300,6 +300,7 @@ class TestOpenRouterGateway(unittest.TestCase):
 
 class TestCreateLLMGateway(unittest.TestCase):
     @patch("selvage.src.llm_gateway.openai_gateway.get_api_key")
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=True)
     def test_create_openai_gateway(self, mock_get_api_key):
         """OpenAI 모델명으로 get_llm_gateway 호출 시 실제 OpenAIGateway 반환을 테스트합니다."""
         mock_get_api_key.return_value = "fake-api-key"
@@ -311,10 +312,10 @@ class TestCreateLLMGateway(unittest.TestCase):
         self.assertEqual(gateway.get_model_name(), "gpt-5")
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
-    @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=True)  # OpenRouter 키 없음
-    def test_create_claude_gateway_with_anthropic_provider(
-        self, mock_get_api_key
-    ):
+    @patch.dict(
+        os.environ, {"OPENROUTER_API_KEY": ""}, clear=True
+    )  # OpenRouter 키 없음
+    def test_create_claude_gateway_with_anthropic_provider(self, mock_get_api_key):
         """OpenRouter 키가 없을 때 Claude 모델이 ClaudeGateway로 처리되는지 테스트"""
         mock_get_api_key.return_value = "fake-claude-key"
 
@@ -345,7 +346,9 @@ class TestCreateLLMGateway(unittest.TestCase):
         self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro")
 
     @patch("selvage.src.llm_gateway.google_gateway.get_api_key")
-    @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=True)  # OpenRouter 키 없음
+    @patch.dict(
+        os.environ, {"OPENROUTER_API_KEY": ""}, clear=True
+    )  # OpenRouter 키 없음
     def test_create_google_gateway_direct(self, mock_get_api_key):
         """OpenRouter 키가 없을 때 Google 모델이 GoogleGateway로 처리되는지 테스트"""
         mock_get_api_key.return_value = "fake-api-key"

@@ -173,7 +173,7 @@ class TestOpenRouterFirst(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             GatewayFactory.create("unknown-model")
 
-        self.assertIn("지원하지 않는 provider", str(context.exception))
+        self.assertIn("Unsupported provider", str(context.exception))
 
 
 if __name__ == "__main__":
