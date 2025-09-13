@@ -56,7 +56,7 @@ class TestSynthesisPromptManager:
     def test_get_system_prompt_for_task_invalid(self, prompt_manager: SynthesisPromptManager) -> None:
         """작업별 시스템 프롬프트 반환 - 잘못된 작업 타입 테스트"""
         # When & Then: 지원하지 않는 작업 타입으로 호출 시 예외 발생
-        with pytest.raises(ValueError, match="지원하지 않는 작업 타입"):
+        with pytest.raises(ValueError, match="Unsupported task type"):
             prompt_manager.get_system_prompt_for_task("invalid_task")
 
     @patch("selvage.src.multiturn.synthesis_prompt_manager.get_default_language")

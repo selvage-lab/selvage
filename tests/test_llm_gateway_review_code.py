@@ -304,7 +304,7 @@ def test_review_code_empty_response(
     response: ReviewResponse = review_result.review_response
 
     assert len(response.issues) == 0
-    assert "비어있" in response.summary
+    assert "LLM response is empty or incomplete." in response.summary
 
 
 @patch("selvage.src.llm_gateway.base_gateway.BaseGateway._create_client")

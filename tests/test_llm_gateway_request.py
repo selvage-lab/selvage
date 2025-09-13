@@ -18,6 +18,7 @@ class TestRequestParamsCreation(unittest.TestCase):
     """프로바이더별 요청 파라미터 생성 테스트"""
 
     @patch("selvage.src.llm_gateway.openai_gateway.get_api_key")
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=True)
     def test_openai_create_request_params(self, mock_get_api_key):
         """OpenAI 게이트웨이의 요청 파라미터 생성을 테스트합니다."""
         # 설정

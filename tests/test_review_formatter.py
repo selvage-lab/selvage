@@ -175,7 +175,7 @@ def test_formatter_format_invalid() -> None:
         formatter.format(review, output_format="json")
 
     # 예외 메시지 검증
-    assert "지원하지 않는 출력 형식" in str(excinfo.value)
+    assert "Unsupported output format" in str(excinfo.value)
 
 
 # 모킹을 사용한 format 메서드 테스트

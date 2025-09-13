@@ -74,7 +74,7 @@ class TestLoadFileContent:
         with pytest.raises(FileNotFoundError) as excinfo:
             load_file_content("non_existent.txt", temp_repo_with_files)
 
-        assert str(excinfo.value) == "파일을 찾을 수 없습니다: non_existent.txt"
+        assert str(excinfo.value) == "File not found: non_existent.txt"
 
     def test_permission_error(self, temp_repo_with_files: str) -> None:
         """저장소 외부 파일 접근 시도 시 적절한 예외가 발생하는지 테스트합니다.

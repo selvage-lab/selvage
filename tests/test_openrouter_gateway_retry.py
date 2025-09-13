@@ -76,7 +76,7 @@ class TestOpenRouterGatewayRetry:
             self.gateway._validate_api_response(mock_response, raw_data)
 
         error = exc_info.value
-        assert "choices가 없습니다" in str(error)
+        assert "OpenRouter API response has no choices" in str(error)
         assert error.raw_response == raw_data
         assert error.missing_field == "choices"
 
@@ -91,7 +91,7 @@ class TestOpenRouterGatewayRetry:
             self.gateway._extract_response_content(mock_response, raw_data)
 
         error = exc_info.value
-        assert "content가 없습니다" in str(error)
+        assert "OpenRouter API response has no content" in str(error)
         assert error.raw_response == raw_data
         assert error.missing_field == "content"
 
@@ -112,7 +112,7 @@ class TestOpenRouterGatewayRetry:
             self.gateway._validate_structured_response(None, "test response text")
 
         error = exc_info.value
-        assert "유효한 JSON을 파싱할 수 없습니다" in str(error)
+        assert "Cannot parse valid JSON from OpenRouter API response" in str(error)
 
     def test_validate_structured_response_passes_when_valid(self):
         """유효한 구조화된 응답인 경우 예외가 발생하지 않는지 테스트"""
@@ -133,7 +133,7 @@ class TestOpenRouterGatewayRetry:
             self.gateway._validate_api_response(mock_response, raw_data)
 
         # 디버그 모드에서 원본 응답이 로깅되었는지 확인
-        mock_console.error.assert_any_call(f"원본 응답: {raw_data}")
+        mock_console.error.assert_any_call(f"Raw response: {raw_data}")
 
     @patch("selvage.src.llm_gateway.openrouter.gateway.console")
     def test_extract_response_content_logs_debug_info_when_debug_mode(
@@ -151,7 +151,7 @@ class TestOpenRouterGatewayRetry:
             self.gateway._extract_response_content(mock_response, raw_data)
 
         # 디버그 모드에서 원본 응답이 로깅되었는지 확인
-        mock_console.error.assert_any_call(f"원본 응답: {raw_data}")
+        mock_console.error.assert_any_call(f"Raw response: {raw_data}")
 
 
 class TestOpenRouterGatewayModelSpecific:
