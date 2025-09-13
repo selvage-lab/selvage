@@ -5,7 +5,7 @@ models:
   gpt-5:
     full_name: "gpt-5"
     aliases: ["gpt-5-medium"]
-    description: "OpenAI의 최신 통합 모델로 고급 추론과 빠른 응답을 결합"
+    description: "OpenAI's latest unified model combining advanced reasoning with fast response"
     provider: "openai"
     params:
       reasoning_effort: "medium"
@@ -23,7 +23,7 @@ models:
   gpt-5-high:
     full_name: "gpt-5"
     aliases: ["gpt-5-high"]
-    description: "최고 수준의 추론 능력으로 복잡한 코드 분석 및 문제 해결 수행"
+    description: "Highest-level reasoning capability for complex code analysis and problem solving"
     provider: "openai"
     params:
       reasoning_effort: "high"
@@ -41,7 +41,7 @@ models:
   gpt-5-mini:
     full_name: "gpt-5-mini"
     aliases: ["gpt-5-mini"]
-    description: "경량화된 GPT-5 모델로 빠른 응답과 비용 효율성 제공"
+    description: "Lightweight GPT-5 model providing fast response and cost efficiency"
     provider: "openai"
     params:
       reasoning_effort: "medium"
@@ -59,7 +59,7 @@ models:
   claude-sonnet-4-20250514:
     full_name: "claude-sonnet-4-20250514"
     aliases: ["claude-sonnet-4"]
-    description: "하이브리드 추론 모델로 고급 코딩 및 명령 수행 최적화"
+    description: "Hybrid reasoning model optimized for advanced coding and command execution"
     provider: "anthropic"
     params:
       temperature: 0.0
@@ -77,7 +77,7 @@ models:
   claude-sonnet-4-20250514-thinking:
     full_name: "claude-sonnet-4-20250514"
     aliases: ["claude-sonnet-4-thinking"]
-    description: "(recommend) 하이브리드 추론 모델로 확장 사고 프로세스 지원"
+    description: "(recommend) Hybrid reasoning model supporting extended thinking process"
     provider: "anthropic"
     params:
       temperature: 1 # thinking 모드에서 더 다양한 사고 과정 생성을 위해 설정
@@ -100,7 +100,7 @@ models:
   gemini-2.5-pro:
     full_name: "gemini-2.5-pro"
     aliases: ["gemini-2.5-pro"]
-    description: "(recommend) 대용량 컨텍스트 처리 및 고급 추론 작업 수행"
+    description: "(recommend) Large context processing and advanced reasoning task execution"
     provider: "google"
     params:
       temperature: 0.0
@@ -117,7 +117,7 @@ models:
   gemini-2.5-flash:
     full_name: "gemini-2.5-flash"
     aliases: ["gemini-2.5-flash"]
-    description: "(recommend) 응답 속도와 비용 효율성 최적화 모델"
+    description: "(recommend) Model optimized for response speed and cost efficiency"
     provider: "google"
     params:
       temperature: 0.0
@@ -134,7 +134,7 @@ models:
   kimi-k2:
     full_name: "kimi-k2"
     aliases: ["kimi-k2"]
-    description: "Moonshot AI의 대용량 컨텍스트 처리 모델"
+    description: "Moonshot AI's large context processing model"
     provider: "openrouter"
     params:
       temperature: 0.0
@@ -151,7 +151,7 @@ models:
   kimi-k2-free:
     full_name: "kimi-k2-free"
     aliases: ["kimi-k2-free"]
-    description: "Moonshot AI의 대용량 컨텍스트 처리 모델 (무료)"
+    description: "Moonshot AI's large context processing model (free)"
     provider: "openrouter"
     params:
       temperature: 0.0
@@ -168,7 +168,7 @@ models:
   deepseek-v3-0324:
     full_name: "deepseek-v3-0324"
     aliases: ["deepseek-v3-0324"]
-    description: "DeepSeek의 고급 대화 모델 v3.0"
+    description: "DeepSeek's advanced conversation model v3.0"
     provider: "openrouter"
     params:
       temperature: 0.0
@@ -185,7 +185,7 @@ models:
   deepseek-v3-0324-free:
     full_name: "deepseek-v3-0324-free"
     aliases: ["deepseek-v3-0324-free"]
-    description: "DeepSeek의 고급 대화 모델 v3.0 (무료)"
+    description: "DeepSeek's advanced conversation model v3.0 (free)"
     provider: "openrouter"
     openrouter_params:
       temperature: 0.0
@@ -202,7 +202,7 @@ models:
   deepseek-r1-0528:
     full_name: "deepseek-r1-0528"
     aliases: ["deepseek-r1-0528"]
-    description: "DeepSeek의 추론 특화 모델 R1"
+    description: "DeepSeek's reasoning-specialized model R1"
     provider: "openrouter"
     params:
       temperature: 0.0
@@ -219,7 +219,7 @@ models:
   deepseek-r1-0528-free:
     full_name: "deepseek-r1-0528-free"
     aliases: ["deepseek-r1-0528-free"]
-    description: "DeepSeek의 추론 특화 모델 R1 (무료)"
+    description: "DeepSeek's reasoning-specialized model R1 (free)"
     provider: "openrouter"
     params:
       temperature: 0.0
@@ -236,7 +236,7 @@ models:
   qwen3-coder:
     full_name: "qwen3-coder"
     aliases: ["qwen3-coder"]
-    description: "Qwen의 코더 모델"
+    description: "Qwen's coder model"
     provider: "openrouter"
     params:
       temperature: 0.0
@@ -253,7 +253,7 @@ models:
   qwen3-coder-free:
     full_name: "qwen3-coder-free"
     aliases: ["qwen3-coder-free"]
-    description: "Qwen의 코더 모델 (무료)"
+    description: "Qwen's coder model (free)"
     provider: "openrouter"
     params:
       temperature: 0.0
