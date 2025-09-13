@@ -184,12 +184,12 @@ def config_list() -> None:
 
     if has_openrouter_api_key():
         console.print(
-            "🚀 [bold green]OpenRouter First 모드[/bold green]: 모든 모델이 OpenRouter를 통해 작동합니다",
+            "🚀 [bold green]OpenRouter First Mode[/bold green]: All models operate through OpenRouter",
             style="green",
         )
     else:
         console.print(
-            "💡 [bold yellow]OpenRouter First[/bold yellow]: OPENROUTER_API_KEY를 설정하면 모든 모델을 OpenRouter를 통해 사용할 수 있습니다",
+            "💡 [bold yellow]OpenRouter First[/bold yellow]: Set OPENROUTER_API_KEY to use all models through OpenRouter",
             style="yellow",
         )
     console.print("")
@@ -262,7 +262,7 @@ def _handle_api_error(error_response: ErrorResponse) -> None:
     else:
         # 기존 에러 처리 로직
         console.error(
-            f"API 오류 ({error_response.provider.get_display_name()}): "
+            f"API error ({error_response.provider.get_display_name()}): "
             f"{error_response.error_message}"
         )
 
@@ -326,7 +326,7 @@ def _perform_new_review(
             if error_response.is_context_limit_error():
                 # UI 연속성을 유지하면서 멀티턴 모드로 전환
                 progress.transition_to_multiturn(
-                    "Context 한계 도달! Long context mode로 처리 중..."
+                    "Context limit reached! Processing in long context mode..."
                 )
                 result = _handle_context_limit_error(
                     review_prompt, error_response, llm_gateway
