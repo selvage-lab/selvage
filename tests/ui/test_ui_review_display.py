@@ -32,7 +32,7 @@ def test_enhanced_progress_review():
         # 3단계: UI 연속성을 유지하면서 멀티턴 모드로 전환
         print("  🔄 멀티턴 모드로 부드럽게 전환 (UI 연속성 유지)")
         progress.transition_to_multiturn(
-            "Context 한계 도달! Long context mode로 처리 중..."
+            "Context limit reached! Processing in long context mode..."
         )
 
         # 4단계: Multiturn review 처리 시뮬레이션

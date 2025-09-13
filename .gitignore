@@ -213,3 +213,5 @@ llm_eval/results/
 
 # 개인 환경별 스크립트 파일들
 scripts/prepare_integration_test_data.py
+
+.serena

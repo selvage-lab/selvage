@@ -173,7 +173,7 @@ def test_long_context_transition():
         multiturn_progress = display.create_updatable_progress("kimi-k2")
         multiturn_progress.start()
         multiturn_progress.update_message(
-            "Context 한계 도달! Long context mode로 처리 중..."
+            "Context limit reached! Processing in long context mode..."
         )
 
         # 6. Multiturn review 처리 시뮬레이션
@@ -284,7 +284,7 @@ def test_cli_exact_reproduction():
             multiturn_progress = display.create_updatable_progress("kimi-k2")
             multiturn_progress.start()
             multiturn_progress.update_message(
-                "Context 한계 도달! Long context mode로 처리 중..."
+                "Context limit reached! Processing in long context mode..."
             )
 
             try:
