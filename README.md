@@ -15,10 +15,7 @@
 <!-- <p align="center"> <img src="[데모 GIF URL]" width="100%" alt="Selvage Demo"/> </p> -->
 
 <p align="center">
-  <video width="100%" autoplay muted loop>
-    <source src="https://github.com/user-attachments/assets/7815d0ab-9218-42a2-8799-a9bca398276f" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <img src="https://github.com/user-attachments/assets/7815d0ab-9218-42a2-8799-a9bca398276f" width="100%" alt="Selvage Demo"/>
 </p>
 
 **Selvage: 코드 리뷰도 엣지있게!**
