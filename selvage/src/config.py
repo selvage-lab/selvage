@@ -224,13 +224,13 @@ def get_default_language() -> str:
     """기본 언어를 반환합니다.
 
     Returns:
-        str: 기본 언어 (기본값: Korean)
+        str: 기본 언어 (기본값: English)
     """
     try:
         config = load_config()
-        return config["language"].get("default", "Korean")
+        return config["language"].get("default", "English")
     except KeyError:
-        return "Korean"
+        return "English"
 
 
 def set_default_language(language: str) -> bool:
