@@ -15,7 +15,7 @@
 <!-- <p align="center"> <img src="[Demo GIF URL]" width="100%" alt="Selvage Demo"/> </p> -->
 
 <p align="center">
-  <video src="assets/demo-en.mp4" width="100%" autoplay muted loop></video>
+  <img src="assets/demo-en.gif" width="100%" alt="Selvage Demo"/>
 </p>
 
 **Selvage: Code reviews with an edge!**
