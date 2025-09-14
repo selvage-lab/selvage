@@ -15,7 +15,7 @@
 <!-- <p align="center"> <img src="[데모 GIF URL]" width="100%" alt="Selvage Demo"/> </p> -->
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/7815d0ab-9218-42a2-8799-a9bca398276f" width="100%" controls></video>
+  <video src="https://github.com/user-attachments/assets/338766d9-535e-47cb-ad10-1f8ce069401d" width="100%" controls></video>
 </p>
 
 **Selvage: 코드 리뷰도 엣지있게!**
