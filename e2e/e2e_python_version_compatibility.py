@@ -4,6 +4,7 @@
 """
 
 import pytest
+import docker
 from testcontainers.core.generic import DockerContainer
 
 
@@ -18,6 +19,16 @@ def test_selvage_python_compatibility(python_version: str) -> None:
         working_dir="/app"
     )  # working_dir은 유지하거나 필요에 따라 제거
     container.with_command("bash -c 'while true; do sleep 1; done'")
+
+    # 최신 이미지 보장을 위해 Docker client로 pull 수행
+    docker_client = docker.from_env()
+    image_name = f"python:{python_version}-slim"
+    try:
+        print(f"Pulling latest {image_name} image...")
+        docker_client.images.pull(image_name)
+    except Exception as e:
+        print(f"Warning: Failed to pull image {image_name}: {e}")
+
     container.start()
 
     try:
@@ -28,11 +39,18 @@ def test_selvage_python_compatibility(python_version: str) -> None:
 
         assert container_attrs["State"]["Running"], "Container should be running"
 
-        # 필요한 패키지 설치
-        exit_code, output = container.exec(
-            "bash -c 'DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y git'"
-        )
-        assert exit_code == 0, "Package installation should succeed"
+        # 필요한 패키지 설치 (재시도 로직 포함)
+        install_success = False
+        for attempt in range(3):  # 최대 3회 재시도
+            exit_code, output = container.exec(
+                "bash -c 'DEBIAN_FRONTEND=noninteractive apt-get clean && apt-get update -y && apt-get install -y git'"
+            )
+            if exit_code == 0:
+                install_success = True
+                break
+            print(f"Package installation attempt {attempt + 1} failed, retrying...")
+
+        assert install_success, f"Package installation failed after 3 attempts. Last output: {output.decode() if output else 'No output'}"
 
         # Git 설정
         container.exec("bash -c 'git config --global user.email test@example.com'")
@@ -71,6 +89,16 @@ def test_selvage_python_incompatibility() -> None:
         working_dir="/app"
     )  # working_dir은 유지하거나 필요에 따라 제거
     container.with_command("bash -c 'while true; do sleep 1; done'")
+
+    # 최신 이미지 보장을 위해 Docker client로 pull 수행
+    docker_client = docker.from_env()
+    image_name = "python:3.9-slim"
+    try:
+        print(f"Pulling latest {image_name} image...")
+        docker_client.images.pull(image_name)
+    except Exception as e:
+        print(f"Warning: Failed to pull image {image_name}: {e}")
+
     container.start()
 
     try:
@@ -81,11 +109,18 @@ def test_selvage_python_incompatibility() -> None:
 
         assert container_attrs["State"]["Running"], "Container should be running"
 
-        # 필요한 패키지 설치
-        exit_code, output = container.exec(
-            "bash -c 'DEBIAN_FRONTEND=noninteractive apt-get update -y && apt-get install -y git'"
-        )
-        assert exit_code == 0, "Package installation should succeed"
+        # 필요한 패키지 설치 (재시도 로직 포함)
+        install_success = False
+        for attempt in range(3):  # 최대 3회 재시도
+            exit_code, output = container.exec(
+                "bash -c 'DEBIAN_FRONTEND=noninteractive apt-get clean && apt-get update -y && apt-get install -y git'"
+            )
+            if exit_code == 0:
+                install_success = True
+                break
+            print(f"Package installation attempt {attempt + 1} failed, retrying...")
+
+        assert install_success, f"Package installation failed after 3 attempts. Last output: {output.decode() if output else 'No output'}"
 
         # Git 설정
         container.exec("bash -c 'git config --global user.email test@example.com'")
