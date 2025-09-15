@@ -15,7 +15,7 @@
 <!-- <p align="center"> <img src="[Demo GIF URL]" width="100%" alt="Selvage Demo"/> </p> -->
 
 <p align="center">
-  <img src="assets/demo-en.gif" width="100%" alt="Selvage Demo"/>
+  <video src="https://github.com/user-attachments/assets/338766d9-535e-47cb-ad10-1f8ce069401d" width="100%" controls></video>
 </p>
 
 **Selvage: Code reviews with an edge!**
