@@ -40,6 +40,7 @@ With smart context analysis (AST-based) that's accurate and cost-effective, plus
   - [Troubleshooting](#troubleshooting)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
+- [📋 Change Log](#-change-log)
 - [📞 Contact and Community](#-contact-and-community)
 
 </details>
@@ -378,6 +379,14 @@ Selvage is an open-source project and we always welcome your contributions! Bug 
 ## 📜 License
 
 Selvage is distributed under the [Apache License 2.0](LICENSE). This license permits commercial use, modification, and distribution, with comprehensive patent protection and trademark restrictions included.
+
+## 📋 Change Log
+
+Check out all version changes and new features of Selvage.
+
+**[📋 View Complete Change Log →](CHANGELOG_EN.md)**
+
+You can find detailed changes for each version, including new features, bug fixes, and performance improvements.
 
 ## 📞 Contact and Community
 
