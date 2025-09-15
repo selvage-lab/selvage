@@ -40,13 +40,13 @@ class TestLanguageConfig:
         assert "language" in config
         assert isinstance(config["language"], configparser.SectionProxy)
 
-    def test_get_default_language_returns_korean_when_no_config(
+    def test_get_default_language_returns_english_when_no_config(
         self, mock_config_file_path
     ):
-        """설정이 없을 때 기본 언어로 Korean을 반환하는지 테스트."""
+        """설정이 없을 때 기본 언어로 English를 반환하는지 테스트."""
         language = get_default_language()
 
-        assert language == "Korean"
+        assert language == "English"
 
     def test_get_default_language_from_config(self, mock_config_file_path):
         """설정 파일에서 언어를 읽어오는지 테스트."""
@@ -149,7 +149,7 @@ class TestLanguageConfigEdgeCases:
         try:
             with patch("selvage.src.config.CONFIG_FILE", corrupted_config_path):
                 language = get_default_language()
-                assert language == "Korean"
+                assert language == "English"
         finally:
             corrupted_config_path.unlink()
 
