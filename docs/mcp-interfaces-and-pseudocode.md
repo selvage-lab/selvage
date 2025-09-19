@@ -772,10 +772,51 @@ def _get_server_uptime(pid: int) -> str:
 
 ### 3.1 Claude Code에서 사용
 
-```bash
-# 1. MCP 서버 시작
-$ selvage mcp start --daemon
+#### 연동 설정
 
+**1. MCP 서버 추가 (Claude Code CLI 사용)**
+
+```bash
+# selvage MCP 서버 추가
+claude mcp add selvage uvx selvage mcp start
+
+# 환경변수와 함께 추가
+claude mcp add selvage \
+  -e ANTHROPIC_API_KEY=your_anthropic_key \
+  -e OPENAI_API_KEY=your_openai_key \
+  -e GEMINI_API_KEY=your_gemini_key \
+  -- uvx selvage mcp start
+```
+
+**2. 수동 설정 (~/.claude.json)**
+
+```json
+{
+  "mcpServers": {
+    "selvage": {
+      "command": "uvx",
+      "args": ["selvage", "mcp", "start"],
+      "env": {
+        "OPENROUTER_API_KEY": "your_openrouter_key"
+      }
+    }
+  }
+}
+```
+
+**3. 설정 확인**
+
+```bash
+# MCP 서버 목록 확인
+claude mcp list
+
+# selvage 서버 상태 확인
+claude mcp get selvage
+```
+
+#### 사용 예시
+
+```bash
 # 2. Claude Code에서 사용
 사용자: "현재 변경사항을 코드 리뷰해줘"
 
@@ -794,15 +835,236 @@ Claude Code:
 
 ### 3.2 Cursor에서 사용
 
+#### 연동 설정
+
+**1. mcp.json 설정 파일 수정**
+
+Cursor의 MCP 설정 파일 경로: `~/.cursor/mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "selvage": {
+      "command": "uvx",
+      "args": ["selvage", "mcp", "start"],
+      "env": {
+        "OPENROUTER_API_KEY": "your_openrouter_key"
+      }
+    }
+  }
+}
+```
+
+**2. 로컬 패키지로 개발 중인 경우**
+
+```json
+{
+  "mcpServers": {
+    "selvage-dev": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/path/to/selvage",
+        "run",
+        "python",
+        "-m",
+        "selvage.src.mcp.server"
+      ],
+      "env": {
+        "OPENROUTER_API_KEY": "your_openrouter_key"
+      }
+    }
+  }
+}
+```
+
+**3. 특정 프로젝트 경로 지정**
+
+```json
+{
+  "mcpServers": {
+    "selvage-project": {
+      "command": "uvx",
+      "args": ["selvage", "mcp", "start"],
+      "env": {
+        "OPENROUTER_API_KEY": "your_openrouter_key"
+      }
+    }
+  }
+}
+```
+
+#### 사용 예시
+
 ```bash
 # Cursor에서 MCP 연동 후
 사용자: "스테이징된 변경사항에 대해 리뷰 받고 싶어"
 
 Cursor:
 - MCP call: review_staged_changes
+- parameters: {"model": "claude-sonnet-4", "repo_path": "."}
 - 결과 분석 후 추가 제안
 - 코드 개선 방향 제시
+
+# 히스토리 조회 예시
+사용자: "최근 5개 리뷰 히스토리를 보여줘"
+
+Cursor:
+- MCP call: get_review_history
+- parameters: {"limit": 5, "repo_path": "."}
+- 리뷰 히스토리 테이블 형식으로 표시
 ```
+
+### 3.3 일반적인 MCP 클라이언트 연동
+
+#### 표준 MCP 설정 형식
+
+**1. stdio transport 방식 (권장)**
+
+```json
+{
+  "mcpServers": {
+    "selvage": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["selvage", "mcp", "start"],
+      "env": {
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+**2. 환경변수 직접 전달**
+
+```json
+{
+  "mcpServers": {
+    "selvage": {
+      "command": "uvx",
+      "args": ["selvage", "mcp", "start"],
+      "env": {
+        "OPENROUTER_API_KEY": "sk-or-v1-..."
+      }
+    }
+  }
+}
+```
+
+#### 다양한 설치 방식
+
+**1. PyPI에서 직접 설치**
+
+```bash
+# uvx로 자동 설치 및 실행
+uvx selvage mcp start
+
+# uv tool로 설치 후 실행
+uv tool install selvage
+uv tool run selvage mcp start
+```
+
+**2. GitHub에서 개발 버전 설치**
+
+```json
+{
+  "mcpServers": {
+    "selvage-dev": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/your-org/selvage.git",
+        "selvage",
+        "mcp",
+        "start"
+      ]
+    }
+  }
+}
+```
+
+**3. 로컬 개발 환경**
+
+```json
+{
+  "mcpServers": {
+    "selvage-local": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/absolute/path/to/selvage",
+        "run",
+        "python",
+        "-m",
+        "selvage.src.mcp.server"
+      ]
+    }
+  }
+}
+```
+
+#### 고급 설정 옵션
+
+**1. 특정 모델 기본값 설정**
+
+```json
+{
+  "mcpServers": {
+    "selvage": {
+      "command": "uvx",
+      "args": ["selvage", "mcp", "start"],
+      "env": {
+        "SELVAGE_DEFAULT_MODEL": "claude-sonnet-4",
+        "SELVAGE_DEFAULT_LANGUAGE": "ko",
+        "OPENROUTER_API_KEY": "your_openrouter_key"
+      }
+    }
+  }
+}
+```
+
+**2. 디버그 모드 활성화**
+
+```json
+{
+  "mcpServers": {
+    "selvage-debug": {
+      "command": "uvx",
+      "args": ["selvage", "mcp", "start"],
+      "env": {
+        "SELVAGE_DEBUG_MODE": "true",
+        "SELVAGE_LOG_LEVEL": "DEBUG",
+        "ANTHROPIC_API_KEY": "your_key"
+      }
+    }
+  }
+}
+```
+
+#### 연동 확인 방법
+
+**1. MCP 서버 상태 확인**
+
+```bash
+# 서버 프로세스 확인
+ps aux | grep selvage
+
+# 로그 확인 (디버그 모드 시)
+tail -f ~/.selvage/logs/selvage.log
+```
+
+**2. 사용 가능한 도구 확인**
+대부분의 MCP 클라이언트에서 사용 가능한 도구 목록:
+
+- `review_current_changes` - 현재 변경사항 리뷰
+- `review_staged_changes` - 스테이징된 변경사항 리뷰
+- `review_against_branch` - 브랜치 간 차이점 리뷰
+- `review_against_commit` - 커밋 간 차이점 리뷰
+- `get_available_models` - 사용 가능한 AI 모델 목록
+- `get_review_history` - 리뷰 히스토리 조회
+- `get_server_status` - 서버 상태 조회
+- `validate_model_config` - 모델 설정 검증
 
 ## 4. MCP 모드 출력 관리
 
@@ -811,6 +1073,7 @@ Cursor:
 MCP 서버에서는 stdin/stdout이 프로토콜 통신에 사용되므로, 일반적인 출력을 stdout으로 하면 안 됩니다.
 
 **현재 selvage의 출력 방식**:
+
 - Rich Console: 기본적으로 stdout 사용
 - Python Logger: stderr 사용 (안전)
 
@@ -897,12 +1160,14 @@ class BaseConsole:
 ### 4.4 장점 및 특징
 
 **장점**:
+
 1. **기존 코드 최소 변경**: BaseConsole만 수정하면 됨
 2. **안전성**: 한번 설정 후 변경 불가로 예측 가능한 동작
 3. **성능**: 런타임 오버헤드 최소화
 4. **호환성**: CLI 모드와 MCP 모드 모두 지원
 
 **특징**:
+
 - MCP 서버 프로세스는 시작부터 종료까지 stderr 사용
 - 일반 CLI 명령어는 기존대로 stdout 사용하여 파이프라인 호환성 유지
 - 테스트 환경에서도 안전하게 격리 가능
@@ -945,5 +1210,400 @@ def test_normal_mode_console_output():
 3. **MCP 서버 구현**: `SelvageMCPServer.__init__()`에서 `set_mcp_mode(True)` 호출
 4. **CLI 명령어 추가**: 기존 2.4 섹션의 CLI 통합 로직 활용
 5. **테스트 작성**: MCP 모드와 일반 모드 동작 검증
+
+## 5. 테스트 및 호환성 전략
+
+### 5.1 단위 테스트 전략
+
+#### Tool 호출 테스트
+
+```python
+# tests/test_mcp_tools.py
+import pytest
+from unittest.mock import Mock, patch
+from selvage.src.mcp.tools.review_tools import register_review_tools
+from selvage.src.mcp.models.responses import ReviewResult
+
+class TestMCPReviewTools:
+    """MCP 리뷰 도구 단위 테스트"""
+
+    def test_review_current_changes_parameter_validation(self):
+        """파라미터 검증 테스트"""
+        # 필수 파라미터 누락 시 에러
+        with pytest.raises(ValueError):
+            review_current_changes(model="")
+
+        # 잘못된 모델명 시 에러
+        with pytest.raises(ValueError):
+            review_current_changes(model="invalid-model")
+
+    @patch('selvage.src.mcp.tools.review_tools._execute_review_workflow')
+    def test_review_current_changes_pipeline_execution(self, mock_workflow):
+        """파이프라인 실행 테스트"""
+        # Mock 설정
+        mock_result = ReviewResult(
+            success=True,
+            review_content="Test review content",
+            model_used="claude-sonnet-4",
+            files_reviewed=["test.py"]
+        )
+        mock_workflow.return_value = mock_result
+
+        # 실행
+        result = review_current_changes(
+            model="claude-sonnet-4",
+            repo_path="/test/repo"
+        )
+
+        # 검증
+        assert result.success is True
+        assert result.model_used == "claude-sonnet-4"
+        mock_workflow.assert_called_once()
+
+    def test_review_result_summary_conversion(self):
+        """요약 변환 테스트"""
+        review_content = """
+        # Code Review
+
+        ## Issues Found
+        1. Missing error handling
+        2. Unused import
+
+        ## Suggestions
+        - Add try-catch blocks
+        """
+
+        summary = _generate_summary(review_content)
+        assert len(summary) <= 200
+        assert "error handling" in summary.lower()
+```
+
+#### StdIO Transport 테스트
+
+```python
+# tests/test_mcp_transport.py
+import json
+import pytest
+from selvage.src.mcp.server import SelvageMCPServer
+
+class TestMCPTransport:
+    """MCP StdIO Transport 형식 테스트"""
+
+    def test_tool_call_input_format(self):
+        """도구 호출 입력 형식 스냅샷 테스트"""
+        expected_input = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "method": "tools/call",
+            "params": {
+                "name": "review_current_changes",
+                "arguments": {
+                    "model": "claude-sonnet-4",
+                    "repo_path": "."
+                }
+            }
+        }
+
+        # 입력 형식 검증
+        assert "jsonrpc" in expected_input
+        assert expected_input["method"] == "tools/call"
+        assert "arguments" in expected_input["params"]
+
+    def test_tool_response_output_format(self):
+        """도구 응답 출력 형식 스냅샷 테스트"""
+        response = {
+            "jsonrpc": "2.0",
+            "id": "1",
+            "result": {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps({
+                            "success": True,
+                            "review_content": "Test review",
+                            "model_used": "claude-sonnet-4"
+                        })
+                    }
+                ]
+            }
+        }
+
+        # 출력 형식 검증
+        assert response["jsonrpc"] == "2.0"
+        assert "result" in response
+        assert "content" in response["result"]
+```
+
+### 5.2 통합 테스트 전략
+
+#### 가짜 MCP 클라이언트 테스트
+
+```python
+# tests/integration/test_mcp_integration.py
+import asyncio
+import json
+from unittest.mock import AsyncMock
+from selvage.src.mcp.server import SelvageMCPServer
+
+class MockMCPClient:
+    """테스트용 가짜 MCP 클라이언트"""
+
+    def __init__(self):
+        self.received_messages = []
+        self.server = None
+
+    async def connect_to_server(self, server: SelvageMCPServer):
+        """서버에 연결"""
+        self.server = server
+
+    async def call_tool(self, tool_name: str, arguments: dict):
+        """도구 호출"""
+        request = {
+            "jsonrpc": "2.0",
+            "id": "test-1",
+            "method": "tools/call",
+            "params": {
+                "name": tool_name,
+                "arguments": arguments
+            }
+        }
+
+        # 서버로 요청 전송 (시뮬레이션)
+        response = await self._simulate_server_call(request)
+        self.received_messages.append(response)
+        return response
+
+    async def _simulate_server_call(self, request):
+        """서버 호출 시뮬레이션"""
+        # 실제 구현에서는 stdio를 통해 통신
+        return {
+            "jsonrpc": "2.0",
+            "id": request["id"],
+            "result": {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Mock review result"
+                    }
+                ]
+            }
+        }
+
+class TestMCPIntegration:
+    """MCP 통합 테스트"""
+
+    @pytest.mark.asyncio
+    async def test_full_review_workflow(self):
+        """전체 리뷰 워크플로우 테스트"""
+        # 설정
+        client = MockMCPClient()
+        server = SelvageMCPServer()
+
+        await client.connect_to_server(server)
+
+        # 도구 호출
+        response = await client.call_tool(
+            "review_current_changes",
+            {
+                "model": "claude-sonnet-4",
+                "repo_path": "/test/repo"
+            }
+        )
+
+        # 검증
+        assert response["jsonrpc"] == "2.0"
+        assert "result" in response
+        assert len(client.received_messages) == 1
+
+    @pytest.mark.asyncio
+    async def test_error_handling_workflow(self):
+        """에러 처리 워크플로우 테스트"""
+        client = MockMCPClient()
+
+        # 잘못된 파라미터로 호출
+        response = await client.call_tool(
+            "review_current_changes",
+            {
+                "model": "",  # 빈 모델명
+                "repo_path": "/nonexistent"
+            }
+        )
+
+        # 에러 응답 검증
+        assert "error" in response or response["result"]["content"][0]["text"].find("error") != -1
+```
+
+### 5.3 호환성 체크리스트
+
+#### MCP 클라이언트 버전 호환성
+
+```python
+# tests/compatibility/test_mcp_compatibility.py
+
+class TestMCPCompatibility:
+    """MCP 클라이언트 호환성 테스트"""
+
+    def test_cursor_mcp_version_compatibility(self):
+        """Cursor MCP 버전 호환성"""
+        # Cursor에서 지원하는 MCP 스펙 버전
+        supported_versions = ["1.0", "1.1", "1.2"]
+
+        for version in supported_versions:
+            # 각 버전별 호환성 확인
+            assert self._check_version_compatibility(version)
+
+    def test_claude_code_mcp_compatibility(self):
+        """Claude Code MCP 호환성"""
+        # Claude Code 특정 요구사항 확인
+        assert self._check_claude_code_requirements()
+
+    def test_large_diff_multiturn_handling(self):
+        """대용량 diff 멀티턴 처리 확인"""
+        # 대용량 diff 시나리오
+        large_diff = "+" * 100000  # 100KB 이상의 diff
+
+        # 멀티턴 처리 흐름 확인
+        result = self._process_large_diff(large_diff)
+        assert result["multiturn_used"] is True
+        assert len(result["chunks"]) > 1
+
+    def _check_version_compatibility(self, version: str) -> bool:
+        """버전 호환성 확인"""
+        # 실제 구현에서는 MCP 스펙 버전별 테스트
+        return True
+
+    def _check_claude_code_requirements(self) -> bool:
+        """Claude Code 요구사항 확인"""
+        # Tool 이름 규칙, 파라미터 형식 등 확인
+        return True
+
+    def _process_large_diff(self, diff: str) -> dict:
+        """대용량 diff 처리 시뮬레이션"""
+        return {
+            "multiturn_used": len(diff) > 50000,
+            "chunks": [diff[i:i+50000] for i in range(0, len(diff), 50000)]
+        }
+```
+
+### 5.4 성능 및 안정성 테스트
+
+#### 동시 요청 처리 테스트
+
+```python
+# tests/performance/test_mcp_performance.py
+import asyncio
+import pytest
+from concurrent.futures import ThreadPoolExecutor
+
+class TestMCPPerformance:
+    """MCP 성능 테스트"""
+
+    @pytest.mark.asyncio
+    async def test_concurrent_tool_calls(self):
+        """동시 도구 호출 처리 테스트"""
+        # 10개의 동시 요청
+        tasks = []
+        for i in range(10):
+            task = asyncio.create_task(
+                self._call_review_tool(f"request-{i}")
+            )
+            tasks.append(task)
+
+        # 모든 요청 완료 대기
+        results = await asyncio.gather(*tasks)
+
+        # 모든 요청이 성공적으로 처리되었는지 확인
+        assert len(results) == 10
+        assert all(result["success"] for result in results)
+
+    async def _call_review_tool(self, request_id: str):
+        """리뷰 도구 호출"""
+        # 시뮬레이션된 도구 호출
+        await asyncio.sleep(0.1)  # 네트워크 지연 시뮬레이션
+        return {"success": True, "request_id": request_id}
+
+    def test_memory_usage_under_load(self):
+        """부하 상황에서 메모리 사용량 테스트"""
+        import psutil
+        import os
+
+        process = psutil.Process(os.getpid())
+        initial_memory = process.memory_info().rss
+
+        # 100개의 리뷰 요청 처리
+        for i in range(100):
+            self._simulate_review_processing()
+
+        final_memory = process.memory_info().rss
+        memory_increase = final_memory - initial_memory
+
+        # 메모리 증가량이 허용 범위 내인지 확인 (예: 100MB 이하)
+        assert memory_increase < 100 * 1024 * 1024
+
+    def _simulate_review_processing(self):
+        """리뷰 처리 시뮬레이션"""
+        # 메모리 사용량 테스트를 위한 시뮬레이션
+        dummy_data = "x" * 1000  # 1KB 데이터
+        return len(dummy_data)
+```
+
+### 5.5 테스트 실행 가이드
+
+#### 테스트 명령어
+
+```bash
+# 전체 MCP 테스트 실행
+pytest tests/test_mcp* -v
+
+# 단위 테스트만 실행
+pytest tests/test_mcp_tools.py tests/test_mcp_transport.py -v
+
+# 통합 테스트 실행
+pytest tests/integration/test_mcp_integration.py -v
+
+# 호환성 테스트 실행
+pytest tests/compatibility/test_mcp_compatibility.py -v
+
+# 성능 테스트 실행
+pytest tests/performance/test_mcp_performance.py -v
+
+# 커버리지와 함께 실행
+pytest tests/test_mcp* --cov=selvage.src.mcp --cov-report=html
+```
+
+#### CI/CD 통합
+
+```yaml
+# .github/workflows/mcp-tests.yml
+name: MCP Tests
+
+on: [push, pull_request]
+
+jobs:
+  mcp-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install -e .[dev]
+        pip install pytest-asyncio pytest-cov
+
+    - name: Run MCP unit tests
+      run: pytest tests/test_mcp* -v
+
+    - name: Run MCP integration tests
+      run: pytest tests/integration/test_mcp* -v
+
+    - name: Run compatibility tests
+      run: pytest tests/compatibility/test_mcp* -v
+```
 
 이러한 인터페이스와 수도 코드를 바탕으로 실제 구현을 진행할 수 있습니다.
