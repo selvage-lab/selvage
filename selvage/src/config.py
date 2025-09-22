@@ -18,6 +18,10 @@ from selvage.src.utils.platform_utils import get_platform_config_dir
 CONFIG_DIR = get_platform_config_dir()
 CONFIG_FILE = CONFIG_DIR / "config.ini"
 
+# MCP 모드 전역 상태
+_MCP_MODE = False
+_mcp_mode_set = False
+
 # 기본 설정 섹션 목록
 DEFAULT_SECTIONS = [
     "paths",  # 경로 설정
@@ -256,3 +260,42 @@ def set_default_language(language: str) -> bool:
             f"Error occurred while setting default language: {str(e)}", exception=e
         )
         return False
+
+
+def set_mcp_mode(enabled: bool) -> None:
+    """MCP 모드를 설정합니다. 프로세스당 한번만 설정 가능합니다.
+
+    Args:
+        enabled: MCP 모드 활성화 여부
+
+    Raises:
+        RuntimeError: 이미 MCP 모드가 설정된 경우
+    """
+    global _MCP_MODE, _mcp_mode_set
+
+    if _mcp_mode_set:
+        raise RuntimeError("MCP mode can only be set once per process")
+
+    _MCP_MODE = enabled
+    _mcp_mode_set = True
+
+
+def is_mcp_mode() -> bool:
+    """현재 MCP 모드 여부를 반환합니다.
+
+    Returns:
+        bool: MCP 모드 활성화 여부
+    """
+    return _MCP_MODE
+
+
+def get_mcp_mode_status() -> dict[str, bool]:
+    """MCP 모드 상태 정보를 반환합니다 (디버깅용).
+
+    Returns:
+        dict: MCP 모드 상태 정보
+    """
+    return {
+        "mcp_mode": _MCP_MODE,
+        "mcp_mode_set": _mcp_mode_set,
+    }
