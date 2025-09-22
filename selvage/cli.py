@@ -677,6 +677,26 @@ def models() -> None:
     review_display.show_available_models()
 
 
+@cli.command()
+def mcp() -> None:
+    """Start MCP (Model Context Protocol) server"""
+    import subprocess
+    import sys
+    
+    try:
+        # 모듈로 MCP 서버 실행
+        console.info("Starting MCP server...")
+        subprocess.run([sys.executable, '-m', 'selvage.src.mcp.server'], check=True)
+    except subprocess.CalledProcessError as e:
+        console.error(f"MCP server failed with exit code {e.returncode}")
+        sys.exit(e.returncode)
+    except KeyboardInterrupt:
+        console.info("\nMCP server stopped by user.")
+    except Exception as e:
+        console.error(f"MCP server error: {str(e)}", exception=e)
+        sys.exit(1)
+
+
 def main() -> None:
     """애플리케이션의 메인 진입점."""
     # 로깅 설정 초기화 (파일 로깅만 활성화, 콘솔 로깅은 비활성화)

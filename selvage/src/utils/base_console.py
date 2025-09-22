@@ -1,5 +1,6 @@
 """기본 콘솔 출력 및 로깅을 위한 모듈."""
 
+import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
@@ -15,8 +16,24 @@ class BaseConsole:
 
     def __init__(self) -> None:
         """콘솔 인스턴스를 초기화합니다."""
-        self.console = Console()
+        # MCP 모드에 따른 조건부 출력 스트림 설정
+        if self._is_mcp_mode():
+            # MCP 모드: 모든 출력을 stderr로 (프로토콜 안전성)
+            self.console = Console(file=sys.stderr)
+        else:
+            # 일반 모드: stdout 사용 (파이프라인 호환성)
+            self.console = Console()
+
         self.logger = get_logger(__name__)
+
+    def _is_mcp_mode(self) -> bool:
+        """MCP 모드 여부를 확인합니다."""
+        try:
+            from selvage.src.config import is_mcp_mode
+
+            return is_mcp_mode()
+        except (ImportError, AttributeError, Exception):
+            return False
 
     def success(self, message: str) -> None:
         """성공 메시지를 출력합니다."""
