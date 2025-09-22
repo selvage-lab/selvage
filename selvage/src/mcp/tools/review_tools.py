@@ -53,7 +53,7 @@ def _validate_model_and_api_key(
     if not model_info:
         return False, f"지원되지 않는 모델입니다: {model}", None
 
-    provider_value = model_info.provider
+    provider_value = model_info["provider"]
     if isinstance(provider_value, str):
         try:
             provider = ModelProvider.from_string(provider_value)

@@ -15,8 +15,11 @@
 {
   "mcpServers": {
     "selvage": {
-      "command": "/Users/USER/.pyenv/versions/3.11.9/bin/python",
-      "args": ["-m", "selvage.src.mcp.server"],
+      "command": "/bin/sh",
+      "args": [
+        "-lc",
+        "cd /Users/demin_coder/Dev/selvage && /Users/demin_coder/Dev/selvage/venv/bin/python -m selvage.src.mcp.server"
+      ],
       "env": {
         "PYTHONUNBUFFERED": "1"
       }
@@ -25,9 +28,14 @@
 }
 ```
 
-- command: 로컬 Python 실행 경로로 바꿔주세요. 예) `/Users/you/.venv/bin/python` 또는 프로젝트 venv의 `python` 경로
-- args: `-m selvage.src.mcp.server` 그대로 유지 (stdio)
+- command: `/bin/sh` (셸을 통해 실행)
+- args: `-lc` 플래그와 함께 작업 디렉토리 변경 후 Python 실행
 - env(PYTHONUNBUFFERED): 로그 출력 버퍼링 방지에 유용
+
+**경로 수정 필요사항:**
+
+- `/Users/demin_coder/Dev/selvage` → 본인의 Selvage 프로젝트 경로로 변경
+- `/Users/demin_coder/Dev/selvage/venv/bin/python` → 본인의 Python 가상환경 경로로 변경
 
 Cursor를 재시작하면 `selvage` MCP 서버가 자동으로 연결되어 도구를 탐색할 수 있습니다.
 
