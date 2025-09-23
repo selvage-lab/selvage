@@ -231,7 +231,7 @@ class TestExecuteReviewWorkflow:
             issues=[],
             summary="Test review summary",
             score=8.0,
-            recommendations=["Test recommendation"]
+            recommendations=["Test recommendation"],
         )
         mock_estimated_cost = Mock()
         mock_estimated_cost.total_cost_usd = 0.05

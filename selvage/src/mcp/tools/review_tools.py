@@ -181,67 +181,11 @@ def _execute_review_workflow(
         )
 
 
-def _generate_summary(review_content: str) -> str:
-    """리뷰 내용에서 요약 생성"""
-    # 간단한 요약 생성 로직
-    lines = review_content.split("\n")
-    summary_lines = []
-
-    for line in lines[:10]:  # 첫 10줄에서 요약 추출
-        if line.strip() and not line.startswith("#"):
-            summary_lines.append(line.strip())
-            if len(summary_lines) >= 3:
-                break
-
-    return " ".join(summary_lines)[:200] + "..." if summary_lines else "리뷰 완료"
-
-
-# 실제 도구 함수들
-def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
-    """현재 작업 디렉토리의 unstaged 변경사항을 AI로 코드 리뷰합니다."""
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        staged=False,
-    )
-
-
-def review_staged_changes(model: str, repo_path: str = ".") -> ReviewResult:
-    """스테이징 영역의 변경사항을 AI로 코드 리뷰합니다."""
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        staged=True,
-    )
-
-
-def review_against_branch(
-    model: str, target_branch: str, repo_path: str = "."
-) -> ReviewResult:
-    """현재 브랜치와 지정된 브랜치 간의 차이점을 AI로 코드 리뷰합니다."""
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        target_branch=target_branch,
-    )
-
-
-def review_against_commit(
-    model: str, target_commit: str, repo_path: str = "."
-) -> ReviewResult:
-    """지정된 커밋부터 HEAD까지의 변경사항을 AI로 코드 리뷰합니다."""
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        target_commit=target_commit,
-    )
-
-
 def register_review_tools(mcp: FastMCP) -> None:
     """리뷰 관련 MCP 도구들을 등록합니다."""
 
     @mcp.tool()
-    def review_current_changes_tool(model: str, repo_path: str = ".") -> ReviewResult:
+    def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
         """
         현재 작업 디렉토리의 unstaged 변경사항을 AI로 코드 리뷰합니다.
 
@@ -252,11 +196,14 @@ def register_review_tools(mcp: FastMCP) -> None:
         Returns:
             ReviewResult: 리뷰 결과 (success, response, estimated_cost, files_reviewed)
         """
-        result = review_current_changes(model, repo_path)
-        return result
+        return _execute_review_workflow(
+            model=model,
+            repo_path=repo_path,
+            staged=False,
+        )
 
     @mcp.tool()
-    def review_staged_changes_tool(model: str, repo_path: str = ".") -> ReviewResult:
+    def review_staged_changes(model: str, repo_path: str = ".") -> ReviewResult:
         """
         스테이징 영역의 변경사항을 AI로 코드 리뷰합니다.
 
@@ -267,11 +214,14 @@ def register_review_tools(mcp: FastMCP) -> None:
         Returns:
             ReviewResult: 리뷰 결과 (success, response, estimated_cost, files_reviewed)
         """
-        result = review_staged_changes(model, repo_path)
-        return result
+        return _execute_review_workflow(
+            model=model,
+            repo_path=repo_path,
+            staged=True,
+        )
 
     @mcp.tool()
-    def review_against_branch_tool(
+    def review_against_branch(
         model: str, target_branch: str, repo_path: str = "."
     ) -> ReviewResult:
         """
@@ -285,11 +235,14 @@ def register_review_tools(mcp: FastMCP) -> None:
         Returns:
             ReviewResult: 리뷰 결과 (success, response, estimated_cost, files_reviewed)
         """
-        result = review_against_branch(model, target_branch, repo_path)
-        return result
+        return _execute_review_workflow(
+            model=model,
+            repo_path=repo_path,
+            target_branch=target_branch,
+        )
 
     @mcp.tool()
-    def review_against_commit_tool(
+    def review_against_commit(
         model: str, target_commit: str, repo_path: str = "."
     ) -> ReviewResult:
         """
@@ -303,5 +256,8 @@ def register_review_tools(mcp: FastMCP) -> None:
         Returns:
             ReviewResult: 리뷰 결과 (success, response, estimated_cost, files_reviewed)
         """
-        result = review_against_commit(model, target_commit, repo_path)
-        return result
+        return _execute_review_workflow(
+            model=model,
+            repo_path=repo_path,
+            target_commit=target_commit,
+        )
