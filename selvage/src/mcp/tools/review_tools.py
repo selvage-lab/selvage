@@ -1,4 +1,4 @@
-"""MCP 리뷰 도구 구현"""
+"""MCP review tools implementation"""
 
 from dataclasses import dataclass
 
@@ -187,14 +187,23 @@ def register_review_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
         """
-        현재 작업 디렉토리의 unstaged 변경사항을 AI로 코드 리뷰합니다.
+        Review unstaged changes in the repository with AI.
 
         Args:
-            model: 사용할 AI 모델 (예: claude-sonnet-4, gpt-4o)
-            repo_path: Git 저장소 경로 (기본값: 현재 디렉토리)
+            model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
+            repo_path: Git repository path (default: current directory)
 
         Returns:
-            ReviewResult: 리뷰 결과 (success, response, estimated_cost, files_reviewed)
+            ReviewResult:
+                - success: bool
+                - response: ReviewResponse | None
+                - estimated_cost: float (USD)
+                - model_used: str
+                - files_reviewed: list[str]
+                - log_id: str | None
+                - log_path: str | None
+                - timestamp: str (ISO 8601)
+                - error_message: str | None
         """
         return _execute_review_workflow(
             model=model,
@@ -205,14 +214,23 @@ def register_review_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def review_staged_changes(model: str, repo_path: str = ".") -> ReviewResult:
         """
-        스테이징 영역의 변경사항을 AI로 코드 리뷰합니다.
+        Review staged changes with AI.
 
         Args:
-            model: 사용할 AI 모델 (예: claude-sonnet-4, gpt-4o)
-            repo_path: Git 저장소 경로 (기본값: 현재 디렉토리)
+            model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
+            repo_path: Git repository path (default: current directory)
 
         Returns:
-            ReviewResult: 리뷰 결과 (success, response, estimated_cost, files_reviewed)
+            ReviewResult:
+                - success: bool
+                - response: ReviewResponse | None
+                - estimated_cost: float (USD)
+                - model_used: str
+                - files_reviewed: list[str]
+                - log_id: str | None
+                - log_path: str | None
+                - timestamp: str (ISO 8601)
+                - error_message: str | None
         """
         return _execute_review_workflow(
             model=model,
@@ -225,15 +243,24 @@ def register_review_tools(mcp: FastMCP) -> None:
         model: str, target_branch: str, repo_path: str = "."
     ) -> ReviewResult:
         """
-        현재 브랜치와 지정된 브랜치 간의 차이점을 AI로 코드 리뷰합니다.
+        Review differences between current branch and specified branch with AI.
 
         Args:
-            model: 사용할 AI 모델 (예: claude-sonnet-4, gpt-4o)
-            target_branch: 비교할 브랜치명 (예: main, develop)
-            repo_path: Git 저장소 경로 (기본값: 현재 디렉토리)
+            model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
+            target_branch: Target branch to compare (e.g., main, develop)
+            repo_path: Git repository path (default: current directory)
 
         Returns:
-            ReviewResult: 리뷰 결과 (success, response, estimated_cost, files_reviewed)
+            ReviewResult:
+                - success: bool
+                - response: ReviewResponse | None
+                - estimated_cost: float (USD)
+                - model_used: str
+                - files_reviewed: list[str]
+                - log_id: str | None
+                - log_path: str | None
+                - timestamp: str (ISO 8601)
+                - error_message: str | None
         """
         return _execute_review_workflow(
             model=model,
@@ -246,15 +273,24 @@ def register_review_tools(mcp: FastMCP) -> None:
         model: str, target_commit: str, repo_path: str = "."
     ) -> ReviewResult:
         """
-        지정된 커밋부터 HEAD까지의 변경사항을 AI로 코드 리뷰합니다.
+        Review changes from specified commit to HEAD with AI.
 
         Args:
-            model: 사용할 AI 모델 (예: claude-sonnet-4, gpt-4o)
-            target_commit: 기준 커밋 해시 (예: abc1234)
-            repo_path: Git 저장소 경로 (기본값: 현재 디렉토리)
+            model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
+            target_commit: Base commit hash (e.g., abc1234)
+            repo_path: Git repository path (default: current directory)
 
         Returns:
-            ReviewResult: 리뷰 결과 (success, response, estimated_cost, files_reviewed)
+            ReviewResult:
+                - success: bool
+                - response: ReviewResponse | None
+                - estimated_cost: float (USD)
+                - model_used: str
+                - files_reviewed: list[str]
+                - log_id: str | None
+                - log_path: str | None
+                - timestamp: str (ISO 8601)
+                - error_message: str | None
         """
         return _execute_review_workflow(
             model=model,

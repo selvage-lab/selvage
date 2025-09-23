@@ -1,4 +1,4 @@
-"""MCP 유틸리티 도구 구현"""
+"""MCP utility tools implementation"""
 
 import logging
 from datetime import datetime
@@ -26,10 +26,18 @@ def register_utility_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def get_available_models() -> dict:
         """
-        Selvage에서 사용 가능한 AI 모델 목록을 조회합니다.
+        Get list of available AI models in Selvage.
 
         Returns:
-            dict: 사용 가능한 모델들의 정보 리스트
+            dict: {'models': list[ModelInfo]}
+                ModelInfo fields:
+                - name: str
+                - provider: str
+                - display_name: str
+                - description: str
+                - cost_per_1k_tokens: float (USD)
+                - max_tokens: int
+                - supports_function_calling: bool
         """
         try:
             config = ModelConfig()
@@ -67,15 +75,24 @@ def register_utility_tools(mcp: FastMCP) -> None:
         model_filter: str | None = None,
     ) -> dict:
         """
-        최근 코드 리뷰 히스토리를 조회합니다.
+        Get recent code review history.
 
         Args:
-            limit: 조회할 히스토리 개수 (최대 50)
-            repo_path: Git 저장소 경로
-            model_filter: 특정 모델로 필터링 (선택적)
+            limit: Number of history items to retrieve (max 50)
+            repo_path: Git repository path (default: current directory)
+            model_filter: Filter by specific model (optional)
 
         Returns:
-            dict: 리뷰 히스토리 목록
+            dict: {'history': list[ReviewHistoryItem]}
+                ReviewHistoryItem fields:
+                - log_id: str
+                - timestamp: str (ISO 8601)
+                - model: str
+                - files_count: int
+                - status: str (SUCCESS | FAILED)
+                - cost: float (USD)
+                - review_type: str (current | staged | branch | commit)
+                - target: str | None
         """
         try:
             # limit 범위 제한 (성능 및 메모리 사용량 고려)
@@ -126,13 +143,14 @@ def register_utility_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def get_review_details(log_id: str) -> dict:
         """
-        특정 리뷰의 상세 정보를 조회합니다.
+        Get detailed information of a specific review.
 
         Args:
-            log_id: 조회할 리뷰의 로그 ID
+            log_id: Log ID of the review to retrieve
 
         Returns:
-            dict: 리뷰 상세 정보 (프롬프트, 응답, 메타데이터 포함)
+            dict: On success, returns the saved log dict.
+                On error, returns {'error': True, 'error_message': str}
         """
         try:
             log_data = ReviewLogManager.load_log(log_id)
@@ -146,10 +164,11 @@ def register_utility_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def get_server_status() -> dict:
         """
-        MCP 서버의 현재 상태를 조회합니다.
+        Get current MCP server status.
 
         Returns:
-            dict: 서버 상태 정보
+            dict: Dict containing fields: running, version, tools_count, port,
+                host, start_time
         """
         status = ServerStatus(
             running=True,
@@ -164,13 +183,15 @@ def register_utility_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def validate_model_config(model: str) -> dict:
         """
-        지정된 모델의 설정과 API 키를 검증합니다.
+        Validate configuration and API key for specified model.
 
         Args:
-            model: 검증할 모델명
+            model: Model name to validate
 
         Returns:
-            dict: 검증 결과 (유효성, 에러 메시지 등)
+            dict: On success returns {'valid': True, 'model', 'provider',
+                'api_key_configured'}. On failure returns {'valid': False,
+                'error'}
         """
         try:
             # 1. 모델 정보 검증
