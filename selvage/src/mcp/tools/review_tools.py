@@ -34,22 +34,30 @@ def _validate(
     """OpenRouter-first로 provider를 결정하고 API 키를 검증합니다.
 
     Returns:
-        tuple: (성공 여부, 에러 메시지, 선택된 ModelProvider)
+        ValidationResult: 검증 결과 (success, error_message)
     """
     model_info = get_model_info(model)
     if not model_info:
-        return False, f"지원되지 않는 모델입니다: {model}", None
+        return ValidationResult(
+            success=False, error_message=f"지원되지 않는 모델입니다: {model}"
+        )
 
     provider_value = model_info["provider"]
     if isinstance(provider_value, str):
         try:
             provider = ModelProvider.from_string(provider_value)
         except ValueError:
-            return False, f"지원되지 않는 프로바이더입니다: {provider_value}", None
+            return ValidationResult(
+                success=False,
+                error_message=f"지원되지 않는 프로바이더입니다: {provider_value}",
+            )
     elif isinstance(provider_value, ModelProvider):
         provider = provider_value
     else:
-        return False, f"잘못된 프로바이더 타입입니다: {type(provider_value)}", None
+        return ValidationResult(
+            success=False,
+            error_message=f"잘못된 프로바이더 타입입니다: {type(provider_value)}",
+        )
 
     # OpenRouter-first: OpenRouter 키가 있으면 OpenRouter를 사용
     selected_provider = (
@@ -192,119 +200,123 @@ def _execute_review_workflow(
         )
 
 
+def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
+    """
+    Review unstaged changes in the repository with AI.
+
+    Args:
+        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
+        repo_path: Git repository path (default: current directory)
+
+    Returns:
+        ReviewResult:
+            - success: bool
+            - response: ReviewResponse | None
+            - estimated_cost: float (USD)
+            - model_used: str
+            - files_reviewed: list[str]
+            - log_id: str | None
+            - log_path: str | None
+            - timestamp: str (ISO 8601)
+            - error_message: str | None
+    """
+    return _execute_review_workflow(
+        model=model,
+        repo_path=repo_path,
+        staged=False,
+    )
+
+
+def review_staged_changes(model: str, repo_path: str = ".") -> ReviewResult:
+    """
+    Review staged changes with AI.
+
+    Args:
+        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
+        repo_path: Git repository path (default: current directory)
+
+    Returns:
+        ReviewResult:
+            - success: bool
+            - response: ReviewResponse | None
+            - estimated_cost: float (USD)
+            - model_used: str
+            - files_reviewed: list[str]
+            - log_id: str | None
+            - log_path: str | None
+            - timestamp: str (ISO 8601)
+            - error_message: str | None
+    """
+    return _execute_review_workflow(
+        model=model,
+        repo_path=repo_path,
+        staged=True,
+    )
+
+
+def review_against_branch(
+    model: str, target_branch: str, repo_path: str = "."
+) -> ReviewResult:
+    """
+    Review differences between current branch and specified branch with AI.
+
+    Args:
+        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
+        target_branch: Target branch to compare (e.g., main, develop)
+        repo_path: Git repository path (default: current directory)
+
+    Returns:
+        ReviewResult:
+            - success: bool
+            - response: ReviewResponse | None
+            - estimated_cost: float (USD)
+            - model_used: str
+            - files_reviewed: list[str]
+            - log_id: str | None
+            - log_path: str | None
+            - timestamp: str (ISO 8601)
+            - error_message: str | None
+    """
+    return _execute_review_workflow(
+        model=model,
+        repo_path=repo_path,
+        target_branch=target_branch,
+    )
+
+
+def review_against_commit(
+    model: str, target_commit: str, repo_path: str = "."
+) -> ReviewResult:
+    """
+    Review changes from specified commit to HEAD with AI.
+
+    Args:
+        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
+        target_commit: Base commit hash (e.g., abc1234)
+        repo_path: Git repository path (default: current directory)
+
+    Returns:
+        ReviewResult:
+            - success: bool
+            - response: ReviewResponse | None
+            - estimated_cost: float (USD)
+            - model_used: str
+            - files_reviewed: list[str]
+            - log_id: str | None
+            - log_path: str | None
+            - timestamp: str (ISO 8601)
+            - error_message: str | None
+    """
+    return _execute_review_workflow(
+        model=model,
+        repo_path=repo_path,
+        target_commit=target_commit,
+    )
+
+
 def register_review_tools(mcp: FastMCP) -> None:
     """리뷰 관련 MCP 도구들을 등록합니다."""
-
-    @mcp.tool()
-    def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
-        """
-        Review unstaged changes in the repository with AI.
-
-        Args:
-            model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-            repo_path: Git repository path (default: current directory)
-
-        Returns:
-            ReviewResult:
-                - success: bool
-                - response: ReviewResponse | None
-                - estimated_cost: float (USD)
-                - model_used: str
-                - files_reviewed: list[str]
-                - log_id: str | None
-                - log_path: str | None
-                - timestamp: str (ISO 8601)
-                - error_message: str | None
-        """
-        return _execute_review_workflow(
-            model=model,
-            repo_path=repo_path,
-            staged=False,
-        )
-
-    @mcp.tool()
-    def review_staged_changes(model: str, repo_path: str = ".") -> ReviewResult:
-        """
-        Review staged changes with AI.
-
-        Args:
-            model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-            repo_path: Git repository path (default: current directory)
-
-        Returns:
-            ReviewResult:
-                - success: bool
-                - response: ReviewResponse | None
-                - estimated_cost: float (USD)
-                - model_used: str
-                - files_reviewed: list[str]
-                - log_id: str | None
-                - log_path: str | None
-                - timestamp: str (ISO 8601)
-                - error_message: str | None
-        """
-        return _execute_review_workflow(
-            model=model,
-            repo_path=repo_path,
-            staged=True,
-        )
-
-    @mcp.tool()
-    def review_against_branch(
-        model: str, target_branch: str, repo_path: str = "."
-    ) -> ReviewResult:
-        """
-        Review differences between current branch and specified branch with AI.
-
-        Args:
-            model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-            target_branch: Target branch to compare (e.g., main, develop)
-            repo_path: Git repository path (default: current directory)
-
-        Returns:
-            ReviewResult:
-                - success: bool
-                - response: ReviewResponse | None
-                - estimated_cost: float (USD)
-                - model_used: str
-                - files_reviewed: list[str]
-                - log_id: str | None
-                - log_path: str | None
-                - timestamp: str (ISO 8601)
-                - error_message: str | None
-        """
-        return _execute_review_workflow(
-            model=model,
-            repo_path=repo_path,
-            target_branch=target_branch,
-        )
-
-    @mcp.tool()
-    def review_against_commit(
-        model: str, target_commit: str, repo_path: str = "."
-    ) -> ReviewResult:
-        """
-        Review changes from specified commit to HEAD with AI.
-
-        Args:
-            model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-            target_commit: Base commit hash (e.g., abc1234)
-            repo_path: Git repository path (default: current directory)
-
-        Returns:
-            ReviewResult:
-                - success: bool
-                - response: ReviewResponse | None
-                - estimated_cost: float (USD)
-                - model_used: str
-                - files_reviewed: list[str]
-                - log_id: str | None
-                - log_path: str | None
-                - timestamp: str (ISO 8601)
-                - error_message: str | None
-        """
-        return _execute_review_workflow(
-            model=model,
-            repo_path=repo_path,
-            target_commit=target_commit,
-        )
+    mcp.tool()(review_current_changes)
+    mcp.tool()(review_staged_changes)
+    mcp.tool()(review_against_branch)
+    mcp.tool()(review_against_commit)

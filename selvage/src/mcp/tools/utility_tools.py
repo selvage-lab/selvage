@@ -24,25 +24,25 @@ def register_utility_tools(mcp: FastMCP) -> None:
     """유틸리티 관련 MCP 도구들을 등록합니다."""
 
     @mcp.tool()
-    def get_available_models() -> dict:
+    def get_available_models() -> list[ModelInfo]:
         """
         Get list of available AI models in Selvage.
 
         Returns:
-            dict: {'models': list[ModelInfo]}
-                ModelInfo fields:
-                - name: str
-                - provider: str
-                - display_name: str
-                - description: str
-                - cost_per_1k_tokens: float (USD)
-                - max_tokens: int
-                - supports_function_calling: bool
+            list[ModelInfo]: List of available model information with the following
+                attributes:
+                - name: 모델 이름
+                - provider: 프로바이더 (openai, anthropic, google, openrouter)
+                - display_name: 표시용 이름
+                - description: 모델 설명
+                - cost_per_1k_tokens: 1000토큰당 비용 (USD)
+                - max_tokens: 최대 토큰 수
+                - supports_function_calling: 함수 호출 지원 여부
         """
         try:
             config = ModelConfig()
             models_data = config.get_all_models_config()
-            model_list = []
+            model_list: list[ModelInfo] = []
 
             for model_name, model_data in models_data.items():
                 model_info = ModelInfo(
@@ -58,11 +58,11 @@ def register_utility_tools(mcp: FastMCP) -> None:
                 )
                 model_list.append(model_info)
 
-            return {"models": [model.model_dump() for model in model_list]}
+            return model_list
         except (ImportError, AttributeError, KeyError) as e:
             # 예상 가능한 설정 관련 오류만 처리
             logging.warning(f"Failed to load model configuration: {e}")
-            return {"models": []}
+            return []
         except Exception as e:
             # 예상치 못한 오류는 로깅 후 재발생
             logging.error(f"Unexpected error in get_available_models: {e}")
@@ -73,7 +73,7 @@ def register_utility_tools(mcp: FastMCP) -> None:
         limit: int = 10,
         repo_path: str = ".",
         model_filter: str | None = None,
-    ) -> dict:
+    ) -> list[ReviewHistoryItem]:
         """
         Get recent code review history.
 
@@ -83,16 +83,16 @@ def register_utility_tools(mcp: FastMCP) -> None:
             model_filter: Filter by specific model (optional)
 
         Returns:
-            dict: {'history': list[ReviewHistoryItem]}
-                ReviewHistoryItem fields:
-                - log_id: str
-                - timestamp: str (ISO 8601)
-                - model: str
-                - files_count: int
-                - status: str (SUCCESS | FAILED)
-                - cost: float (USD)
-                - review_type: str (current | staged | branch | commit)
-                - target: str | None
+            list[ReviewHistoryItem]: List of review history items with the following
+                attributes:
+                - log_id: 로그 ID
+                - timestamp: 리뷰 시간
+                - model: 사용된 모델
+                - files_count: 리뷰된 파일 수
+                - status: 리뷰 상태 (SUCCESS, FAILED)
+                - cost: 실제 비용 (USD)
+                - review_type: 리뷰 타입 (current, staged, branch, commit)
+                - target: 타겟 브랜치 또는 커밋 (해당되는 경우)
         """
         try:
             # limit 범위 제한 (성능 및 메모리 사용량 고려)
@@ -134,7 +134,7 @@ def register_utility_tools(mcp: FastMCP) -> None:
                 )
                 history_items.append(history_item)
 
-            return {"history": [item.model_dump() for item in history_items]}
+            return history_items
         except Exception as e:
             # 예상치 못한 오류는 로깅 후 재발생
             logging.error(f"Unexpected error in get_review_history: {e}")
@@ -162,15 +162,14 @@ def register_utility_tools(mcp: FastMCP) -> None:
             }
 
     @mcp.tool()
-    def get_server_status() -> dict:
+    def get_server_status() -> ServerStatus:
         """
         Get current MCP server status.
 
         Returns:
-            dict: Dict containing fields: running, version, tools_count, port,
-                host, start_time
+            ServerStatus: Server status information
         """
-        status = ServerStatus(
+        return ServerStatus(
             running=True,
             port=None,  # stdio 모드이므로 포트 없음
             host=None,  # stdio 모드이므로 호스트 없음
@@ -178,7 +177,6 @@ def register_utility_tools(mcp: FastMCP) -> None:
             version=__version__,
             tools_count=TOTAL_MCP_TOOLS_COUNT,
         )
-        return status.model_dump()
 
     @mcp.tool()
     def validate_model_config(model: str) -> dict:
@@ -234,10 +232,11 @@ def register_utility_tools(mcp: FastMCP) -> None:
                 "valid": True,
                 "model": model,
                 "provider": provider.get_display_name(),
+                "has_api_key": True,
                 "api_key_configured": True,
             }
         except Exception as e:
             return {
                 "valid": False,
-                "error": f"모델 설정 검증 중 오류가 발생했습니다: {str(e)}",
+                "error_message": f"모델 설정 검증 중 오류가 발생했습니다: {str(e)}",
             }
