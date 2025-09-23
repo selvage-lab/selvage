@@ -239,25 +239,27 @@ class ReviewLogManager:
         raise FileNotFoundError(f"로그 ID '{log_id}'를 찾을 수 없습니다")
 
     @staticmethod
-    def _parse_timestamp(timestamp_str: str) -> datetime:
-        """타임스탬프 문자열을 datetime 객체로 변환합니다."""
+    def _parse_timestamp(timestamp_str: str) -> str:
+        """타임스탬프 문자열을 검증하고 ISO 형식으로 정규화합니다."""
         if not timestamp_str:
-            return datetime.now()
+            return datetime.now().isoformat()
 
         try:
             # Z suffix 제거
-            if timestamp_str.endswith("Z"):
-                timestamp_str = timestamp_str.replace("Z", "+00:00")
+            normalized_str = timestamp_str
+            if normalized_str.endswith("Z"):
+                normalized_str = normalized_str.replace("Z", "+00:00")
 
-            parsed_dt = datetime.fromisoformat(timestamp_str)
+            # 유효한 ISO 형식인지 검증
+            parsed_dt = datetime.fromisoformat(normalized_str)
 
-            # timezone-naive 객체로 변환 (비교를 위해)
+            # timezone-naive 객체로 변환하고 ISO 형식 문자열로 반환
             if parsed_dt.tzinfo is not None:
                 parsed_dt = parsed_dt.replace(tzinfo=None)
 
-            return parsed_dt
+            return parsed_dt.isoformat()
         except ValueError:
-            return datetime.now()
+            return datetime.now().isoformat()
 
     @staticmethod
     def _extract_files_count(log_data: dict) -> int:
