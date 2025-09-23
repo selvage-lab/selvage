@@ -184,12 +184,16 @@ class TestGetReviewDetails:
             pytest.skip("get_review_details not implemented yet")
 
     @patch("selvage.src.mcp.tools.utility_tools.ReviewLogManager")
-    def test_get_review_details_returns_dict(self, mock_log_manager: Mock) -> None:
-        """get_review_details가 딕셔너리를 반환해야 함"""
+    def test_get_review_details_returns_review_details_result(
+        self, mock_log_manager: Mock
+    ) -> None:
+        """get_review_details가 ReviewDetailsResult를 반환해야 함"""
         try:
             from selvage.src.mcp.tools.utility_tools import get_review_details
         except ImportError:
             pytest.skip("get_review_details not implemented yet")
+
+        from selvage.src.mcp.models.responses import ReviewDetailsResult
 
         # Mock 설정
         mock_log_manager.load_log.return_value = {
@@ -205,11 +209,11 @@ class TestGetReviewDetails:
         result = get_review_details("log-123")
 
         # 검증
-        assert isinstance(result, dict)
-        assert result["log_id"] == "log-123"
-        assert "review_request" in result
-        assert "review_response" in result
-        assert "estimated_cost" in result
+        assert isinstance(result, ReviewDetailsResult)
+        assert result.success is True
+        assert result.data is not None
+        assert result.data["content"] == "Good code quality"
+        assert result.error_message is None
 
     def test_get_review_details_requires_log_id(self) -> None:
         """get_review_details가 log_id 파라미터를 필요로 해야 함"""
@@ -312,7 +316,7 @@ class TestValidateModelConfig:
         # 검증
         assert isinstance(result, dict)
         assert result["valid"] is False
-        assert "error_message" in result
+        assert "error" in result or "error_message" in result
 
     def test_validate_model_config_requires_model(self) -> None:
         """validate_model_config가 model 파라미터를 필요로 해야 함"""

@@ -109,3 +109,19 @@ class DiffContentResult:
     success: bool
     error_message: str | None
     diff_content: str | None
+
+
+class ReviewDetailsResult(BaseModel):
+    """Review details result response model
+
+    Structured review details information returned from MCP tools.
+
+    Attributes:
+        success: Review retrieval success status
+        data: Review response data (on success)
+        error_message: Error message (on failure)
+    """
+
+    success: bool = Field(description="Review retrieval success status")
+    data: dict | None = Field(None, description="Review response data")
+    error_message: str | None = Field(None, description="Error message (on failure)")

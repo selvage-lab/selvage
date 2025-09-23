@@ -11,7 +11,12 @@ from selvage.src.model_config import ModelConfig, get_model_info
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.logging.review_log_manager import RepoPath, ReviewLogManager
 
-from ..models.responses import ModelInfo, ReviewHistoryItem, ServerStatus
+from ..models.responses import (
+    ModelInfo,
+    ReviewDetailsResult,
+    ReviewHistoryItem,
+    ServerStatus,
+)
 
 # 상수 정의
 MAX_HISTORY_LIMIT = 50  # 성능 및 메모리 사용량 고려
@@ -131,7 +136,7 @@ def get_review_history(
         raise
 
 
-def get_review_details(log_id: str) -> dict:
+def get_review_details(log_id: str) -> ReviewDetailsResult:
     """
     Get detailed information of a specific review.
 
@@ -139,23 +144,32 @@ def get_review_details(log_id: str) -> dict:
         log_id: Log ID of the review to retrieve
 
     Returns:
-        dict: On success, returns the review response data only.
-            On error, returns {'error': True, 'error_message': str}
+        ReviewDetailsResult: Review details result with the following
+            attributes:
+            - success: Review retrieval success status
+            - data: Review response data (on success)
+            - error_message: Error message (on failure)
     """
     try:
         log_data = ReviewLogManager.load_log(log_id)
         review_response = log_data.get("review_response")
         if review_response is None:
-            return {
-                "error": True,
-                "error_message": "리뷰 응답 데이터를 찾을 수 없습니다.",
-            }
-        return review_response
+            return ReviewDetailsResult(
+                success=False,
+                data=None,
+                error_message="리뷰 응답 데이터를 찾을 수 없습니다.",
+            )
+        return ReviewDetailsResult(
+            success=True,
+            data=review_response,
+            error_message=None,
+        )
     except Exception as e:
-        return {
-            "error": True,
-            "error_message": f"로그 조회 중 오류가 발생했습니다: {str(e)}",
-        }
+        return ReviewDetailsResult(
+            success=False,
+            data=None,
+            error_message=f"로그 조회 중 오류가 발생했습니다: {str(e)}",
+        )
 
 
 def get_server_status() -> ServerStatus:

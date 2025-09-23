@@ -129,9 +129,11 @@ class TestMCPServerIntegration:
         """잘못된 로그 ID로 리뷰 상세 조회 함수 테스트"""
         details = get_review_details("invalid-log-id-12345")
 
-        assert isinstance(details, dict)
+        assert hasattr(details, "success")
+        assert hasattr(details, "error_message")
         # 에러 정보가 포함되어야 함
-        assert "error" in details or "error_message" in details
+        assert details.success is False
+        assert details.error_message is not None
 
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
     def test_review_current_changes_function(self, mock_workflow: Mock) -> None:
@@ -243,8 +245,10 @@ class TestMCPServerErrorHandling:
         """존재하지 않는 로그 ID로 상세 조회 테스트"""
         details = get_review_details("invalid-log-id-67890")
 
-        assert isinstance(details, dict)
-        assert "error" in details or "error_message" in details
+        assert hasattr(details, "success")
+        assert hasattr(details, "error_message")
+        assert details.success is False
+        assert details.error_message is not None
 
 
 class TestMCPServerFunctionalIntegration:
