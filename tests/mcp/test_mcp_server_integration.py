@@ -102,7 +102,7 @@ class TestMCPServerIntegration:
         if result["valid"]:
             assert "provider" in result
             assert "has_api_key" in result
-            assert "model_info" in result
+            assert "api_key_configured" in result
 
     def test_validate_model_config_function_invalid_model(self) -> None:
         """무효한 모델 설정 검증 함수 테스트"""
