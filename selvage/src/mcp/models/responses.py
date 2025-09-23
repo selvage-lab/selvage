@@ -67,17 +67,19 @@ class ModelInfo(BaseModel):
 
 
 class ReviewHistoryItem(BaseModel):
-    """리뷰 히스토리 항목"""
+    """Review history item"""
 
-    log_id: str = Field(description="로그 ID")
-    timestamp: datetime = Field(description="리뷰 시간")
-    model: str = Field(description="사용된 모델")
-    files_count: int = Field(description="리뷰된 파일 수")
-    status: str = Field(description="리뷰 상태 (SUCCESS, FAILED)")
-    cost: float = Field(description="실제 비용 (USD)")
-    review_type: str = Field(description="리뷰 타입 (current, staged, branch, commit)")
+    log_id: str = Field(description="Log ID")
+    timestamp: str = Field(description="Review timestamp (ISO 8601 format)")
+    model: str = Field(description="Model used for review")
+    files_count: int = Field(description="Number of files reviewed")
+    status: str = Field(description="Review status (SUCCESS, FAILED)")
+    cost: float = Field(description="Actual cost (USD)")
+    review_type: str = Field(
+        description="Review type (current, staged, branch, commit)"
+    )
     target: str | None = Field(
-        None, description="타겟 브랜치 또는 커밋 (해당되는 경우)"
+        None, description="Target branch or commit (if applicable)"
     )
 
 
