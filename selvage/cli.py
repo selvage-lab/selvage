@@ -40,7 +40,7 @@ from selvage.src.multiturn.multiturn_review_executor import MultiturnReviewExecu
 from selvage.src.ui import run_app
 from selvage.src.utils.base_console import console
 from selvage.src.utils.file_utils import find_project_root
-from selvage.src.utils.git_utils import GitDiffMode, GitDiffUtility
+from selvage.src.utils.git_utils import get_diff_content
 from selvage.src.utils.logging import LOG_LEVEL_INFO, setup_logging
 from selvage.src.utils.logging.review_log_manager import ReviewLogManager
 from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
@@ -73,34 +73,6 @@ def cli(
     # 명령어가 지정되지 않은 경우 기본으로 review 명령어 호출
     if ctx.invoked_subcommand is None:
         ctx.invoke(review)
-
-
-def get_diff_content(
-    repo_path: str = ".",
-    staged: bool = False,
-    target_commit: str | None = None,
-    target_branch: str | None = None,
-) -> str:
-    """Git diff 내용을 가져옵니다."""
-    try:
-        # 모드 결정
-        mode = GitDiffMode.UNSTAGED
-        target = None
-
-        if staged:
-            mode = GitDiffMode.STAGED
-        elif target_commit:
-            mode = GitDiffMode.TARGET_COMMIT
-            target = target_commit
-        elif target_branch:
-            mode = GitDiffMode.TARGET_BRANCH
-            target = target_branch
-
-        git_diff = GitDiffUtility(repo_path=repo_path, mode=mode, target=target)
-        return git_diff.get_diff()
-    except ValueError as e:
-        console.error(f"Git diff error: {str(e)}", exception=e)
-        return ""
 
 
 def config_model(model_name: str | None = None) -> None:
@@ -682,11 +654,11 @@ def mcp() -> None:
     """Start MCP (Model Context Protocol) server"""
     import subprocess
     import sys
-    
+
     try:
         # 모듈로 MCP 서버 실행
         console.info("Starting MCP server...")
-        subprocess.run([sys.executable, '-m', 'selvage.src.mcp.server'], check=True)
+        subprocess.run([sys.executable, "-m", "selvage.src.mcp.server"], check=True)
     except subprocess.CalledProcessError as e:
         console.error(f"MCP server failed with exit code {e.returncode}")
         sys.exit(e.returncode)

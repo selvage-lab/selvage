@@ -4,31 +4,17 @@ from dataclasses import dataclass
 
 from fastmcp import FastMCP
 
-from selvage.cli import get_diff_content
 from selvage.src.config import get_api_key
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.model_config import get_model_info
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_status import ReviewStatus
+from selvage.src.utils.git_utils import get_diff_content
 from selvage.src.utils.logging.review_log_manager import ReviewLogManager
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.token.models import EstimatedCost, ReviewRequest, ReviewResponse
 
 from ..models.responses import ReviewResult
-
-# 공통 ReviewResult 설명 (중복 제거를 위해 상수로 정의)
-REVIEW_RESULT_DESCRIPTION = """
-ReviewResult: 구조화된 리뷰 결과 객체
-    - success: 리뷰 성공 여부
-    - response: 전체 ReviewResponse (issues, summary, score, recommendations)
-    - estimated_cost: 예상 비용 (USD)
-    - model_used: 사용된 AI 모델
-    - files_reviewed: 리뷰된 파일 목록
-    - log_id: 로그 ID
-    - log_path: 로그 파일 경로
-    - timestamp: 리뷰 완료 시간
-    - error_message: 에러 메시지 (실패 시)
-"""
 
 
 @dataclass

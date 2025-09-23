@@ -123,3 +123,31 @@ class GitDiffUtility:
                 exception=e,
             )
             return ""
+
+
+def get_diff_content(
+    repo_path: str = ".",
+    staged: bool = False,
+    target_commit: str | None = None,
+    target_branch: str | None = None,
+) -> str:
+    """Git diff 내용을 가져옵니다."""
+    try:
+        # 모드 결정
+        mode = GitDiffMode.UNSTAGED
+        target = None
+
+        if staged:
+            mode = GitDiffMode.STAGED
+        elif target_commit:
+            mode = GitDiffMode.TARGET_COMMIT
+            target = target_commit
+        elif target_branch:
+            mode = GitDiffMode.TARGET_BRANCH
+            target = target_branch
+
+        git_diff = GitDiffUtility(repo_path=repo_path, mode=mode, target=target)
+        return git_diff.get_diff()
+    except ValueError as e:
+        console.error(f"Git diff error: {str(e)}", exception=e)
+        return ""
