@@ -1,5 +1,6 @@
 """MCP 응답 모델 정의"""
 
+from dataclasses import dataclass
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -89,3 +90,20 @@ class ServerStatus(BaseModel):
     start_time: datetime | None = Field(None, description="서버 시작 시간")
     version: str = Field(description="Selvage 버전")
     tools_count: int = Field(description="등록된 도구 수")
+
+
+@dataclass
+class ValidationResult:
+    """Internal validation result model for MCP tools."""
+
+    success: bool
+    error_message: str | None = None
+
+
+@dataclass
+class DiffContentResult:
+    """Result model for diff content extraction/validation."""
+
+    success: bool
+    error_message: str | None
+    diff_content: str | None

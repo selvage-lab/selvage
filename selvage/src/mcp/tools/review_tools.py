@@ -4,8 +4,9 @@ from dataclasses import dataclass
 
 from fastmcp import FastMCP
 
-from selvage.src.config import get_api_key
+from selvage.src.config import get_api_key, has_openrouter_api_key
 from selvage.src.diff_parser import parse_git_diff
+from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
 from selvage.src.model_config import get_model_info
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_status import ReviewStatus
@@ -14,7 +15,7 @@ from selvage.src.utils.logging.review_log_manager import ReviewLogManager
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.token.models import EstimatedCost, ReviewRequest, ReviewResponse
 
-from ..models.responses import ReviewResult
+from ..models.responses import DiffContentResult, ReviewResult, ValidationResult
 
 
 @dataclass
@@ -27,13 +28,13 @@ class ReviewExecutionResult:
     log_path: str
 
 
-def _validate_model_and_api_key(
+def _validate(
     model: str,
-) -> tuple[bool, str | None, ModelProvider | None]:
-    """모델과 API 키를 검증합니다.
+) -> ValidationResult:
+    """OpenRouter-first로 provider를 결정하고 API 키를 검증합니다.
 
     Returns:
-        tuple: (성공 여부, 에러 메시지, ModelProvider)
+        tuple: (성공 여부, 에러 메시지, 선택된 ModelProvider)
     """
     model_info = get_model_info(model)
     if not model_info:
@@ -50,36 +51,44 @@ def _validate_model_and_api_key(
     else:
         return False, f"잘못된 프로바이더 타입입니다: {type(provider_value)}", None
 
-    api_key = get_api_key(provider)
-    if not api_key:
-        error_msg = f"{provider.get_display_name()} API 키가 설정되지 않았습니다."
-        return False, error_msg, None
+    # OpenRouter-first: OpenRouter 키가 있으면 OpenRouter를 사용
+    selected_provider = (
+        ModelProvider.OPENROUTER if has_openrouter_api_key() else provider
+    )
 
-    return True, None, provider
+    try:
+        _ = get_api_key(selected_provider)
+    except APIKeyNotFoundError:
+        error_msg = (
+            f"{selected_provider.get_display_name()} API 키가 설정되지 않았습니다."
+        )
+        return ValidationResult(success=False, error_message=error_msg)
+
+    return ValidationResult(success=True, error_message=None)
 
 
-def _extract_and_validate_diff(
+def get_diff_content_result(
     repo_path: str,
     staged: bool = False,
     target_commit: str | None = None,
     target_branch: str | None = None,
-) -> tuple[bool, str | None, str | None]:
-    """Git diff를 추출하고 검증합니다.
-
-    Returns:
-        tuple: (성공 여부, 에러 메시지, diff 내용)
-    """
-    diff_content = get_diff_content(
+) -> DiffContentResult:
+    """Extract and validate Git diff content."""
+    diff_text = get_diff_content(
         repo_path=repo_path,
         staged=staged,
         target_commit=target_commit,
         target_branch=target_branch,
     )
 
-    if not diff_content:
-        return False, "리뷰할 변경사항이 없습니다.", None
+    if not diff_text:
+        return DiffContentResult(
+            success=False,
+            error_message="리뷰할 변경사항이 없습니다.",
+            diff_content=None,
+        )
 
-    return True, None, diff_content
+    return DiffContentResult(success=True, error_message=None, diff_content=diff_text)
 
 
 def _create_review_request(
@@ -137,27 +146,29 @@ def _execute_review_workflow(
     """공통 리뷰 워크플로우 실행"""
     try:
         # 1. 모델 및 API 키 검증
-        is_valid, error_msg, provider = _validate_model_and_api_key(model)
-        if not is_valid:
+        validation = _validate(model)
+        if not validation.success:
             return ReviewResult(
                 success=False,
                 model_used=model,
-                error_message=error_msg,
+                error_message=validation.error_message,
             )
 
         # 2. Git diff 추출 및 검증
-        is_valid, error_msg, diff_content = _extract_and_validate_diff(
+        diff_result = get_diff_content_result(
             repo_path, staged, target_commit, target_branch
         )
-        if not is_valid:
+        if not diff_result.success:
             return ReviewResult(
                 success=False,
                 model_used=model,
-                error_message=error_msg,
+                error_message=diff_result.error_message,
             )
 
         # 3. 리뷰 요청 생성
-        review_request = _create_review_request(diff_content, repo_path, model)
+        review_request = _create_review_request(
+            diff_result.diff_content, repo_path, model
+        )
 
         # 4. 리뷰 수행 및 로그 저장
         execution_result = _perform_review_and_save_log(review_request, model)
