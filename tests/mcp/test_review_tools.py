@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from selvage.src.config import APIKeyNotFoundError, ModelProvider
 from selvage.src.mcp.models.responses import ReviewResult
 from selvage.src.mcp.tools.review_tools import (
     register_review_tools,
@@ -287,7 +288,7 @@ class TestExecuteReviewWorkflow:
 
         # Mock 설정
         mock_get_model_info.return_value = {"provider": "anthropic"}
-        mock_get_api_key.return_value = None
+        mock_get_api_key.side_effect = APIKeyNotFoundError(ModelProvider.ANTHROPIC)
 
         # 실행
         result = _execute_review_workflow(

@@ -153,7 +153,7 @@ class TestGetReviewHistory:
         assert len(result) == 2
         assert all(isinstance(item, ReviewHistoryItem) for item in result)
         assert result[0].log_id == "log-123"
-        assert result[1].review_type == "branch"
+        assert result[1].log_id == "log-456"
 
     def test_get_review_history_parameter_validation(self) -> None:
         """get_review_history 파라미터 검증 테스트"""

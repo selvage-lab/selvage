@@ -76,7 +76,6 @@ class TestReviewLogManager:
             assert result[0]["status"] == "SUCCESS"
             assert result[0]["cost"] == 0.05
             assert result[0]["files_count"] == 0  # 기본값
-            assert result[0]["review_type"] == "current"
 
     def test_get_recent_logs_with_limit(self, temp_log_dir, sample_log_data):
         """limit 파라미터로 get_recent_logs 테스트"""
@@ -121,12 +120,16 @@ class TestReviewLogManager:
             return_value=temp_log_dir,
         ):
             # Claude 모델 필터링
-            result = ReviewLogManager.get_recent_logs(model_filter="claude-sonnet-4", repo_path="ALL")
+            result = ReviewLogManager.get_recent_logs(
+                model_filter="claude-sonnet-4", repo_path="ALL"
+            )
             assert len(result) == 1
             assert result[0]["log_id"] == "claude-log-id"
 
             # GPT 모델 필터링
-            result = ReviewLogManager.get_recent_logs(model_filter="gpt-4", repo_path="ALL")
+            result = ReviewLogManager.get_recent_logs(
+                model_filter="gpt-4", repo_path="ALL"
+            )
             assert len(result) == 1
             assert result[0]["log_id"] == "gpt-log-id"
 

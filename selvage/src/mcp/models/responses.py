@@ -75,12 +75,6 @@ class ReviewHistoryItem(BaseModel):
     files_count: int = Field(description="Number of files reviewed")
     status: str = Field(description="Review status (SUCCESS, FAILED)")
     cost: float = Field(description="Actual cost (USD)")
-    review_type: str = Field(
-        description="Review type (current, staged, branch, commit)"
-    )
-    target: str | None = Field(
-        None, description="Target branch or commit (if applicable)"
-    )
 
 
 class ServerStatus(BaseModel):

@@ -95,8 +95,6 @@ def get_review_history(
             - files_count: Number of files reviewed
             - status: Review status (SUCCESS, FAILED)
             - cost: Actual cost (USD)
-            - review_type: Review type (current, staged, branch, commit)
-            - target: Target branch or commit (if applicable)
     """
     try:
         # limit 범위 제한 (성능 및 메모리 사용량 고려)
@@ -114,7 +112,6 @@ def get_review_history(
 
         history_items = []
         for log_data in logs_data:
-            # ReviewLogManager에서 이미 검증된 ISO 형식 문자열을 반환하므로 그대로 사용
             timestamp_str = log_data.get("timestamp", datetime.now().isoformat())
 
             history_item = ReviewHistoryItem(
@@ -124,8 +121,6 @@ def get_review_history(
                 files_count=log_data.get("files_count", 0),
                 status=log_data.get("status", "UNKNOWN"),
                 cost=log_data.get("cost", 0.0),
-                review_type=log_data.get("review_type", "unknown"),
-                target=log_data.get("target"),
             )
             history_items.append(history_item)
 

@@ -153,42 +153,40 @@ class TestReviewHistoryItem:
 
     def test_review_history_item_creation(self) -> None:
         """ReviewHistoryItem 생성 테스트"""
-        timestamp = datetime.now()
+        timestamp_str = "2023-12-01T10:00:00"
         item = ReviewHistoryItem(
             log_id="log-123",
-            timestamp=timestamp,
+            timestamp=timestamp_str,
             model="claude-sonnet-4",
             files_count=3,
             status="SUCCESS",
             cost=0.05,
-            review_type="current",
-            target=None,
         )
 
         assert item.log_id == "log-123"
-        assert item.timestamp == timestamp
+        assert item.timestamp == timestamp_str
         assert item.model == "claude-sonnet-4"
         assert item.files_count == 3
         assert item.status == "SUCCESS"
         assert item.cost == 0.05
-        assert item.review_type == "current"
-        assert item.target is None
 
     def test_review_history_item_with_target(self) -> None:
-        """타겟이 있는 ReviewHistoryItem 테스트"""
+        """간단한 ReviewHistoryItem 테스트 (target/review_type 필드 제거됨)"""
         item = ReviewHistoryItem(
             log_id="log-456",
-            timestamp=datetime.now(),
+            timestamp="2023-12-01T11:00:00",
             model="gpt-4o",
             files_count=5,
             status="SUCCESS",
             cost=0.10,
-            review_type="branch",
-            target="main",
         )
 
-        assert item.review_type == "branch"
-        assert item.target == "main"
+        assert item.log_id == "log-456"
+        assert item.timestamp == "2023-12-01T11:00:00"
+        assert item.model == "gpt-4o"
+        assert item.files_count == 5
+        assert item.status == "SUCCESS"
+        assert item.cost == 0.10
 
 
 class TestServerStatus:
@@ -273,12 +271,11 @@ class TestModelSerialization:
         # ReviewHistoryItem
         history_item = ReviewHistoryItem(
             log_id="test",
-            timestamp=datetime.now(),
+            timestamp="2023-12-01T12:00:00",
             model="test",
             files_count=1,
             status="SUCCESS",
             cost=0.01,
-            review_type="current",
         )
         assert isinstance(history_item.model_dump(), dict)
 

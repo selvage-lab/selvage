@@ -176,8 +176,6 @@ class ReviewLogManager:
                     "files_count": ReviewLogManager._extract_files_count(log_data),
                     "status": log_data.get("status", "UNKNOWN"),
                     "cost": log_data.get("total_cost", 0.0),
-                    "review_type": ReviewLogManager._extract_review_type(log_data),
-                    "target": log_data.get("review_request", {}).get("target"),
                 }
                 logs.append(log_item)
 
@@ -271,15 +269,3 @@ class ReviewLogManager:
             return len(files)
 
         return 0
-
-    @staticmethod
-    def _extract_review_type(log_data: dict) -> str:
-        """로그 데이터에서 리뷰 타입을 추출합니다."""
-        review_request = log_data.get("review_request", {})
-        diff_mode = review_request.get("diff_mode", "")
-
-        if diff_mode:
-            return diff_mode
-
-        # 기본값
-        return "current"
