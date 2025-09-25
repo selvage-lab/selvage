@@ -12,7 +12,9 @@ from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.logging.review_log_manager import RepoPath, ReviewLogManager
 
 from ..models.responses import (
+    ApiKeyValidationResult,
     ModelInfo,
+    ModelValidationResult,
     ReviewDetailsResult,
     ReviewHistoryItem,
     ServerStatus,
@@ -22,7 +24,7 @@ from ..models.responses import (
 MAX_HISTORY_LIMIT = 50  # 성능 및 메모리 사용량 고려
 MIN_HISTORY_LIMIT = 1
 DEFAULT_HISTORY_LIMIT = 10
-TOTAL_MCP_TOOLS_COUNT = 9  # 리뷰 도구 4개 + 유틸리티 도구 5개
+TOTAL_MCP_TOOLS_COUNT = 10  # 리뷰 도구 4개 + 유틸리티 도구 6개
 
 
 def get_available_models() -> list[ModelInfo]:
@@ -184,26 +186,24 @@ def get_server_status() -> ServerStatus:
     )
 
 
-def validate_model_config(model: str) -> dict:
+def validate_model_support(model: str) -> ModelValidationResult:
     """
-    Validate configuration and API key for specified model.
+    모델 지원 여부 및 프로바이더 정보 검증
 
     Args:
-        model: Model name to validate
+        model: 검증할 모델 이름
 
     Returns:
-        dict: On success returns {'valid': True, 'model', 'provider',
-            'api_key_configured'}. On failure returns {'valid': False,
-            'error'}
+        ModelValidationResult: 모델 지원 여부 검증 결과
     """
     try:
         # 1. 모델 정보 검증
         model_info = get_model_info(model)
         if not model_info:
-            return {
-                "valid": False,
-                "error": f"지원되지 않는 모델입니다: {model}",
-            }
+            return ModelValidationResult(
+                valid=False,
+                error_message=f"지원되지 않는 모델입니다: {model}",
+            )
 
         # 2. 프로바이더 정보 추출
         provider_value = model_info.get("provider")
@@ -211,40 +211,72 @@ def validate_model_config(model: str) -> dict:
             try:
                 provider = ModelProvider.from_string(provider_value)
             except ValueError:
-                return {
-                    "valid": False,
-                    "error": f"지원되지 않는 프로바이더입니다: {provider_value}",
-                }
+                return ModelValidationResult(
+                    valid=False,
+                    error_message=f"지원되지 않는 프로바이더입니다: {provider_value}",
+                )
         elif isinstance(provider_value, ModelProvider):
             provider = provider_value
         else:
-            return {
-                "valid": False,
-                "error": f"잘못된 프로바이더 타입입니다: {type(provider_value)}",
-            }
+            return ModelValidationResult(
+                valid=False,
+                error_message=f"잘못된 프로바이더 타입입니다: {type(provider_value)}",
+            )
 
-        # 3. API 키 검증
-        api_key = get_api_key(provider)
-        if not api_key:
-            return {
-                "valid": False,
-                "error": (
-                    f"{provider.get_display_name()} API 키가 설정되지 않았습니다."
-                ),
-            }
-
-        return {
-            "valid": True,
-            "model": model,
-            "provider": provider.get_display_name(),
-            "has_api_key": True,
-            "api_key_configured": True,
-        }
+        return ModelValidationResult(
+            valid=True,
+            model=model,
+            provider=provider.get_display_name(),
+        )
     except Exception as e:
-        return {
-            "valid": False,
-            "error_message": f"모델 설정 검증 중 오류가 발생했습니다: {str(e)}",
-        }
+        return ModelValidationResult(
+            valid=False,
+            error_message=f"모델 지원 여부 검증 중 오류가 발생했습니다: {str(e)}",
+        )
+
+
+def validate_api_key_for_provider(provider: str) -> ApiKeyValidationResult:
+    """
+    프로바이더의 API 키 검증
+
+    Args:
+        provider: 프로바이더 이름 (openai, anthropic, google, openrouter)
+
+    Returns:
+        ApiKeyValidationResult: API 키 검증 결과
+    """
+    try:
+        # 1. 프로바이더 문자열을 ModelProvider로 변환
+        try:
+            provider_enum = ModelProvider.from_string(provider)
+        except ValueError:
+            return ApiKeyValidationResult(
+                valid=False,
+                error_message=f"지원되지 않는 프로바이더입니다: {provider}",
+            )
+
+        # 2. API 키 검증
+        api_key = get_api_key(provider_enum)
+        if not api_key:
+            return ApiKeyValidationResult(
+                valid=False,
+                provider=provider_enum.get_display_name(),
+                api_key_configured=False,
+                error_message=(
+                    f"{provider_enum.get_display_name()} API 키가 설정되지 않았습니다."
+                ),
+            )
+
+        return ApiKeyValidationResult(
+            valid=True,
+            provider=provider_enum.get_display_name(),
+            api_key_configured=True,
+        )
+    except Exception as e:
+        return ApiKeyValidationResult(
+            valid=False,
+            error_message=f"API 키 검증 중 오류가 발생했습니다: {str(e)}",
+        )
 
 
 def register_utility_tools(mcp: FastMCP) -> None:
@@ -253,4 +285,5 @@ def register_utility_tools(mcp: FastMCP) -> None:
     mcp.tool()(get_review_history)
     mcp.tool()(get_review_details)
     mcp.tool()(get_server_status)
-    mcp.tool()(validate_model_config)
+    mcp.tool()(validate_model_support)
+    mcp.tool()(validate_api_key_for_provider)

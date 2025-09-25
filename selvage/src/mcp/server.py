@@ -56,7 +56,8 @@ class SelvageMCPServer:
                 "get_review_history_tool",
                 "get_review_details_tool",
                 "get_server_status_tool",
-                "validate_model_config_tool",
+                "validate_model_support_tool",
+                "validate_api_key_for_provider_tool",
             ],
         }
 

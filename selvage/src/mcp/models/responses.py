@@ -105,6 +105,24 @@ class DiffContentResult:
     diff_content: str | None
 
 
+class ModelValidationResult(BaseModel):
+    """모델 지원 여부 검증 결과"""
+
+    valid: bool = Field(description="모델 지원 여부")
+    model: str | None = Field(None, description="모델 이름")
+    provider: str | None = Field(None, description="프로바이더 이름")
+    error_message: str | None = Field(None, description="에러 메시지")
+
+
+class ApiKeyValidationResult(BaseModel):
+    """API 키 검증 결과"""
+
+    valid: bool = Field(description="API 키 유효성")
+    provider: str | None = Field(None, description="프로바이더 이름")
+    api_key_configured: bool = Field(False, description="API 키 설정 여부")
+    error_message: str | None = Field(None, description="에러 메시지")
+
+
 class ReviewDetailsResult(BaseModel):
     """Review details result response model
 

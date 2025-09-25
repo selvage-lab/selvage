@@ -32,8 +32,8 @@ class TestUtilityToolsRegistration:
 
         register_utility_tools(mock_mcp_instance)
 
-        # tool 데코레이터가 5번 호출되어야 함 (5개 유틸리티 도구)
-        assert mock_mcp_instance.tool.call_count == 5
+        # tool 데코레이터가 6번 호출되어야 함 (6개 유틸리티 도구)
+        assert mock_mcp_instance.tool.call_count == 6
 
 
 class TestGetAvailableModels:
@@ -257,76 +257,119 @@ class TestGetServerStatus:
         assert isinstance(result.tools_count, int)
 
 
-class TestValidateModelConfig:
-    """validate_model_config 도구 테스트"""
+class TestValidateModelSupport:
+    """validate_model_support 도구 테스트"""
 
-    def test_validate_model_config_function_exists(self) -> None:
-        """validate_model_config 함수가 존재해야 함"""
-        try:
-            from selvage.src.mcp.tools.utility_tools import validate_model_config
+    def test_validate_model_support_function_exists(self) -> None:
+        """validate_model_support 함수가 존재해야 함"""
+        from selvage.src.mcp.tools.utility_tools import validate_model_support
 
-            assert callable(validate_model_config)
-        except ImportError:
-            pytest.skip("validate_model_config not implemented yet")
+        assert callable(validate_model_support)
 
     @patch("selvage.src.mcp.tools.utility_tools.get_model_info")
-    @patch("selvage.src.mcp.tools.utility_tools.get_api_key")
-    def test_validate_model_config_valid_model(
-        self, mock_get_api_key: Mock, mock_get_model_info: Mock
+    def test_validate_model_support_valid_model(
+        self, mock_get_model_info: Mock
     ) -> None:
-        """validate_model_config가 유효한 모델에 대해 올바른 결과를 반환해야 함"""
-        try:
-            from selvage.src.mcp.tools.utility_tools import validate_model_config
-        except ImportError:
-            pytest.skip("validate_model_config not implemented yet")
+        """validate_model_support가 유효한 모델에 대해 올바른 결과를 반환해야 함"""
+        from selvage.src.mcp.tools.utility_tools import validate_model_support
+        from selvage.src.mcp.models.responses import ModelValidationResult
 
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": "anthropic",
             "name": "claude-sonnet-4",
         }
-        mock_get_api_key.return_value = "test-api-key"
 
         # 실행
-        result = validate_model_config("claude-sonnet-4")
+        result = validate_model_support("claude-sonnet-4")
 
         # 검증
-        assert isinstance(result, dict)
-        assert result["valid"] is True
-        assert result["model"] == "claude-sonnet-4"
-        assert "provider" in result
-        assert "has_api_key" in result
+        assert isinstance(result, ModelValidationResult)
+        assert result.valid is True
+        assert result.model == "claude-sonnet-4"
+        assert result.provider == "Anthropic"
 
     @patch("selvage.src.mcp.tools.utility_tools.get_model_info")
-    def test_validate_model_config_invalid_model(
+    def test_validate_model_support_invalid_model(
         self, mock_get_model_info: Mock
     ) -> None:
-        """validate_model_config가 무효한 모델에 대해 올바른 결과를 반환해야 함"""
-        try:
-            from selvage.src.mcp.tools.utility_tools import validate_model_config
-        except ImportError:
-            pytest.skip("validate_model_config not implemented yet")
+        """validate_model_support가 무효한 모델에 대해 올바른 결과를 반환해야 함"""
+        from selvage.src.mcp.tools.utility_tools import validate_model_support
+        from selvage.src.mcp.models.responses import ModelValidationResult
 
         # Mock 설정
         mock_get_model_info.return_value = None
 
         # 실행
-        result = validate_model_config("invalid-model")
+        result = validate_model_support("invalid-model")
 
         # 검증
-        assert isinstance(result, dict)
-        assert result["valid"] is False
-        assert "error" in result or "error_message" in result
+        assert isinstance(result, ModelValidationResult)
+        assert result.valid is False
+        assert result.error_message is not None
 
-    def test_validate_model_config_requires_model(self) -> None:
-        """validate_model_config가 model 파라미터를 필요로 해야 함"""
-        try:
-            from selvage.src.mcp.tools.utility_tools import validate_model_config
-        except ImportError:
-            pytest.skip("validate_model_config not implemented yet")
 
-        with pytest.raises(TypeError):
-            validate_model_config()  # model 누락
+class TestValidateApiKeyForProvider:
+    """validate_api_key_for_provider 도구 테스트"""
+
+    def test_validate_api_key_for_provider_function_exists(self) -> None:
+        """validate_api_key_for_provider 함수가 존재해야 함"""
+        from selvage.src.mcp.tools.utility_tools import validate_api_key_for_provider
+
+        assert callable(validate_api_key_for_provider)
+
+    @patch("selvage.src.mcp.tools.utility_tools.get_api_key")
+    def test_validate_api_key_for_provider_valid_key(
+        self, mock_get_api_key: Mock
+    ) -> None:
+        """validate_api_key_for_provider가 유효한 API 키에 대해 올바른 결과를 반환해야 함"""
+        from selvage.src.mcp.tools.utility_tools import validate_api_key_for_provider
+        from selvage.src.mcp.models.responses import ApiKeyValidationResult
+
+        # Mock 설정
+        mock_get_api_key.return_value = "test-api-key"
+
+        # 실행
+        result = validate_api_key_for_provider("anthropic")
+
+        # 검증
+        assert isinstance(result, ApiKeyValidationResult)
+        assert result.valid is True
+        assert result.provider == "Anthropic"
+        assert result.api_key_configured is True
+
+    @patch("selvage.src.mcp.tools.utility_tools.get_api_key")
+    def test_validate_api_key_for_provider_missing_key(
+        self, mock_get_api_key: Mock
+    ) -> None:
+        """validate_api_key_for_provider가 누락된 API 키에 대해 올바른 결과를 반환해야 함"""
+        from selvage.src.mcp.tools.utility_tools import validate_api_key_for_provider
+        from selvage.src.mcp.models.responses import ApiKeyValidationResult
+
+        # Mock 설정
+        mock_get_api_key.return_value = None
+
+        # 실행
+        result = validate_api_key_for_provider("anthropic")
+
+        # 검증
+        assert isinstance(result, ApiKeyValidationResult)
+        assert result.valid is False
+        assert result.api_key_configured is False
+        assert result.error_message is not None
+
+    def test_validate_api_key_for_provider_invalid_provider(self) -> None:
+        """validate_api_key_for_provider가 무효한 프로바이더에 대해 올바른 결과를 반환해야 함"""
+        from selvage.src.mcp.tools.utility_tools import validate_api_key_for_provider
+        from selvage.src.mcp.models.responses import ApiKeyValidationResult
+
+        # 실행
+        result = validate_api_key_for_provider("invalid-provider")
+
+        # 검증
+        assert isinstance(result, ApiKeyValidationResult)
+        assert result.valid is False
+        assert result.error_message is not None
 
 
 class TestUtilityToolsIntegration:

@@ -16,7 +16,8 @@ from selvage.src.mcp.tools.utility_tools import (
     get_review_details,
     get_review_history,
     get_server_status,
-    validate_model_config,
+    validate_api_key_for_provider,
+    validate_model_support,
 )
 
 
@@ -61,7 +62,8 @@ class TestMCPServerIntegration:
             "get_review_history_tool",
             "get_review_details_tool",
             "get_server_status_tool",
-            "validate_model_config_tool",
+            "validate_model_support_tool",
+            "validate_api_key_for_provider_tool",
         ]
 
         assert server_info["review_tools"] == expected_review_tools
@@ -76,7 +78,7 @@ class TestMCPServerIntegration:
         assert status.host is None  # stdio 모드
         assert status.start_time is None
         assert isinstance(status.version, str)
-        assert status.tools_count == 9
+        assert status.tools_count == 10
 
     def test_get_available_models_function(self) -> None:
         """사용 가능한 모델 조회 함수 테스트"""
@@ -89,29 +91,38 @@ class TestMCPServerIntegration:
             assert hasattr(model, "provider")
             assert hasattr(model, "display_name")
 
-    def test_validate_model_config_function_valid_model(self) -> None:
-        """유효한 모델 설정 검증 함수 테스트"""
+    def test_validate_model_support_function_valid_model(self) -> None:
+        """유효한 모델 지원 여부 검증 함수 테스트"""
+        from selvage.src.mcp.models.responses import ModelValidationResult
+
         # 실제 존재하는 모델로 테스트
-        result = validate_model_config("claude-sonnet-4")
+        result = validate_model_support("claude-sonnet-4")
 
-        assert isinstance(result, dict)
-        assert "valid" in result
-        assert "model" in result
-        assert result["model"] == "claude-sonnet-4"
+        assert isinstance(result, ModelValidationResult)
+        assert result.model == "claude-sonnet-4"
 
-        if result["valid"]:
-            assert "provider" in result
-            assert "has_api_key" in result
-            assert "api_key_configured" in result
+        if result.valid:
+            assert result.provider is not None
 
-    def test_validate_model_config_function_invalid_model(self) -> None:
-        """무효한 모델 설정 검증 함수 테스트"""
-        result = validate_model_config("invalid-model-name-12345")
+    def test_validate_model_support_function_invalid_model(self) -> None:
+        """무효한 모델 지원 여부 검증 함수 테스트"""
+        from selvage.src.mcp.models.responses import ModelValidationResult
 
-        assert isinstance(result, dict)
-        assert "valid" in result
-        assert result["valid"] is False
-        assert "error_message" in result
+        result = validate_model_support("invalid-model-name-12345")
+
+        assert isinstance(result, ModelValidationResult)
+        assert result.valid is False
+        assert result.error_message is not None
+
+    def test_validate_api_key_for_provider_function(self) -> None:
+        """API 키 검증 함수 테스트"""
+        from selvage.src.mcp.models.responses import ApiKeyValidationResult
+
+        result = validate_api_key_for_provider("anthropic")
+
+        assert isinstance(result, ApiKeyValidationResult)
+        # API 키가 있든 없든 올바른 구조로 반환되어야 함
+        assert result.provider == "Anthropic" or result.valid is False
 
     def test_get_review_history_function(self) -> None:
         """리뷰 히스토리 조회 함수 테스트"""
@@ -236,10 +247,13 @@ class TestMCPServerErrorHandling:
 
     def test_invalid_model_validation(self) -> None:
         """존재하지 않는 모델 검증 테스트"""
-        result = validate_model_config("non-existent-model-12345")
+        from selvage.src.mcp.models.responses import ModelValidationResult
 
-        assert result["valid"] is False
-        assert "error_message" in result
+        result = validate_model_support("non-existent-model-12345")
+
+        assert isinstance(result, ModelValidationResult)
+        assert result.valid is False
+        assert result.error_message is not None
 
     def test_invalid_log_id_review_details(self) -> None:
         """존재하지 않는 로그 ID로 상세 조회 테스트"""
@@ -259,7 +273,7 @@ class TestMCPServerFunctionalIntegration:
         # 서버 상태 조회
         status = get_server_status()
         assert status.running is True
-        assert status.tools_count == 9
+        assert status.tools_count == 10
 
         # 모델 목록 조회
         models = get_available_models()
