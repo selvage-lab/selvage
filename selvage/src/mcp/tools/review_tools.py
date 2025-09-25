@@ -39,7 +39,7 @@ def _validate(
     model_info = get_model_info(model)
     if not model_info:
         return ValidationResult(
-            success=False, error_message=f"지원되지 않는 모델입니다: {model}"
+            success=False, error_message=f"Unsupported model: {model}"
         )
 
     provider_value = model_info["provider"]
@@ -49,14 +49,14 @@ def _validate(
         except ValueError:
             return ValidationResult(
                 success=False,
-                error_message=f"지원되지 않는 프로바이더입니다: {provider_value}",
+                error_message=f"Unsupported provider: {provider_value}",
             )
     elif isinstance(provider_value, ModelProvider):
         provider = provider_value
     else:
         return ValidationResult(
             success=False,
-            error_message=f"잘못된 프로바이더 타입입니다: {type(provider_value)}",
+            error_message=f"Invalid provider type: {type(provider_value)}",
         )
 
     # OpenRouter-first: OpenRouter 키가 있으면 OpenRouter를 사용
@@ -67,9 +67,7 @@ def _validate(
     try:
         _ = get_api_key(selected_provider)
     except APIKeyNotFoundError:
-        error_msg = (
-            f"{selected_provider.get_display_name()} API 키가 설정되지 않았습니다."
-        )
+        error_msg = f"{selected_provider.get_display_name()} API key is not configured."
         return ValidationResult(success=False, error_message=error_msg)
 
     return ValidationResult(success=True, error_message=None)
@@ -92,7 +90,7 @@ def get_diff_content_result(
     if not diff_text:
         return DiffContentResult(
             success=False,
-            error_message="리뷰할 변경사항이 없습니다.",
+            error_message="No changes to review.",
             diff_content=None,
         )
 
@@ -196,7 +194,7 @@ def _execute_review_workflow(
         return ReviewResult(
             success=False,
             model_used=model,
-            error_message=f"리뷰 중 오류가 발생했습니다: {str(e)}",
+            error_message=f"An error occurred during review: {str(e)}",
         )
 
 

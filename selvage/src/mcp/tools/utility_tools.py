@@ -154,7 +154,7 @@ def get_review_details(log_id: str) -> ReviewDetailsResult:
             return ReviewDetailsResult(
                 success=False,
                 data=None,
-                error_message="리뷰 응답 데이터를 찾을 수 없습니다.",
+                error_message="Review response data not found.",
             )
         return ReviewDetailsResult(
             success=True,
@@ -165,7 +165,7 @@ def get_review_details(log_id: str) -> ReviewDetailsResult:
         return ReviewDetailsResult(
             success=False,
             data=None,
-            error_message=f"로그 조회 중 오류가 발생했습니다: {str(e)}",
+            error_message=f"An error occurred while retrieving log: {str(e)}",
         )
 
 
@@ -202,7 +202,7 @@ def validate_model_support(model: str) -> ModelValidationResult:
         if not model_info:
             return ModelValidationResult(
                 valid=False,
-                error_message=f"지원되지 않는 모델입니다: {model}",
+                error_message=f"Unsupported model: {model}",
             )
 
         # 2. 프로바이더 정보 추출
@@ -213,14 +213,14 @@ def validate_model_support(model: str) -> ModelValidationResult:
             except ValueError:
                 return ModelValidationResult(
                     valid=False,
-                    error_message=f"지원되지 않는 프로바이더입니다: {provider_value}",
+                    error_message=f"Unsupported provider: {provider_value}",
                 )
         elif isinstance(provider_value, ModelProvider):
             provider = provider_value
         else:
             return ModelValidationResult(
                 valid=False,
-                error_message=f"잘못된 프로바이더 타입입니다: {type(provider_value)}",
+                error_message=f"Invalid provider type: {type(provider_value)}",
             )
 
         return ModelValidationResult(
@@ -231,7 +231,7 @@ def validate_model_support(model: str) -> ModelValidationResult:
     except Exception as e:
         return ModelValidationResult(
             valid=False,
-            error_message=f"모델 지원 여부 검증 중 오류가 발생했습니다: {str(e)}",
+            error_message=f"An error occurred while validating model support: {str(e)}",
         )
 
 
@@ -251,7 +251,7 @@ def validate_api_key_for_provider(model: str) -> ApiKeyValidationResult:
         if not model_info:
             return ApiKeyValidationResult(
                 valid=False,
-                error_message=f"지원되지 않는 모델입니다: {model}",
+                error_message=f"Unsupported model: {model}",
             )
 
         # 2. OpenRouter-first 전략: OpenRouter 키가 있으면 OpenRouter를 사용
@@ -264,7 +264,7 @@ def validate_api_key_for_provider(model: str) -> ApiKeyValidationResult:
                 try:
                     selected_provider = ModelProvider.from_string(provider_value)
                 except ValueError:
-                    error_msg = f"지원되지 않는 프로바이더입니다: {provider_value}"
+                    error_msg = f"Unsupported provider: {provider_value}"
                     return ApiKeyValidationResult(
                         valid=False,
                         error_message=error_msg,
@@ -272,7 +272,7 @@ def validate_api_key_for_provider(model: str) -> ApiKeyValidationResult:
             elif isinstance(provider_value, ModelProvider):
                 selected_provider = provider_value
             else:
-                error_msg = f"잘못된 프로바이더 타입입니다: {type(provider_value)}"
+                error_msg = f"Invalid provider type: {type(provider_value)}"
                 return ApiKeyValidationResult(
                     valid=False,
                     error_message=error_msg,
@@ -286,8 +286,7 @@ def validate_api_key_for_provider(model: str) -> ApiKeyValidationResult:
                 provider=selected_provider.get_display_name(),
                 api_key_configured=False,
                 error_message=(
-                    f"{selected_provider.get_display_name()} API "
-                    "키가 설정되지 않았습니다."
+                    f"{selected_provider.get_display_name()} API key is not configured."
                 ),
             )
 
@@ -299,7 +298,7 @@ def validate_api_key_for_provider(model: str) -> ApiKeyValidationResult:
     except Exception as e:
         return ApiKeyValidationResult(
             valid=False,
-            error_message=f"API 키 검증 중 오류가 발생했습니다: {str(e)}",
+            error_message=f"An error occurred while validating API key: {str(e)}",
         )
 
 

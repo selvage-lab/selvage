@@ -276,7 +276,7 @@ class TestExecuteReviewWorkflow:
 
         # 검증
         assert result.success is False
-        assert "지원되지 않는 모델입니다" in result.error_message
+        assert "Unsupported model" in result.error_message
 
     @patch("selvage.src.mcp.tools.review_tools.get_model_info")
     @patch("selvage.src.mcp.tools.review_tools.get_api_key")
@@ -298,7 +298,7 @@ class TestExecuteReviewWorkflow:
 
         # 검증
         assert result.success is False
-        assert "API 키가 설정되지 않았습니다" in result.error_message
+        assert "API key is not configured" in result.error_message
 
     @patch("selvage.src.mcp.tools.review_tools.get_model_info")
     @patch("selvage.src.mcp.tools.review_tools.get_api_key")
@@ -322,7 +322,7 @@ class TestExecuteReviewWorkflow:
 
         # 검증
         assert result.success is False
-        assert "리뷰할 변경사항이 없습니다" in result.error_message
+        assert "No changes to review" in result.error_message
 
 
 class TestReviewToolsIntegration:
