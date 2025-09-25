@@ -6,7 +6,7 @@ from datetime import datetime
 from fastmcp import FastMCP
 
 from selvage.__version__ import __version__
-from selvage.src.config import get_api_key
+from selvage.src.config import get_api_key, has_openrouter_api_key
 from selvage.src.model_config import ModelConfig, get_model_info
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.utils.logging.review_log_manager import RepoPath, ReviewLogManager
@@ -235,41 +235,65 @@ def validate_model_support(model: str) -> ModelValidationResult:
         )
 
 
-def validate_api_key_for_provider(provider: str) -> ApiKeyValidationResult:
+def validate_api_key_for_provider(model: str) -> ApiKeyValidationResult:
     """
-    프로바이더의 API 키 검증
+    모델의 API 키 검증 (OpenRouter-first 전략 적용)
 
     Args:
-        provider: 프로바이더 이름 (openai, anthropic, google, openrouter)
+        model: 검증할 모델 이름
 
     Returns:
         ApiKeyValidationResult: API 키 검증 결과
     """
     try:
-        # 1. 프로바이더 문자열을 ModelProvider로 변환
-        try:
-            provider_enum = ModelProvider.from_string(provider)
-        except ValueError:
+        # 1. 모델 정보 검증
+        model_info = get_model_info(model)
+        if not model_info:
             return ApiKeyValidationResult(
                 valid=False,
-                error_message=f"지원되지 않는 프로바이더입니다: {provider}",
+                error_message=f"지원되지 않는 모델입니다: {model}",
             )
 
-        # 2. API 키 검증
-        api_key = get_api_key(provider_enum)
+        # 2. OpenRouter-first 전략: OpenRouter 키가 있으면 OpenRouter를 사용
+        if has_openrouter_api_key():
+            selected_provider = ModelProvider.OPENROUTER
+        else:
+            # OpenRouter 키가 없으면 모델의 원래 프로바이더 사용
+            provider_value = model_info.get("provider")
+            if isinstance(provider_value, str):
+                try:
+                    selected_provider = ModelProvider.from_string(provider_value)
+                except ValueError:
+                    error_msg = f"지원되지 않는 프로바이더입니다: {provider_value}"
+                    return ApiKeyValidationResult(
+                        valid=False,
+                        error_message=error_msg,
+                    )
+            elif isinstance(provider_value, ModelProvider):
+                selected_provider = provider_value
+            else:
+                error_msg = f"잘못된 프로바이더 타입입니다: {type(provider_value)}"
+                return ApiKeyValidationResult(
+                    valid=False,
+                    error_message=error_msg,
+                )
+
+        # 3. API 키 검증
+        api_key = get_api_key(selected_provider)
         if not api_key:
             return ApiKeyValidationResult(
                 valid=False,
-                provider=provider_enum.get_display_name(),
+                provider=selected_provider.get_display_name(),
                 api_key_configured=False,
                 error_message=(
-                    f"{provider_enum.get_display_name()} API 키가 설정되지 않았습니다."
+                    f"{selected_provider.get_display_name()} API "
+                    "키가 설정되지 않았습니다."
                 ),
             )
 
         return ApiKeyValidationResult(
             valid=True,
-            provider=provider_enum.get_display_name(),
+            provider=selected_provider.get_display_name(),
             api_key_configured=True,
         )
     except Exception as e:

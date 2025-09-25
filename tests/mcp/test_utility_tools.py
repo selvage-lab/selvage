@@ -318,19 +318,26 @@ class TestValidateApiKeyForProvider:
 
         assert callable(validate_api_key_for_provider)
 
+    @patch("selvage.src.mcp.tools.utility_tools.has_openrouter_api_key")
     @patch("selvage.src.mcp.tools.utility_tools.get_api_key")
+    @patch("selvage.src.mcp.tools.utility_tools.get_model_info")
     def test_validate_api_key_for_provider_valid_key(
-        self, mock_get_api_key: Mock
+        self, mock_get_model_info: Mock, mock_get_api_key: Mock, mock_has_openrouter: Mock
     ) -> None:
         """validate_api_key_for_provider가 유효한 API 키에 대해 올바른 결과를 반환해야 함"""
         from selvage.src.mcp.tools.utility_tools import validate_api_key_for_provider
         from selvage.src.mcp.models.responses import ApiKeyValidationResult
 
         # Mock 설정
+        mock_get_model_info.return_value = {
+            "provider": "anthropic",
+            "name": "claude-sonnet-4",
+        }
+        mock_has_openrouter.return_value = False  # OpenRouter 키 없음
         mock_get_api_key.return_value = "test-api-key"
 
         # 실행
-        result = validate_api_key_for_provider("anthropic")
+        result = validate_api_key_for_provider("claude-sonnet-4")
 
         # 검증
         assert isinstance(result, ApiKeyValidationResult)
@@ -338,19 +345,26 @@ class TestValidateApiKeyForProvider:
         assert result.provider == "Anthropic"
         assert result.api_key_configured is True
 
+    @patch("selvage.src.mcp.tools.utility_tools.has_openrouter_api_key")
     @patch("selvage.src.mcp.tools.utility_tools.get_api_key")
+    @patch("selvage.src.mcp.tools.utility_tools.get_model_info")
     def test_validate_api_key_for_provider_missing_key(
-        self, mock_get_api_key: Mock
+        self, mock_get_model_info: Mock, mock_get_api_key: Mock, mock_has_openrouter: Mock
     ) -> None:
         """validate_api_key_for_provider가 누락된 API 키에 대해 올바른 결과를 반환해야 함"""
         from selvage.src.mcp.tools.utility_tools import validate_api_key_for_provider
         from selvage.src.mcp.models.responses import ApiKeyValidationResult
 
         # Mock 설정
+        mock_get_model_info.return_value = {
+            "provider": "anthropic",
+            "name": "claude-sonnet-4",
+        }
+        mock_has_openrouter.return_value = False  # OpenRouter 키 없음
         mock_get_api_key.return_value = None
 
         # 실행
-        result = validate_api_key_for_provider("anthropic")
+        result = validate_api_key_for_provider("claude-sonnet-4")
 
         # 검증
         assert isinstance(result, ApiKeyValidationResult)
@@ -358,18 +372,45 @@ class TestValidateApiKeyForProvider:
         assert result.api_key_configured is False
         assert result.error_message is not None
 
-    def test_validate_api_key_for_provider_invalid_provider(self) -> None:
-        """validate_api_key_for_provider가 무효한 프로바이더에 대해 올바른 결과를 반환해야 함"""
+    def test_validate_api_key_for_provider_invalid_model(self) -> None:
+        """validate_api_key_for_provider가 무효한 모델에 대해 올바른 결과를 반환해야 함"""
         from selvage.src.mcp.tools.utility_tools import validate_api_key_for_provider
         from selvage.src.mcp.models.responses import ApiKeyValidationResult
 
         # 실행
-        result = validate_api_key_for_provider("invalid-provider")
+        result = validate_api_key_for_provider("invalid-model")
 
         # 검증
         assert isinstance(result, ApiKeyValidationResult)
         assert result.valid is False
         assert result.error_message is not None
+
+    @patch("selvage.src.mcp.tools.utility_tools.has_openrouter_api_key")
+    @patch("selvage.src.mcp.tools.utility_tools.get_api_key")
+    @patch("selvage.src.mcp.tools.utility_tools.get_model_info")
+    def test_validate_api_key_for_provider_openrouter_first(
+        self, mock_get_model_info: Mock, mock_get_api_key: Mock, mock_has_openrouter: Mock
+    ) -> None:
+        """OpenRouter 키가 있으면 OpenRouter를 우선 사용해야 함"""
+        from selvage.src.mcp.tools.utility_tools import validate_api_key_for_provider
+        from selvage.src.mcp.models.responses import ApiKeyValidationResult
+
+        # Mock 설정
+        mock_get_model_info.return_value = {
+            "provider": "anthropic",  # 원래 프로바이더는 anthropic
+            "name": "claude-sonnet-4",
+        }
+        mock_has_openrouter.return_value = True  # OpenRouter 키 있음
+        mock_get_api_key.return_value = "openrouter-api-key"
+
+        # 실행
+        result = validate_api_key_for_provider("claude-sonnet-4")
+
+        # 검증
+        assert isinstance(result, ApiKeyValidationResult)
+        assert result.valid is True
+        assert result.provider == "OpenRouter"  # anthropic이 아닌 OpenRouter 사용
+        assert result.api_key_configured is True
 
 
 class TestUtilityToolsIntegration:

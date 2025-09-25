@@ -118,11 +118,12 @@ class TestMCPServerIntegration:
         """API 키 검증 함수 테스트"""
         from selvage.src.mcp.models.responses import ApiKeyValidationResult
 
-        result = validate_api_key_for_provider("anthropic")
+        result = validate_api_key_for_provider("claude-sonnet-4")
 
         assert isinstance(result, ApiKeyValidationResult)
         # API 키가 있든 없든 올바른 구조로 반환되어야 함
-        assert result.provider == "Anthropic" or result.valid is False
+        # OpenRouter 키가 있으면 "OpenRouter", 없으면 "Anthropic" 또는 검증 실패
+        assert result.provider in ["OpenRouter", "Anthropic"] or result.valid is False
 
     def test_get_review_history_function(self) -> None:
         """리뷰 히스토리 조회 함수 테스트"""
