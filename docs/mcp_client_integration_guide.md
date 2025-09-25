@@ -1,66 +1,49 @@
 ### Selvage MCP 서버 연동 가이드 (Cursor, Claude Code)
 
-이 문서는 실제 MCP 클라이언트(예: Cursor, Claude Code)와 `Selvage MCP Server`를 연동해 로컬에서 코드 리뷰 워크플로우를 테스트하는 방법을 안내합니다.
+이 문서는 MCP 클라이언트(Cursor, Claude Code)와 `Selvage MCP Server`를 연동해 코드 리뷰 워크플로우를 사용하는 방법을 안내합니다.
 
 ---
 
-#### 1) 연동 방법
+## 일반 사용자를 위한 연동 방법 (권장)
 
-##### A. Cursor와 연동 (mcp.json 설정)
+### 사전 요구사항
 
-1. Selvage MCP 서버는 `python -m selvage.src.mcp.server`로 stdio 기반 실행이 가능합니다.
-2. Cursor의 MCP 설정 파일(`~/.cursor/mcp.json` 혹은 워크스페이스 설정 위치)에 다음과 같이 등록합니다.
+- `uv`가 설치되어 있어야 합니다: [uv 설치 가이드](https://docs.astral.sh/uv/getting-started/installation/)
+
+### A. Cursor와 연동 (mcp.json 설정)
+
+Cursor의 MCP 설정 파일(`~/.cursor/mcp.json`)에 다음과 같이 등록합니다:
 
 ```json
 {
   "mcpServers": {
     "selvage": {
-      "command": "/bin/sh",
-      "args": [
-        "-lc",
-        "cd /Users/demin_coder/Dev/selvage && /Users/demin_coder/Dev/selvage/venv/bin/python -m selvage.src.mcp.server"
-      ],
-      "env": {
-        "PYTHONUNBUFFERED": "1"
-      }
+      "command": "uvx",
+      "args": ["selvage", "mcp"]
     }
   }
 }
 ```
 
-- command: `/bin/sh` (셸을 통해 실행)
-- args: `-lc` 플래그와 함께 작업 디렉토리 변경 후 Python 실행
-- env(PYTHONUNBUFFERED): 로그 출력 버퍼링 방지에 유용
+Cursor를 재시작하면 `selvage` MCP 서버가 자동으로 연결되어 도구를 사용할 수 있습니다.
 
-**경로 수정 필요사항:**
-
-- `/Users/demin_coder/Dev/selvage` → 본인의 Selvage 프로젝트 경로로 변경
-- `/Users/demin_coder/Dev/selvage/venv/bin/python` → 본인의 Python 가상환경 경로로 변경
-
-Cursor를 재시작하면 `selvage` MCP 서버가 자동으로 연결되어 도구를 탐색할 수 있습니다.
-
-##### B. Claude Code와 연동 (Terminal 명령)
-
-Claude Code(데스크톱 앱)에서 로컬 MCP 서버를 연결할 때는 `claude mcp add <name> <command> [args...]` 형식을 사용합니다. 예시:
+### B. Claude Code와 연동
 
 ```bash
-# 사용자 환경에 맞춰 python 경로를 바꾸세요
-claude mcp add -t stdio -- selvage \
-  /Users/demin_coder/Dev/selvage/venv/bin/python -- -m selvage.src.mcp.server
+# MCP 서버 등록
+claude mcp add selvage uvx selvage mcp
 
 # 연결 확인
 claude mcp list
 claude mcp get selvage
 ```
 
-이 저장소 경로 기준(현재 워크스페이스) 절대 경로 예시:
+### 장점
 
-```bash
-claude mcp add -t stdio -e PYTHONUNBUFFERED=1 selvage \
-  /Users/demin_coder/Dev/selvage/venv/bin/python -m selvage.src.mcp.server
-```
-
-핵심은 로컬 가상환경의 `python` 바이너리 경로와 `-m selvage.src.mcp.server`를 정확히 전달하는 것입니다.
+- ✅ Selvage를 미리 설치할 필요 없음
+- ✅ 항상 PyPI의 최신 버전 자동 사용
+- ✅ 시스템 환경을 오염시키지 않음
+- ✅ 간단하고 안정적인 연동
 
 ---
 
@@ -105,13 +88,63 @@ Selvage MCP의 get_server_status_tool, get_available_models_tool, get_review_his
 
 ---
 
+## 개발자/Contributor를 위한 고급 설정
+
+개발 중인 Selvage를 MCP 서버로 테스트하려는 경우 아래 방법을 사용하세요.
+
+### A. 로컬 빌드 테스트 설정
+
+#### 1. 패키지 빌드
+
+```bash
+# Selvage 프로젝트 디렉토리에서
+python -m build
+```
+
+#### 2. Claude Code 연동
+
+```bash
+# 로컬 wheel 파일 사용 (버전 번호는 실제로 생성된 파일명으로 변경)
+claude mcp add selvage-dev uvx --from ./dist/selvage-0.1.0-py3-none-any.whl selvage mcp
+
+# 연결 확인
+claude mcp list
+claude mcp get selvage-dev
+```
+
+#### 3. Cursor 연동
+
+Cursor의 MCP 설정 파일(`~/.cursor/mcp.json`)에 다음과 같이 등록:
+
+```json
+{
+  "mcpServers": {
+    "selvage-dev": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "./dist/selvage-0.1.0-py3-none-any.whl",
+        "selvage",
+        "mcp"
+      ]
+    }
+  }
+}
+```
+
+**주의사항:**
+
+- `./dist/selvage-0.1.0-py3-none-any.whl` 경로는 실제 빌드된 파일명으로 변경
+- Cursor 설정 시 Selvage 프로젝트 디렉토리에서 상대 경로 사용
+
+---
+
 #### 참고
 
-- 서버 엔트리포인트: `python -m selvage.src.mcp.server` (stdio)
-- 등록되는 도구(요약):
-  - review_current_changes_tool, review_staged_changes_tool,
-    review_against_branch_tool, review_against_commit_tool
-  - get_available_models_tool, get_review_history_tool,
-    get_review_details_tool, get_server_status_tool, validate_model_config_tool
+- 등록되는 MCP 도구(요약):
+  - review_current_changes, review_staged_changes,
+    review_against_branch, review_against_commit
+  - get_available_models, get_review_history,
+    get_review_details, get_server_status, validate_model_config
 
-연동 과정에서 문제가 있으면 파이썬 경로, 가상환경 활성화, `PYTHONUNBUFFERED=1` 설정을 우선 확인하세요.
+연동 과정에서 문제가 있으면 uv 설치 상태, 네트워크 연결, 또는 개발 환경의 경우 파이썬 경로와 가상환경 설정을 확인하세요.
