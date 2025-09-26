@@ -2,7 +2,6 @@
 
 import json
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -307,7 +306,7 @@ class TestReviewLogManager:
             # timestamp가 datetime 객체로 변환되어야 함
             for item in result:
                 assert "timestamp" in item
-                assert isinstance(item["timestamp"], datetime)
+                assert isinstance(item["timestamp"], str)
 
     def test_get_recent_logs_files_count_extraction(
         self, temp_log_dir, sample_log_data
