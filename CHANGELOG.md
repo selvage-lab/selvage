@@ -1,5 +1,25 @@
 # Change Log
 
+## [0.1.9] - 2025-09-26
+
+### Added
+
+#### MCP (Model Context Protocol) 서버 구현
+
+**핵심 변경사항**
+
+- **MCP 서버 구현**: Selvage를 MCP 서버로 실행하여 Claude Code, Cursor 등에서 코드 리뷰 기능을 직접 사용할 수 있습니다.
+
+  - **MCP 서버 모드**: `selvage mcp` 명령어로 실행
+  - **기존 기능 연동**: 모든 리뷰 및 유틸리티 기능 지원
+
+**세부 구현사항**
+
+- **MCP 서버 아키텍처**: FastMCP 기반 안정적 서버 구현 (`selvage/src/mcp/server.py`)
+- **MCP 응답 모델**: Pydantic 기반 구조화된 응답 모델 (`selvage/src/mcp/models/`)
+- **MCP 도구 노출**: 기존 리뷰 및 유틸리티 기능을 MCP 프로토콜을 통해 노출
+- **MCP 모드 지원**: CLI에 `selvage mcp` 명령어 추가 및 stderr 출력 자동 조정
+
 ## [0.1.8] - 2025-09-15
 
 ### Added
