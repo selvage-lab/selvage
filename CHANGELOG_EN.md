@@ -1,5 +1,25 @@
 # Change Log
 
+## [0.1.9] - 2025-09-26
+
+### Added
+
+#### MCP (Model Context Protocol) Server Implementation
+
+**Core Changes**
+
+- **MCP Server Support**: Selvage now supports MCP server mode, enabling direct access to code review features from Claude Code, Cursor, and other MCP clients.
+
+  - **Server Mode**: Launch with `selvage mcp` command
+  - **Full Feature Access**: All existing review and utility features available
+
+**Implementation Details**
+
+- **Server Architecture**: FastMCP-based implementation (`selvage/src/mcp/server.py`)
+- **Response Models**: Pydantic-based structured models (`selvage/src/mcp/models/`)
+- **Protocol Integration**: Existing features exposed via MCP protocol
+- **CLI Integration**: Added `selvage mcp` command with stderr handling
+
 ## [0.1.8] - 2025-09-15
 
 ### Added
