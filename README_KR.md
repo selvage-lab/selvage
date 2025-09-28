@@ -28,17 +28,14 @@
 
 - [✨ 주요 기능](#-주요-기능)
 - [🚀 빠른 시작](#-빠른-시작)
+- [🎯 실전 활용 가이드](#-실전-활용-가이드)
+  - [MCP 모드 사용 방법](#mcp-모드-사용-방법)
+  - [⌨️ CLI 사용법](#️-cli-사용법)
 - [🌐 Smart Context 분석 및 지원 AI 모델](#-smart-context-분석-및-지원-ai-모델)
   - [Smart Context 분석](#-smart-context-분석)
   - [지원 AI 모델](#지원-ai-모델)
 - [📄 리뷰 결과 저장 형식](#-리뷰-결과-저장-형식)
-- [🎯 실전 활용 가이드](#-실전-활용-가이드)
-  - [문제 해결](#문제-해결)
-- [⌨️ CLI 사용법](#️-cli-사용법)
-  - [Selvage 설정하기](#selvage-설정하기)
-  - [코드 리뷰하기](#코드-리뷰하기)
-  - [Git 워크플로우 활용](#git-워크플로우-활용)
-  - [결과 확인하기](#결과-확인하기)
+- [🔧 문제 해결](#-문제-해결)
 - [🤝 기여하기](#-기여하기)
 - [📜 라이선스](#-라이선스)
 - [📋 업데이트 이력](#-업데이트-이력)
@@ -166,6 +163,173 @@ selvage review --model claude-sonnet-4-thinking
 
 ---
 
+## 🎯 실전 활용 가이드
+
+### MCP 모드 사용 방법
+
+#### 기본 사용법
+
+```
+# 기본 리뷰 요청
+selvage mcp로 현재 변경사항 리뷰해줘
+
+# 스테이징된 변경사항 리뷰
+selvage mcp로 스테이징된 작업 내용을 gpt-5-high로 리뷰해줘
+
+# 특정 브랜치와 비교 리뷰
+selvage mcp로 메인 브랜치와 현재 브랜치를 비교해서 리뷰해줘
+
+# 모델 자동 선택 리뷰
+selvage mcp로 메인 브랜치와 현재 브랜치를 리뷰하되 사용 모델을 확인해서 선정해서 리뷰해줘
+```
+
+#### 고급 워크플로우
+
+**멀티 모델 비교 리뷰**
+```
+selvage mcp로 스테이징된 작업 내용을 gpt-5-high, claude-sonnet-4-thinking으로 각각 리뷰하고 결과를 비교해줘
+```
+
+**단계별 코드 개선 워크플로우**
+```
+1. selvage mcp로 현재 변경사항을 claude-sonnet-4-thinking으로 리뷰해줘
+2. 리뷰 피드백이 현재 코드베이스에 관해 유효한지 비판적으로 검토 후 우선순위를 알려줘
+3. 검토한 내역을 우선순위에 따라 순차적으로 반영해줘
+```
+
+**CI/CD 통합 시나리오**
+```
+# PR 생성 전 코드 품질 검증
+selvage mcp로 PR 생성 전 코드 품질 검증을 위해 main 브랜치 대비 변경사항을 리뷰해줘
+
+# 배포 전 최종 체크
+selvage mcp로 배포 전 최종 체크를 위해 스테이징된 변경사항을 종합적으로 리뷰해줘
+```
+
+### ⌨️ CLI 사용법
+
+터미널에서 직접 사용하는 방법입니다. MCP 모드 사용을 권장하지만, 스크립트나 CI/CD에서는 CLI가 유용합니다.
+
+#### Selvage 설정하기
+
+```bash
+# 모든 설정 보기
+selvage config list
+
+# 기본 모델 설정
+selvage config model <모델명>
+
+# 기본 언어 설정
+selvage config language <언어명>
+
+```
+
+#### 코드 리뷰하기
+
+```bash
+selvage review [OPTIONS]
+```
+
+##### 주요 옵션
+
+- `--repo-path <경로>`: Git 저장소 경로 (기본값: 현재 디렉토리)
+- `--staged`: 스테이징된 변경사항만 리뷰
+- `--target-commit <커밋ID>`: 특정 커밋부터 HEAD까지의 변경사항 리뷰 (예: abc1234)
+- `--target-branch <브랜치명>`: 현재 브랜치와 지정된 브랜치 간 변경사항 리뷰 (예: main)
+- `--model <모델명>`: 사용할 AI 모델 (예: claude-sonnet-4-thinking)
+- `--open-ui`: 리뷰 완료 후 자동으로 UI 실행
+- `--no-print`: 터미널에 리뷰 결과를 출력하지 않음 (기본적으로 터미널 출력 활성화)
+- `--skip-cache`: 캐시를 사용하지 않고 새로운 리뷰 수행
+
+##### 사용 예시
+
+```bash
+# 현재 워킹 디렉토리 변경사항 리뷰
+selvage review
+
+# 커밋 전 최종 점검
+selvage review --staged
+
+# 특정 파일들만 리뷰
+git add specific_files.py && selvage review --staged
+
+# PR 보내기 전 코드 리뷰
+selvage review --target-branch develop
+
+# 빠르고 경제적인 모델로 간단한 변경사항 리뷰
+selvage review --model gemini-2.5-flash
+
+# 리뷰 후 웹 UI로 자세히 확인
+selvage review --target-branch main --open-ui
+```
+
+#### Git 워크플로우 활용
+
+##### 팀 협업 시나리오
+
+```bash
+# Pull Request 생성 전 코드 품질 검증
+selvage review --target-branch main --model claude-sonnet-4-thinking
+
+# 코드 리뷰어를 위한 변경사항 사전 분석
+selvage review --target-branch develop --model claude-sonnet-4-thinking
+
+# 특정 커밋 이후 모든 변경사항 종합 리뷰
+selvage review --target-commit a1b2c3d --model claude-sonnet-4-thinking
+```
+
+##### 개발 단계별 품질 관리
+
+```bash
+# 개발 중 빠른 피드백 (WIP 커밋 전)
+selvage review --model gemini-2.5-flash
+
+# 스테이징된 변경사항 최종 검증 (커밋 전)
+selvage review --staged --model claude-sonnet-4-thinking
+
+# 핫픽스 배포 전 긴급 검토
+selvage review --target-branch main --model claude-sonnet-4-thinking
+```
+
+##### 대용량 코드 리뷰
+
+```bash
+# 대용량 코드베이스도 자동으로 처리
+selvage review --model claude-sonnet-4  # 사용 방법은 동일, 자동 감지 후 멀티턴 처리 적용
+```
+
+Selvage는 LLM model의 컨텍스트 제한을 초과하는 대용량 코드 변경사항도 처리합니다.
+Long Context Mode는 자동으로 실행되니 기다리기만 하면 됩니다.
+
+##### 비용 최적화
+
+```bash
+# 작은 변경사항에는 경제적인 모델 사용
+selvage review --model gemini-2.5-flash
+```
+
+#### 결과 확인하기
+
+리뷰 결과는 **터미널에 바로 출력**되며, 동시에 파일로도 자동 저장됩니다.
+
+**추가적인 리뷰 관리 및 재확인**을 위해 웹 UI를 사용할 수 있습니다:
+
+```bash
+# 저장된 모든 리뷰 결과를 웹 UI로 관리
+selvage view
+
+# 다른 포트에서 UI 실행
+selvage view --port 8502
+```
+
+**UI 주요 기능:**
+
+- 📋 모든 리뷰 결과 목록 표시
+- 🎨 마크다운 형식 표시
+- 🗂️ JSON 구조화된 결과 보기
+
+---
+
 ## 🌐 Smart Context 추출 및 지원 AI 모델
 
 ### 🎯 Smart Context 추출
@@ -239,191 +403,6 @@ Selvage는 파일 크기와 변경 범위를 분석하여 **가장 효율적인 
 <p align="center">
   <img src="assets/demo-ui.png" width="100%" alt="Selvage UI Demo"/>
 </p>
-
-## 🎯 실전 활용 가이드
-
-### MCP 모드를 통한 복합적인 워크플로우
-
-```
-1. selvage mcp로 스테이징된 작업 내용을 gpt-5-high, claude-sonnet-4-thinking으로 리뷰하고 그 내용을 취합 후 알려줘
-2. 리뷰 피드백이 현재 코드베이스에 관해 유효한지 비판적으로 검토 후 우선순위를 알려줘
-3. 검토한 내역을 우선순위에 따라 순차적으로 반영해줘
-```
-
-### 문제 해결
-
-#### 설치 관련 오류
-
-**`externally-managed-environment` 에러 (macOS/Linux)**
-
-```bash
-# 해결 방법 1: uv 사용 (권장)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv tool install selvage
-
-# 해결 방법 2: pipx 사용
-brew install pipx  # macOS
-pipx install selvage
-
-# 해결 방법 3: 가상환경 사용
-python3 -m venv ~/.selvage-env
-source ~/.selvage-env/bin/activate
-pip install selvage
-```
-
-#### API 키 오류
-
-```bash
-# 환경변수 확인
-echo $OPENROUTER_API_KEY
-
-# 영구 설정 (Linux/macOS)
-echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-**모델 not found 오류**
-
-```bash
-# 사용 가능한 모델 목록 확인
-selvage models
-
-# 모델명 정확히 확인하여 사용
-selvage review --model claude-sonnet-4-thinking
-```
-
-**네트워크 연결 오류**
-
-```bash
-# 캐시 무시하고 재시도
-selvage review --skip-cache
-
-# 디버그 모드로 상세 정보 확인
-selvage config debug-mode on
-selvage review
-```
-
-## ⌨️ CLI 사용법
-
-터미널에서 직접 사용하는 방법입니다. MCP 모드 사용을 권장하지만, 스크립트나 CI/CD에서는 CLI가 유용합니다.
-
-### Selvage 설정하기
-
-```bash
-# 모든 설정 보기
-selvage config list
-
-# 기본 모델 설정
-selvage config model <모델명>
-
-# 기본 언어 설정
-selvage config language <언어명>
-
-```
-
-### 코드 리뷰하기
-
-```bash
-selvage review [OPTIONS]
-```
-
-#### 주요 옵션
-
-- `--repo-path <경로>`: Git 저장소 경로 (기본값: 현재 디렉토리)
-- `--staged`: 스테이징된 변경사항만 리뷰
-- `--target-commit <커밋ID>`: 특정 커밋부터 HEAD까지의 변경사항 리뷰 (예: abc1234)
-- `--target-branch <브랜치명>`: 현재 브랜치와 지정된 브랜치 간 변경사항 리뷰 (예: main)
-- `--model <모델명>`: 사용할 AI 모델 (예: claude-sonnet-4-thinking)
-- `--open-ui`: 리뷰 완료 후 자동으로 UI 실행
-- `--no-print`: 터미널에 리뷰 결과를 출력하지 않음 (기본적으로 터미널 출력 활성화)
-- `--skip-cache`: 캐시를 사용하지 않고 새로운 리뷰 수행
-
-#### 사용 예시
-
-```bash
-# 현재 워킹 디렉토리 변경사항 리뷰
-selvage review
-
-# 커밋 전 최종 점검
-selvage review --staged
-
-# 특정 파일들만 리뷰
-git add specific_files.py && selvage review --staged
-
-# PR 보내기 전 코드 리뷰
-selvage review --target-branch develop
-
-# 빠르고 경제적인 모델로 간단한 변경사항 리뷰
-selvage review --model gemini-2.5-flash
-
-# 리뷰 후 웹 UI로 자세히 확인
-selvage review --target-branch main --open-ui
-```
-
-### Git 워크플로우 활용
-
-#### 팀 협업 시나리오
-
-```bash
-# Pull Request 생성 전 코드 품질 검증
-selvage review --target-branch main --model claude-sonnet-4-thinking
-
-# 코드 리뷰어를 위한 변경사항 사전 분석
-selvage review --target-branch develop --model claude-sonnet-4-thinking
-
-# 특정 커밋 이후 모든 변경사항 종합 리뷰
-selvage review --target-commit a1b2c3d --model claude-sonnet-4-thinking
-```
-
-#### 개발 단계별 품질 관리
-
-```bash
-# 개발 중 빠른 피드백 (WIP 커밋 전)
-selvage review --model gemini-2.5-flash
-
-# 스테이징된 변경사항 최종 검증 (커밋 전)
-selvage review --staged --model claude-sonnet-4-thinking
-
-# 핫픽스 배포 전 긴급 검토
-selvage review --target-branch main --model claude-sonnet-4-thinking
-```
-
-#### 대용량 코드 리뷰
-
-```bash
-# 대용량 코드베이스도 자동으로 처리
-selvage review --model claude-sonnet-4  # 사용 방법은 동일, 자동 감지 후 멀티턴 처리 적용
-```
-
-Selvage는 LLM model의 컨텍스트 제한을 초과하는 대용량 코드 변경사항도 처리합니다.
-Long Context Mode는 자동으로 실행되니 기다리기만 하면 됩니다.
-
-#### 비용 최적화
-
-```bash
-# 작은 변경사항에는 경제적인 모델 사용
-selvage review --model gemini-2.5-flash
-```
-
-### 결과 확인하기
-
-리뷰 결과는 **터미널에 바로 출력**되며, 동시에 파일로도 자동 저장됩니다.
-
-**추가적인 리뷰 관리 및 재확인**을 위해 웹 UI를 사용할 수 있습니다:
-
-```bash
-# 저장된 모든 리뷰 결과를 웹 UI로 관리
-selvage view
-
-# 다른 포트에서 UI 실행
-selvage view --port 8502
-```
-
-**UI 주요 기능:**
-
-- 📋 모든 리뷰 결과 목록 표시
-- 🎨 마크다운 형식 표시
-- 🗂️ JSON 구조화된 결과 보기
 
 ## 💡 고급 설정 (개발자/기여자용)
 
@@ -502,6 +481,59 @@ selvage config debug-mode on
 ```
 
 </details>
+
+## 🔧 문제 해결
+
+### 설치 관련 오류
+
+**`externally-managed-environment` 에러 (macOS/Linux)**
+
+```bash
+# 해결 방법 1: uv 사용 (권장)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv tool install selvage
+
+# 해결 방법 2: pipx 사용
+brew install pipx  # macOS
+pipx install selvage
+
+# 해결 방법 3: 가상환경 사용
+python3 -m venv ~/.selvage-env
+source ~/.selvage-env/bin/activate
+pip install selvage
+```
+
+### API 키 오류
+
+```bash
+# 환경변수 확인
+echo $OPENROUTER_API_KEY
+
+# 영구 설정 (Linux/macOS)
+echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**모델 not found 오류**
+
+```bash
+# 사용 가능한 모델 목록 확인
+selvage models
+
+# 모델명 정확히 확인하여 사용
+selvage review --model claude-sonnet-4-thinking
+```
+
+**네트워크 연결 오류**
+
+```bash
+# 캐시 무시하고 재시도
+selvage review --skip-cache
+
+# 디버그 모드로 상세 정보 확인
+selvage config debug-mode on
+selvage review
+```
 
 ## 🤝 기여하기
 
