@@ -78,6 +78,7 @@ class TestMultiturnReviewExecutorIntegration:
         return MultiturnReviewExecutor()
 
     @pytest.mark.slow
+    @pytest.mark.timeout(600)
     def test_multiturn_review_300k_preloaded(
         self,
         multiturn_executor: MultiturnReviewExecutor,

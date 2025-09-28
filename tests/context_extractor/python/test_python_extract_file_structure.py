@@ -31,7 +31,12 @@ class TestPythonContextTree:
         query_scm = query_path.read_text()
         tree = parser.parse(sample_file_path.read_bytes())
         query = language.query(query_scm)
-        captures = query.captures(tree.root_node)
+
+        # 새로운 tree-sitter API 사용: QueryCursor
+        import tree_sitter
+
+        cursor = tree_sitter.QueryCursor(query)
+        captures = cursor.captures(tree.root_node)
 
         # captures를 활용한 파일 구조 추출
         file_structure = self._extract_file_structure(captures, tree)
