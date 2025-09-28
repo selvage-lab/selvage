@@ -48,18 +48,20 @@
 
 ## ✨ 주요 기능
 
-- **🤖 MCP 모드 지원**: Cursor, Claude Code 등에 MCP 모드로 등록하여 "현재 변경사항 리뷰해줘" 같은 자연어로 대화하며 코드 리뷰 요청
 - **🤖 다양한 AI 모델 지원**: OpenAI GPT-5, Anthropic Claude Sonnet-4, Google Gemini 등 최신 LLM 모델 활용
 - **🔍 Git 워크플로우와 통합**: staged, unstaged, 특정 커밋/브랜치 간 변경사항 분석 지원
 - **🎯 최적화된 컨텍스트 분석**: Tree-sitter 기반 AST 분석을 통해 변경 라인이 속하는 가장 작은 코드 블록과 dependency statement를 자동 추출하여 상황에 따라 최적화된 컨텍스트 제공
 - **🔄 자동 멀티턴 처리**: 컨텍스트 제한 초과 시 프롬프트를 자동 분할하여 안정적인 대용량 코드 리뷰 지원
+- **🤖 MCP 모드 지원**: Cursor, Claude Code 등에 MCP 모드로 등록하여 "현재 변경사항 리뷰해줘" 같은 자연어로 대화하며 코드 리뷰 요청
 - **📖 오픈소스**: Apache-2.0 라이선스로 자유롭게 사용 및 수정 가능
 
 ## 🚀 빠른 시작
 
-### 1. 설치
+### 공통 준비
 
-#### 권장 방법 (uv 사용)
+#### 1. 설치
+
+**권장 방법 (uv 사용)**
 
 ```bash
 # uv 설치 (한 번만 실행)
@@ -69,7 +71,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv tool install selvage
 ```
 
-#### 대안 방법 (pipx 사용)
+**대안 방법 (pipx 사용)**
 
 ```bash
 # pipx 설치 (macOS)
@@ -79,7 +81,7 @@ brew install pipx
 pipx install selvage
 ```
 
-#### 전통적 방법 (pip)
+**전통적 방법 (pip)**
 
 ```bash
 # ⚠️ 일부 환경에서 externally-managed-environment 에러 발생 가능
@@ -88,7 +90,7 @@ pip install selvage
 
 **macOS/Linux 사용자**: `pip install` 시 에러가 발생하면 위의 uv 또는 pipx 방법을 사용해주세요.
 
-### 2. API 키 설정
+#### 2. API 키 설정
 
 [OpenRouter](https://openrouter.ai)에서 API 키를 발급받아 설정하세요:
 
@@ -96,7 +98,7 @@ pip install selvage
 export OPENROUTER_API_KEY="your_openrouter_api_key_here"
 ```
 
-### 3. MCP 모드 사용 (권장)
+### MCP 모드 사용 (권장)
 
 Cursor, Claude Code 등에 MCP 모드로 등록하여 자연어로 코드 리뷰를 요청할 수 있습니다.
 
@@ -107,6 +109,17 @@ Cursor의 MCP 설정 파일에 등록 (경로는 사용자 환경에 따라 다�
 **일반적인 경로:** `~/.cursor/mcp.json`
 
 ```json
+// 방법 1: 환경변수 사용 (이미 설정한 경우)
+{
+  "mcpServers": {
+    "selvage": {
+      "command": "uvx",
+      "args": ["selvage", "mcp"]
+    }
+  }
+}
+
+// 방법 2: 직접 지정
 {
   "mcpServers": {
     "selvage": {
@@ -123,8 +136,11 @@ Cursor의 MCP 설정 파일에 등록 (경로는 사용자 환경에 따라 다�
 #### Claude Code 연동
 
 ```bash
-# MCP 서버 등록
-claude mcp add selvage -e OPENROUTER_API_KEY=your_key -- uvx selvage mcp
+# 방법 1: 환경변수 사용 (이미 설정한 경우)
+claude mcp add selvage -- uvx selvage mcp
+
+# 방법 2: 직접 지정
+claude mcp add selvage -e OPENROUTER_API_KEY=your_openrouter_api_key_here -- uvx selvage mcp
 ```
 
 #### 사용법
@@ -138,7 +154,7 @@ selvage mcp로 현재 브랜치와 main 브랜치 변경 내용을 claude-sonnet
 
 🎉 **완료!** Selvage가 코드를 분석해 리뷰하고, Coding Assistant로 전달해줍니다.
 
-### 4. CLI로도 사용 가능
+### CLI 모드 사용
 
 터미널에서 직접 사용하려면:
 
@@ -146,7 +162,7 @@ selvage mcp로 현재 브랜치와 main 브랜치 변경 내용을 claude-sonnet
 selvage review --model claude-sonnet-4-thinking
 ```
 
-**💡 더 많은 옵션:** [CLI 사용법](#️-cli-사용법) | [고급 사용법](#️-고급-사용법)
+**💡 더 많은 옵션:** [CLI 사용법](#️-cli-사용법) | [실전 활용 가이드](#-실전-활용-가이드)
 
 ---
 
@@ -289,7 +305,7 @@ selvage review
 
 ## ⌨️ CLI 사용법
 
-터미널에서 직접 사용하는 방법입니다. AI 어시스턴트와의 대화형 사용을 권장하지만, 스크립트나 CI/CD에서는 CLI가 유용합니다.
+터미널에서 직접 사용하는 방법입니다. MCP 모드 사용을 권장하지만, 스크립트나 CI/CD에서는 CLI가 유용합니다.
 
 ### Selvage 설정하기
 
