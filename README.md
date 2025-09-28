@@ -20,7 +20,7 @@
 
 **Selvage: Code reviews with an edge!**
 
-No more waiting for reviews! AI instantly analyzes your code changes to provide quality improvements and bug prevention.  
+No more waiting for reviews! AI instantly analyzes your code changes to provide quality improvements and bug prevention.
 With smart context analysis (AST-based) that's accurate and cost-effective, plus multi-turn processing for large codebases - seamlessly integrated with all Git workflows.
 
 <details>
@@ -28,16 +28,14 @@ With smart context analysis (AST-based) that's accurate and cost-effective, plus
 
 - [✨ Key Features](#-key-features)
 - [🚀 Quick Start](#-quick-start)
+- [🎯 Practical Usage Guide](#-practical-usage-guide)
+  - [MCP Mode Usage](#mcp-mode-usage)
+  - [⌨️ CLI Usage](#️-cli-usage)
 - [🌐 Smart Context Analysis and Supported AI Models](#-smart-context-analysis-and-supported-ai-models)
-  - [Smart Context Analysis](#-smart-context-analysis)
+  - [🎯 Smart Context Analysis](#-smart-context-analysis)
   - [Supported AI Models](#supported-ai-models)
-- [⌨️ CLI Usage](#️-cli-usage)
-  - [Configuring Selvage](#configuring-selvage)
-  - [Code Review](#code-review)
-  - [Viewing Results](#viewing-results)
 - [📄 Review Result Storage Format](#-review-result-storage-format)
-- [🛠️ Advanced Usage](#️-advanced-usage)
-  - [Troubleshooting](#troubleshooting)
+- [🔧 Troubleshooting](#-troubleshooting)
 - [🤝 Contributing](#-contributing)
 - [📜 License](#-license)
 - [📋 Change Log](#-change-log)
@@ -48,17 +46,19 @@ With smart context analysis (AST-based) that's accurate and cost-effective, plus
 ## ✨ Key Features
 
 - **🤖 Multiple AI Model Support**: Leverage the latest LLM models including OpenAI GPT-5, Anthropic Claude Sonnet-4, Google Gemini, and more
-- **🔍 Git Workflow Integration**: Support for analyzing staged, unstaged, and specific commit/branch changes
-- **🐛 Comprehensive Code Review**: Bug and logic error detection, code quality and readability improvement suggestions
-- **🎯 Optimized Context Analysis**: Automatic extraction of the smallest code blocks and dependency statements containing changed lines through Tree-sitter based AST analysis, providing contextually optimized information
+- **🔍 Git Workflow Integration**: Support for analyzing staged, unstaged, and changes between specific commits/branches
+- **🎯 Optimized Context Analysis**: Tree-sitter based AST analysis automatically extracts the smallest code blocks containing changed lines along with their dependency statements, providing contextually optimized information for each situation
 - **🔄 Automatic Multi-turn Processing**: Automatic prompt splitting when context limits are exceeded, supporting stable large-scale code reviews
+- **🤖 MCP Mode Support**: Register as MCP mode in Cursor, Claude Code, etc., and request code reviews through natural language like "Review current changes"
 - **📖 Open Source**: Freely use and modify under Apache-2.0 License
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### Common Setup
 
-#### Recommended Method (using uv)
+#### 1. Installation
+
+**Recommended Method (using uv)**
 
 ```bash
 # Install uv (run once)
@@ -68,7 +68,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv tool install selvage
 ```
 
-#### Alternative Method (using pipx)
+**Alternative Method (using pipx)**
 
 ```bash
 # Install pipx (macOS)
@@ -78,7 +78,7 @@ brew install pipx
 pipx install selvage
 ```
 
-#### Traditional Method (pip)
+**Traditional Method (pip)**
 
 ```bash
 # ⚠️ May cause externally-managed-environment error on some systems
@@ -87,7 +87,7 @@ pip install selvage
 
 **macOS/Linux users**: If you encounter errors with `pip install`, please use the uv or pipx methods above.
 
-### 2. API Key Setup
+#### 2. API Key Setup
 
 Get an API key from [OpenRouter](https://openrouter.ai) and set it up:
 
@@ -95,21 +95,122 @@ Get an API key from [OpenRouter](https://openrouter.ai) and set it up:
 export OPENROUTER_API_KEY="your_openrouter_api_key_here"
 ```
 
-### 3. Start Code Review
+### MCP Mode Usage (Recommended)
+
+Register as MCP mode in Cursor, Claude Code, etc., to request code reviews through natural language.
+
+#### Cursor Integration
+
+Register in Cursor's MCP configuration file (path may vary depending on user environment):
+
+**Common path:** `~/.cursor/mcp.json`
+
+```json
+// Method 1: Using environment variables (if already set)
+{
+  "mcpServers": {
+    "selvage": {
+      "command": "uvx",
+      "args": ["selvage", "mcp"]
+    }
+  }
+}
+
+// Method 2: Direct specification
+{
+  "mcpServers": {
+    "selvage": {
+      "command": "uvx",
+      "args": ["selvage", "mcp"],
+      "env": {
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here"
+      }
+    }
+  }
+}
+```
+
+#### Claude Code Integration
+
+```bash
+# Method 1: Using environment variables (if already set)
+claude mcp add selvage -- uvx selvage mcp
+
+# Method 2: Direct specification
+claude mcp add selvage -e OPENROUTER_API_KEY=your_openrouter_api_key_here -- uvx selvage mcp
+```
+
+#### Usage
+
+After restarting your IDE, request reviews from your Coding Assistant:
+
+```
+Please review current changes using selvage mcp
+Review changes between current branch and main branch using claude-sonnet-4-thinking with selvage mcp
+```
+
+🎉 **Done!** Selvage will analyze the code, review it, and deliver results through your Coding Assistant.
+
+### CLI Mode Usage
+
+For direct terminal usage:
 
 ```bash
 selvage review --model claude-sonnet-4-thinking
 ```
 
-🎉 **Done!** Review results will be output directly to your terminal.
-
-**💡 More Options:** [CLI Usage](#️-cli-usage) | [Advanced Usage](#️-advanced-usage)
+**💡 More Options:** [CLI Usage](#️-cli-usage) | [Practical Usage Guide](#-practical-usage-guide)
 
 ---
 
-## ⌨️ CLI Usage
+## 🎯 Practical Usage Guide
 
-### Configuring Selvage
+### MCP Mode Usage
+
+#### Basic Usage
+
+```
+# Basic review request
+Please review current changes using selvage mcp
+
+# Review staged changes
+Review staged work using gpt-5-high with selvage mcp
+
+# Review against specific branch
+Review current branch against main branch using selvage mcp
+
+# Review with automatic model selection
+Review current branch against main branch using selvage mcp, automatically selecting appropriate model
+```
+
+#### Advanced Workflows
+
+**Multi-model Comparison Review**
+```
+Review staged work using both gpt-5-high and claude-sonnet-4-thinking with selvage mcp, then compare the results
+```
+
+**Stepwise Code Improvement Workflow**
+```
+1. Review current changes using claude-sonnet-4-thinking with selvage mcp
+2. Critically evaluate review feedback for validity against current codebase and set priorities
+3. Apply improvements sequentially based on established priorities
+```
+
+**CI/CD Integration Scenarios**
+```
+# Code quality verification before PR creation
+Review changes against main branch using selvage mcp for code quality verification before PR creation
+
+# Final check before deployment
+Perform comprehensive review of staged changes using selvage mcp for final check before deployment
+```
+
+### ⌨️ CLI Usage
+
+Direct terminal usage method. While MCP mode is recommended, CLI is useful for scripts and CI/CD.
+
+#### Configuring Selvage
 
 ```bash
 # View all settings
@@ -123,13 +224,13 @@ selvage config language <language_name>
 
 ```
 
-### Code Review
+#### Code Review
 
 ```bash
 selvage review [OPTIONS]
 ```
 
-#### Key Options
+##### Key Options
 
 - `--repo-path <path>`: Git repository path (default: current directory)
 - `--staged`: Review only staged changes
@@ -140,7 +241,7 @@ selvage review [OPTIONS]
 - `--no-print`: Don't output review results to terminal (terminal output enabled by default)
 - `--skip-cache`: Perform new review without using cache
 
-#### Usage Examples
+##### Usage Examples
 
 ```bash
 # Review current working directory changes
@@ -162,7 +263,52 @@ selvage review --model gemini-2.5-flash
 selvage review --target-branch main --open-ui
 ```
 
-### Viewing Results
+#### Git Workflow Integration
+
+##### Team Collaboration Scenarios
+
+```bash
+# Code quality verification before Pull Request creation
+selvage review --target-branch main --model claude-sonnet-4-thinking
+
+# Pre-analysis of changes for code reviewers
+selvage review --target-branch develop --model claude-sonnet-4-thinking
+
+# Comprehensive review of all changes after specific commit
+selvage review --target-commit a1b2c3d --model claude-sonnet-4-thinking
+```
+
+##### Development Stage Quality Management
+
+```bash
+# Quick feedback during development (before WIP commit)
+selvage review --model gemini-2.5-flash
+
+# Final verification of staged changes (before commit)
+selvage review --staged --model claude-sonnet-4-thinking
+
+# Emergency review before hotfix deployment
+selvage review --target-branch main --model claude-sonnet-4-thinking
+```
+
+##### Large-scale Code Review
+
+```bash
+# Large codebases are automatically handled
+selvage review --model claude-sonnet-4  # Usage is the same, multi-turn processing automatically applied after detection
+```
+
+Selvage automatically handles large code changes that exceed LLM model context limits.
+Long Context Mode runs automatically, so just wait for it to complete.
+
+##### Cost Optimization
+
+```bash
+# Use economical models for small changes
+selvage review --model gemini-2.5-flash
+```
+
+#### Viewing Results
 
 Review results are **output directly to the terminal** and automatically saved to files simultaneously.
 
@@ -181,6 +327,8 @@ selvage view --port 8502
 - 📋 Display list of all review results
 - 🎨 Markdown format display
 - 🗂️ JSON structured result view
+
+---
 
 ## 🌐 Smart Context Analysis and Supported AI Models
 
@@ -205,7 +353,7 @@ Selvage analyzes file size and change scope to **automatically select the most e
 📚 Large Changes in Big Files   → Comprehensive review with full file analysis
 ```
 
-> 💡 **Automatic Optimization**: The optimal analysis method for each situation is automatically applied without any manual configuration.
+> 💡 **Automatic Optimization**: The optimal analysis method for each situation is automatically applied without requiring any manual configuration.
 
 #### Smart Context Supported Languages
 
@@ -215,8 +363,8 @@ Selvage analyzes file size and change scope to **automatically select the most e
 
 - **Major Programming Languages**: Go, Ruby, PHP, C#, C/C++, Rust, Swift, Dart, etc.
 
-> 🚀 **Universal context extraction method** provides **excellent code review quality** for major programming languages.  
-> AST-based supported languages are continuously expanding.
+> 🚀 **Universal context extraction method** provides **excellent code review quality** for major programming languages.
+> Smart Context supported languages are continuously expanding.
 
 ---
 
@@ -255,108 +403,6 @@ Review results are saved as **structured files** simultaneously with terminal ou
 <p align="center">
   <img src="assets/demo-ui.png" width="100%" alt="Selvage UI Demo"/>
 </p>
-
-## 🛠️ Advanced Usage
-
-### Various Git Workflow Integration
-
-#### Team Collaboration Workflows
-
-```bash
-# Code quality verification before Pull Request creation
-selvage review --target-branch main --model claude-sonnet-4-thinking
-
-# Pre-analysis of changes for code reviewers
-selvage review --target-branch develop --model claude-sonnet-4-thinking
-
-# Comprehensive review of all changes after specific commit
-selvage review --target-commit a1b2c3d --model claude-sonnet-4-thinking
-```
-
-#### Development Stage Quality Management
-
-```bash
-# Quick feedback during development (before WIP commit)
-selvage review --model gemini-2.5-flash
-
-# Final verification of staged changes (before commit)
-selvage review --staged --model claude-sonnet-4-thinking
-
-# Emergency review before hotfix deployment
-selvage review --target-branch main --model claude-sonnet-4-thinking
-```
-
-### Large-scale Code Review
-
-```bash
-# Large codebases are automatically handled
-selvage review --model claude-sonnet-4  # Usage is the same, multi-turn processing automatically applied after detection
-```
-
-Selvage automatically handles large code changes that exceed LLM model context limits.  
-Long Context Mode runs automatically, so just wait for it to complete.
-
-### Cost Optimization
-
-```bash
-# Use economical models for small changes
-selvage review --model gemini-2.5-flash
-```
-
-### Troubleshooting
-
-#### Installation Errors
-
-**`externally-managed-environment` Error (macOS/Linux)**
-
-```bash
-# Solution 1: Use uv (recommended)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv tool install selvage
-
-# Solution 2: Use pipx
-brew install pipx  # macOS
-pipx install selvage
-
-# Solution 3: Use virtual environment
-python3 -m venv ~/.selvage-env
-source ~/.selvage-env/bin/activate
-pip install selvage
-```
-
-#### Common Errors
-
-**API Key Error**
-
-```bash
-# Check environment variable
-echo $OPENROUTER_API_KEY
-
-# Permanent setup (Linux/macOS)
-echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-**Model not found Error**
-
-```bash
-# Check available model list
-selvage models
-
-# Use correct model name
-selvage review --model claude-sonnet-4-thinking
-```
-
-**Network Connection Error**
-
-```bash
-# Retry ignoring cache
-selvage review --skip-cache
-
-# Check detailed info with debug mode
-selvage config debug-mode on
-selvage review
-```
 
 ## 💡 Advanced Settings (For Developers/Contributors)
 
@@ -436,6 +482,59 @@ selvage config debug-mode on
 
 </details>
 
+## 🔧 Troubleshooting
+
+### Installation Errors
+
+**`externally-managed-environment` Error (macOS/Linux)**
+
+```bash
+# Solution 1: Use uv (recommended)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv tool install selvage
+
+# Solution 2: Use pipx
+brew install pipx  # macOS
+pipx install selvage
+
+# Solution 3: Use virtual environment
+python3 -m venv ~/.selvage-env
+source ~/.selvage-env/bin/activate
+pip install selvage
+```
+
+### API Key Errors
+
+```bash
+# Check environment variable
+echo $OPENROUTER_API_KEY
+
+# Permanent setup (Linux/macOS)
+echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Model not found Error**
+
+```bash
+# Check available model list
+selvage models
+
+# Use correct model name
+selvage review --model claude-sonnet-4-thinking
+```
+
+**Network Connection Error**
+
+```bash
+# Retry ignoring cache
+selvage review --skip-cache
+
+# Check detailed info with debug mode
+selvage config debug-mode on
+selvage review
+```
+
 ## 🤝 Contributing
 
 Selvage is an open-source project and we always welcome your contributions! Bug reports, feature suggestions, documentation improvements, code contributions - any form of contribution is appreciated.
@@ -456,7 +555,7 @@ Selvage is distributed under the [Apache License 2.0](LICENSE). This license per
 
 Check out all version changes and new features of Selvage.
 
-**[📋 View Complete Change Log →](CHANGELOG_EN.md)**
+**[📋 View Complete Change Log →](CHANGELOG.md)**
 
 You can find detailed changes for each version, including new features, bug fixes, and performance improvements.
 
