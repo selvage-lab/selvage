@@ -56,27 +56,27 @@ models:
       reasoning:
         effort: "medium"
 
-  claude-sonnet-4-20250514:
-    full_name: "claude-sonnet-4-20250514"
-    aliases: ["claude-sonnet-4"]
+  claude-sonnet-4.5-20250929:
+    full_name: "claude-sonnet-4.5-20250929"
+    aliases: ["claude-sonnet-4.5"]
     description: "Hybrid reasoning model optimized for advanced coding and command execution"
     provider: "anthropic"
     params:
       temperature: 0.0
     thinking_mode: false
-    max_output_tokens: 8192
+    max_output_tokens: 64000
     pricing:
       input: 3.0
       output: 15.0
       description: "$3.00/$15.00 per 1M tokens"
-    context_limit: 200000
-    openrouter_name: "anthropic/claude-sonnet-4"
+    context_limit: 1000000
+    openrouter_name: "anthropic/claude-sonnet-4.5"
     openrouter_params:
       temperature: 0.0
 
-  claude-sonnet-4-20250514-thinking:
-    full_name: "claude-sonnet-4-20250514"
-    aliases: ["claude-sonnet-4-thinking"]
+  claude-sonnet-4.5-20250929-thinking:
+    full_name: "claude-sonnet-4.5-20250929"
+    aliases: ["claude-sonnet-4.5-thinking"]
     description: "(recommend) Hybrid reasoning model supporting extended thinking process"
     provider: "anthropic"
     params:
@@ -85,13 +85,13 @@ models:
         type: "enabled"
         budget_tokens: 20000
     thinking_mode: true
-    max_output_tokens: 48000
+    max_output_tokens: 64000
     pricing:
       input: 3.0
       output: 15.0
       description: "$3.00/$15.00 per 1M tokens"
-    context_limit: 200000
-    openrouter_name: "anthropic/claude-sonnet-4"
+    context_limit: 1000000
+    openrouter_name: "anthropic/claude-sonnet-4.5"
     openrouter_params:
       temperature: 1
       reasoning:

@@ -33,8 +33,8 @@ def review_display():
 def mock_model_info() -> ModelInfoDict:
     """테스트용 모델 정보를 생성하는 픽스처."""
     return {
-        "full_name": "claude-sonnet-4-20250514",
-        "aliases": ["claude-sonnet-4"],
+        "full_name": "claude-sonnet-4.5-20250929",
+        "aliases": ["claude-sonnet-4.5"],
         "description": "하이브리드 추론 모델로 고급 코딩 및 명령 수행 최적화",
         "provider": ModelProvider.ANTHROPIC,
         "params": {
@@ -55,7 +55,7 @@ def mock_model_info() -> ModelInfoDict:
 def mock_estimated_cost():
     """테스트용 비용 정보를 생성하는 픽스처."""
     return EstimatedCost(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4.5-20250929",
         input_tokens=15420,
         input_cost_usd=0.046,
         output_tokens=3250,
@@ -82,7 +82,7 @@ def mock_review_log_data():
     """테스트용 리뷰 로그 데이터를 생성하는 픽스처."""
     return {
         "id": "20240115_143021_claude_abc123",
-        "model": {"provider": "anthropic", "name": "claude-sonnet-4-20250514"},
+        "model": {"provider": "anthropic", "name": "claude-sonnet-4.5-20250929"},
         "created_at": "2024-01-15T14:30:21.123456",
         "review_response": {
             "summary": "전반적으로 코드 품질이 좋습니다. 몇 가지 개선사항이 있습니다.",
@@ -165,12 +165,12 @@ class TestReviewDisplay:
         """model_info 메서드가 모델명을 포함한 출력을 생성하는지 테스트."""
         output = capture_console_output(
             review_display.model_info,
-            "claude-sonnet-4-20250514",
+            "claude-sonnet-4.5-20250929",
             "하이브리드 추론 모델로 고급 코딩 및 명령 수행 최적화",
         )
 
         # ANSI 색상 코드가 포함된 텍스트에서 모델명 확인
-        assert "claude-sonnet-4-20250514" in output
+        assert "claude-sonnet-4.5-20250929" in output
         assert "하이브리드 추론 모델로 고급 코딩 및 명령 수행 최적화" in output
         assert "Review AI Model" in output
 
@@ -196,7 +196,7 @@ class TestReviewDisplay:
         )
 
         # 모델 정보 확인
-        assert "claude-sonnet-4-20250514" in output
+        assert "claude-sonnet-4.5-20250929" in output
         assert "하이브리드 추론 모델로 고급 코딩 및 명령 수행 최적화" in output
 
         # 비용 정보 확인 (달러 표시)
@@ -301,7 +301,7 @@ class TestReviewDisplay:
         """progress_review 메서드가 context manager로 정상 동작하는지 테스트."""
         # context manager가 정상적으로 시작되고 종료되는지만 확인
         try:
-            with review_display.progress_review("claude-sonnet-4-20250514"):
+            with review_display.progress_review("claude-sonnet-4.5-20250929"):
                 # 실제로는 아무것도 하지 않음 (빠른 테스트를 위해)
                 pass
         except Exception as e:
@@ -364,7 +364,7 @@ class TestReviewDisplay:
         """다양한 비용 형태로 review_complete가 동작하는지 테스트."""
         # 높은 비용
         high_cost = EstimatedCost(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4.5-20250929",
             input_tokens=150000,
             input_cost_usd=0.45,
             output_tokens=32000,

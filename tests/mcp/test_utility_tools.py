@@ -64,8 +64,8 @@ class TestGetAvailableModels:
         mock_config = Mock()
         mock_config_class.return_value = mock_config
         mock_config.get_all_models_config.return_value = {
-            "claude-sonnet-4": {
-                "name": "claude-sonnet-4",
+            "claude-sonnet-4.5-20250929": {
+                "name": "claude-sonnet-4.5-20250929",
                 "provider": "anthropic",
                 "display_name": "Claude Sonnet 4",
                 "description": "High-performance reasoning model",
@@ -91,7 +91,7 @@ class TestGetAvailableModels:
         assert isinstance(result, list)
         assert len(result) == 2
         assert all(isinstance(model, ModelInfo) for model in result)
-        assert result[0].name == "claude-sonnet-4"
+        assert result[0].name == "claude-sonnet-4.5-20250929"
         assert result[1].name == "gpt-4o"
 
 
@@ -126,7 +126,7 @@ class TestGetReviewHistory:
             {
                 "log_id": "log-123",
                 "timestamp": datetime.now().isoformat(),
-                "model": "claude-sonnet-4",
+                "model": "claude-sonnet-4.5-20250929",
                 "files_count": 3,
                 "status": "SUCCESS",
                 "cost": 0.05,
@@ -198,7 +198,7 @@ class TestGetReviewDetails:
         # Mock 설정
         mock_log_manager.load_log.return_value = {
             "log_id": "log-123",
-            "review_request": {"model": "claude-sonnet-4", "repo_path": "."},
+            "review_request": {"model": "claude-sonnet-4.5-20250929", "repo_path": "."},
             "review_response": {"content": "Good code quality"},
             "estimated_cost": {"total_cost": 0.05},
             "timestamp": "2024-01-01T00:00:00",
@@ -277,16 +277,16 @@ class TestValidateModelSupport:
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": "anthropic",
-            "name": "claude-sonnet-4",
+            "name": "claude-sonnet-4.5-20250929",
         }
 
         # 실행
-        result = validate_model_support("claude-sonnet-4")
+        result = validate_model_support("claude-sonnet-4.5-20250929")
 
         # 검증
         assert isinstance(result, ModelValidationResult)
         assert result.valid is True
-        assert result.model == "claude-sonnet-4"
+        assert result.model == "claude-sonnet-4.5-20250929"
         assert result.provider == "Anthropic"
 
     @patch("selvage.src.mcp.tools.utility_tools.get_model_info")
@@ -331,13 +331,13 @@ class TestValidateApiKeyForProvider:
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": "anthropic",
-            "name": "claude-sonnet-4",
+            "name": "claude-sonnet-4.5-20250929",
         }
         mock_has_openrouter.return_value = False  # OpenRouter 키 없음
         mock_get_api_key.return_value = "test-api-key"
 
         # 실행
-        result = validate_api_key_for_provider("claude-sonnet-4")
+        result = validate_api_key_for_provider("claude-sonnet-4.5-20250929")
 
         # 검증
         assert isinstance(result, ApiKeyValidationResult)
@@ -358,13 +358,13 @@ class TestValidateApiKeyForProvider:
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": "anthropic",
-            "name": "claude-sonnet-4",
+            "name": "claude-sonnet-4.5-20250929",
         }
         mock_has_openrouter.return_value = False  # OpenRouter 키 없음
         mock_get_api_key.return_value = None
 
         # 실행
-        result = validate_api_key_for_provider("claude-sonnet-4")
+        result = validate_api_key_for_provider("claude-sonnet-4.5-20250929")
 
         # 검증
         assert isinstance(result, ApiKeyValidationResult)
@@ -398,13 +398,13 @@ class TestValidateApiKeyForProvider:
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": "anthropic",  # 원래 프로바이더는 anthropic
-            "name": "claude-sonnet-4",
+            "name": "claude-sonnet-4.5-20250929",
         }
         mock_has_openrouter.return_value = True  # OpenRouter 키 있음
         mock_get_api_key.return_value = "openrouter-api-key"
 
         # 실행
-        result = validate_api_key_for_provider("claude-sonnet-4")
+        result = validate_api_key_for_provider("claude-sonnet-4.5-20250929")
 
         # 검증
         assert isinstance(result, ApiKeyValidationResult)

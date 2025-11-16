@@ -48,23 +48,23 @@ class TestReviewCurrentChanges:
         mock_result = ReviewResult(
             success=True,
             estimated_cost=0.05,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
             files_reviewed=["test.py"],
         )
         mock_workflow.return_value = mock_result
 
         # 실행
         result = review_current_changes(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/test/repo",
         )
 
         # 검증
         assert result.success is True
-        assert result.model_used == "claude-sonnet-4"
+        assert result.model_used == "claude-sonnet-4.5-20250929"
         assert result.response is None  # response는 선택적 필드
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/test/repo",
             staged=False,
         )
@@ -75,14 +75,14 @@ class TestReviewCurrentChanges:
         # Mock 설정
         mock_result = ReviewResult(
             success=False,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
             error_message="No changes found",
         )
         mock_workflow.return_value = mock_result
 
         # 실행
         result = review_current_changes(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/empty/repo",
         )
 
@@ -118,13 +118,13 @@ class TestReviewStagedChanges:
         """스테이징된 변경사항 리뷰가 staged=True로 호출되는지 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
         )
 
-        review_staged_changes(model="claude-sonnet-4", repo_path="/test/repo")
+        review_staged_changes(model="claude-sonnet-4.5-20250929", repo_path="/test/repo")
 
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/test/repo",
             staged=True,
         )
@@ -140,17 +140,17 @@ class TestReviewAgainstBranch:
         """브랜치 대비 리뷰가 target_branch 파라미터로 호출되는지 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
         )
 
         review_against_branch(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             target_branch="main",
             repo_path="/test/repo",
         )
 
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/test/repo",
             target_branch="main",
         )
@@ -158,7 +158,7 @@ class TestReviewAgainstBranch:
     def test_review_against_branch_requires_target_branch(self) -> None:
         """target_branch 파라미터가 필수인지 테스트"""
         with pytest.raises(TypeError):
-            review_against_branch(model="claude-sonnet-4")  # target_branch 누락
+            review_against_branch(model="claude-sonnet-4.5-20250929")  # target_branch 누락
 
 
 class TestReviewAgainstCommit:
@@ -171,17 +171,17 @@ class TestReviewAgainstCommit:
         """커밋 대비 리뷰가 target_commit 파라미터로 호출되는지 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
         )
 
         review_against_commit(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             target_commit="abc1234",
             repo_path="/test/repo",
         )
 
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/test/repo",
             target_commit="abc1234",
         )
@@ -189,7 +189,7 @@ class TestReviewAgainstCommit:
     def test_review_against_commit_requires_target_commit(self) -> None:
         """target_commit 파라미터가 필수인지 테스트"""
         with pytest.raises(TypeError):
-            review_against_commit(model="claude-sonnet-4")  # target_commit 누락
+            review_against_commit(model="claude-sonnet-4.5-20250929")  # target_commit 누락
 
 
 class TestExecuteReviewWorkflow:
@@ -216,7 +216,7 @@ class TestExecuteReviewWorkflow:
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": "anthropic",
-            "name": "claude-sonnet-4",
+            "name": "claude-sonnet-4.5-20250929",
         }
         mock_get_api_key.return_value = "test-api-key"
         mock_get_diff.return_value = "diff content"
@@ -247,14 +247,14 @@ class TestExecuteReviewWorkflow:
 
         # 실행
         result = _execute_review_workflow(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/test/repo",
             staged=False,
         )
 
         # 검증
         assert result.success is True
-        assert result.model_used == "claude-sonnet-4"
+        assert result.model_used == "claude-sonnet-4.5-20250929"
         assert result.estimated_cost == 0.05
         assert result.log_id == "log-123"
 
@@ -292,7 +292,7 @@ class TestExecuteReviewWorkflow:
 
         # 실행
         result = _execute_review_workflow(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/test/repo",
         )
 
@@ -316,7 +316,7 @@ class TestExecuteReviewWorkflow:
 
         # 실행
         result = _execute_review_workflow(
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             repo_path="/test/repo",
         )
 

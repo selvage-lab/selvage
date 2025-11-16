@@ -215,3 +215,4 @@ llm_eval/results/
 scripts/prepare_integration_test_data.py
 
 .serena
+.mcp.json

@@ -25,7 +25,7 @@ class TestReviewResult:
         result = ReviewResult(
             success=True,
             estimated_cost=0.05,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
             files_reviewed=["test.py", "main.py"],
             log_id="test-log-123",
             log_path="/path/to/log.json",
@@ -34,7 +34,7 @@ class TestReviewResult:
         assert result.success is True
         assert result.response is None  # response는 선택적 필드
         assert result.estimated_cost == 0.05
-        assert result.model_used == "claude-sonnet-4"
+        assert result.model_used == "claude-sonnet-4.5-20250929"
         assert result.files_reviewed == ["test.py", "main.py"]
         assert result.log_id == "test-log-123"
         assert result.log_path == "/path/to/log.json"
@@ -45,14 +45,14 @@ class TestReviewResult:
         """실패한 ReviewResult 생성 테스트"""
         result = ReviewResult(
             success=False,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
             error_message="API key not found",
         )
 
         assert result.success is False
         assert result.response is None
         assert result.estimated_cost == 0.0
-        assert result.model_used == "claude-sonnet-4"
+        assert result.model_used == "claude-sonnet-4.5-20250929"
         assert result.files_reviewed == []
         assert result.log_id is None
         assert result.log_path is None
@@ -63,14 +63,14 @@ class TestReviewResult:
         """ReviewResult JSON 직렬화 테스트"""
         result = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
         )
 
         json_data = result.model_dump()
         assert isinstance(json_data, dict)
         assert json_data["success"] is True
         assert json_data["response"] is None  # response는 선택적
-        assert json_data["model_used"] == "claude-sonnet-4"
+        assert json_data["model_used"] == "claude-sonnet-4.5-20250929"
         assert "timestamp" in json_data
         # timestamp는 ISO 형식 문자열이어야 함
         assert isinstance(json_data["timestamp"], str)
@@ -83,7 +83,7 @@ class TestReviewResult:
 
         # success는 필수 필드
         with pytest.raises(ValueError):
-            ReviewResult(model_used="claude-sonnet-4")  # success 누락
+            ReviewResult(model_used="claude-sonnet-4.5-20250929")  # success 누락
 
 
 class TestModelInfo:
@@ -92,7 +92,7 @@ class TestModelInfo:
     def test_model_info_creation(self) -> None:
         """ModelInfo 생성 테스트"""
         model = ModelInfo(
-            name="claude-sonnet-4",
+            name="claude-sonnet-4.5-20250929",
             provider="anthropic",
             display_name="Claude Sonnet 4",
             description="High-performance reasoning model",
@@ -101,7 +101,7 @@ class TestModelInfo:
             supports_function_calling=True,
         )
 
-        assert model.name == "claude-sonnet-4"
+        assert model.name == "claude-sonnet-4.5-20250929"
         assert model.provider == "anthropic"
         assert model.display_name == "Claude Sonnet 4"
         assert model.description == "High-performance reasoning model"
@@ -157,7 +157,7 @@ class TestReviewHistoryItem:
         item = ReviewHistoryItem(
             log_id="log-123",
             timestamp=timestamp_str,
-            model="claude-sonnet-4",
+            model="claude-sonnet-4.5-20250929",
             files_count=3,
             status="SUCCESS",
             cost=0.05,
@@ -165,7 +165,7 @@ class TestReviewHistoryItem:
 
         assert item.log_id == "log-123"
         assert item.timestamp == timestamp_str
-        assert item.model == "claude-sonnet-4"
+        assert item.model == "claude-sonnet-4.5-20250929"
         assert item.files_count == 3
         assert item.status == "SUCCESS"
         assert item.cost == 0.05
@@ -253,7 +253,7 @@ class TestModelSerialization:
         # ReviewResult
         review_result = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
         )
         assert isinstance(review_result.model_dump(), dict)
 
@@ -291,7 +291,7 @@ class TestModelSerialization:
         """datetime 직렬화 형식 테스트"""
         result = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4",
+            model_used="claude-sonnet-4.5-20250929",
         )
 
         json_data = result.model_dump()
