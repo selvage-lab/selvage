@@ -1,5 +1,21 @@
 # Change Log
 
+## [0.2.0] - 2025-11-17
+
+### Added
+
+#### feat: claude-sonnet-4.5 support and large context trigger improvements
+
+**Core Changes**
+
+- **claude-sonnet-4.5 integration**: Added the latest Claude Sonnet 4.5 model to the catalog to boost reasoning quality and review fidelity on Sonnet-class models.
+- **Large context mode automation**: Adjusted the logic so that Large Context Mode turns on immediately when token usage exceeds 200,000 tokens (tiktoken basis), without waiting for an explicit provider limit error.
+
+**Detailed Implementation**
+
+- **Model configuration and testing**: Updated `claude-sonnet-4.5` metadata, gateway mappings, and test cases so the new model works across the entire pipeline.
+- **Proactive thresholding**: For SoTA models like claude-sonnet-4.5 and gemini-2.5-pro that incur extra costs beyond 200k tokens, Large Context Mode now kicks in as soon as usage passes the 200k mark.
+
 ## [0.1.9] - 2025-09-26
 
 ### Added

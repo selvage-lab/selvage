@@ -48,7 +48,7 @@ With smart context analysis (AST-based) that's accurate and cost-effective, plus
 - **🤖 Multiple AI Model Support**: Leverage the latest LLM models including OpenAI GPT-5, Anthropic Claude Sonnet-4, Google Gemini, and more
 - **🔍 Git Workflow Integration**: Support for analyzing staged, unstaged, and changes between specific commits/branches
 - **🎯 Optimized Context Analysis**: Tree-sitter based AST analysis automatically extracts the smallest code blocks containing changed lines along with their dependency statements, providing contextually optimized information for each situation
-- **🔄 Automatic Multi-turn Processing**: Automatic prompt splitting when context limits are exceeded, supporting stable large-scale code reviews
+- **🔄 Automatic Multi-turn Processing**: Automatic prompt splitting when context limits are exceeded, supporting stable large-scale code reviews (Large Context Mode now auto-triggers once total tokens exceed 200k, even without provider errors)
 - **🤖 MCP Mode Support**: Register as MCP mode in Cursor, Claude Code, etc., and request code reviews through natural language like "Review current changes"
 - **📖 Open Source**: Freely use and modify under Apache-2.0 License
 
@@ -302,7 +302,7 @@ selvage review --model claude-sonnet-4  # Usage is the same, multi-turn processi
 ```
 
 Selvage automatically handles large code changes that exceed LLM model context limits.
-Long Context Mode runs automatically, so just wait for it to complete.
+Once usage reaches roughly 200k tokens (tiktoken basis), Large Context Mode starts automatically, so just wait for it to complete.
 
 ##### Cost Optimization
 
@@ -383,6 +383,7 @@ Selvage analyzes file size and change scope to **automatically select the most e
 
 #### Anthropic Models (OpenRouter or Anthropic API Key)
 
+- **claude-sonnet-4.5**: Latest Sonnet-class model delivering higher reasoning quality (200K context, proactive large-context trigger)
 - **claude-sonnet-4**: Hybrid reasoning model optimized for advanced coding (200K context)
 - **claude-sonnet-4-thinking**: ⭐ **Recommended** - Extended thinking process support (200K context)
 
