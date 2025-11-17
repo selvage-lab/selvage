@@ -15,12 +15,14 @@ from selvage.src.config import (
     get_default_language,
     get_default_model,
     get_default_review_log_dir,
+    get_proactive_multiturn_threshold,
     has_api_key,
     has_openrouter_api_key,
     set_default_debug_mode,
     set_default_language,
     set_default_model,
     set_default_review_log_dir,
+    set_proactive_multiturn_threshold,
 )
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.json_parsing_error import JSONParsingError
@@ -43,6 +45,7 @@ from selvage.src.utils.file_utils import find_project_root
 from selvage.src.utils.git_utils import get_diff_content
 from selvage.src.utils.logging import LOG_LEVEL_INFO, setup_logging
 from selvage.src.utils.logging.review_log_manager import ReviewLogManager
+from selvage.src.utils.proactive_token_checker import ProactiveTokenChecker
 from selvage.src.utils.prompts.models import ReviewPromptWithFileContent
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.review_display import review_display
@@ -147,6 +150,26 @@ def config_review_log_dir(log_dir: str | None = None) -> None:
             console.info("Review log directory is not set.")
 
 
+def config_proactive_multiturn_threshold(threshold: int | None = None) -> None:
+    """Proactive multiturn threshold 설정을 처리합니다."""
+    if threshold is None:
+        # 현재 설정값 표시
+        current_threshold = get_proactive_multiturn_threshold()
+        console.print(
+            f"Proactive multiturn threshold: {current_threshold:,} tokens", style="green"
+        )
+        console.print(
+            "\nTo change: selvage config proactive-multiturn-threshold <tokens>",
+            style="cyan",
+        )
+        return
+
+    # 설정값 업데이트
+    success = set_proactive_multiturn_threshold(threshold)
+    if not success:
+        sys.exit(1)
+
+
 def config_list() -> None:
     """모든 설정을 표시합니다."""
     console.print("==== selvage Configuration ====", style="bold cyan")
@@ -205,13 +228,54 @@ def config_list() -> None:
     review_log_dir = get_default_review_log_dir()
     console.print(f"Review log directory: {review_log_dir}", style="green")
 
+    # Proactive multiturn threshold 표시
+    proactive_threshold = get_proactive_multiturn_threshold()
+    console.print(
+        f"Proactive multiturn threshold: {proactive_threshold:,} tokens", style="green"
+    )
+
+
+def _handle_proactive_multiturn(
+    review_prompt: ReviewPromptWithFileContent,
+    total_tokens: int,
+    threshold: int,
+    llm_gateway: BaseGateway,
+) -> tuple[ReviewResponse, EstimatedCost]:
+    """사전 토큰 체크로 인한 proactive multiturn review 실행"""
+    console.info(
+        f"[DEBUG Proactive] Starting proactive multiturn (tokens={total_tokens:,}, threshold={threshold:,})"
+    )
+
+    # TokenInfo를 직접 생성 (actual_tokens = 계산된 토큰, max_tokens = threshold)
+    token_info = TokenInfo(actual_tokens=total_tokens, max_tokens=threshold)
+    console.info(
+        f"[DEBUG Proactive] TokenInfo created: actual={token_info.actual_tokens}, max={token_info.max_tokens}"
+    )
+
+    executor = MultiturnReviewExecutor()
+    console.info("[DEBUG Proactive] MultiturnReviewExecutor created, calling execute_multiturn_review...")
+
+    multiturn_result = executor.execute_multiturn_review(
+        review_prompt=review_prompt,
+        token_info=token_info,
+        llm_gateway=llm_gateway,
+    )
+
+    console.info("[DEBUG Proactive] Multiturn execution completed successfully!")
+    console.info(
+        f"[DEBUG Proactive] Result: issues={len(multiturn_result.review_response.issues)}, "
+        f"cost=${multiturn_result.estimated_cost.total_cost_usd:.4f}"
+    )
+
+    return multiturn_result.review_response, multiturn_result.estimated_cost
+
 
 def _handle_context_limit_error(
     review_prompt: ReviewPromptWithFileContent,
     error_response: ErrorResponse,
     llm_gateway: BaseGateway,
 ) -> tuple[ReviewResponse, EstimatedCost]:
-    """Context limit 에러 시 multiturn review 실행"""
+    """Context limit 에러 시 multiturn review 실행 (Fallback)"""
     token_info = TokenInfo.from_error_response(error_response)
     executor = MultiturnReviewExecutor()
     multiturn_result = executor.execute_multiturn_review(
@@ -287,6 +351,36 @@ def _perform_new_review(
     # 새로운 enhanced_progress_review 컨텍스트 매니저 사용
     with review_display.enhanced_progress_review(review_request.model) as progress:
         review_prompt = PromptGenerator().create_code_review_prompt(review_request)
+
+        # Proactive multiturn 체크: 토큰 수가 임계값을 초과하는지 확인
+        threshold = get_proactive_multiturn_threshold()
+        token_checker = ProactiveTokenChecker()
+        total_tokens = token_checker.calculate_total_tokens(review_prompt)
+
+        # 로깅: 토큰 계산 결과
+        console.info(
+            f"[Proactive Multiturn Check] Total tokens: {total_tokens:,} | Threshold: {threshold:,}"
+        )
+
+        if total_tokens > threshold:
+            # 사전에 multiturn 모드로 전환
+            console.info(
+                f"[Proactive Multiturn] Triggering multiturn mode (tokens: {total_tokens:,} > threshold: {threshold:,})"
+            )
+            progress.transition_to_multiturn(
+                f"Context size: {total_tokens:,} tokens exceeds threshold ({threshold:,}). "
+                "Using multiturn mode..."
+            )
+            result = _handle_proactive_multiturn(
+                review_prompt, total_tokens, threshold, llm_gateway
+            )
+            progress.complete()
+            return result
+
+        # 임계값 이하: 일반 리뷰 실행
+        console.info(
+            f"[Normal Review] Proceeding with normal review (tokens: {total_tokens:,} <= threshold: {threshold:,})"
+        )
         review_result = llm_gateway.review_code(review_prompt)
 
         # 에러 처리
@@ -296,7 +390,7 @@ def _perform_new_review(
 
             error_response = review_result.error_response
             if error_response.is_context_limit_error():
-                # UI 연속성을 유지하면서 멀티턴 모드로 전환
+                # Fallback: 에러 기반 multiturn 모드로 전환
                 progress.transition_to_multiturn(
                     "Context limit reached! Processing in long context mode..."
                 )
@@ -632,6 +726,13 @@ def language(language_name: str | None) -> None:
 def show_config() -> None:
     """Display all settings"""
     config_list()
+
+
+@config.command(name="proactive-multiturn-threshold")
+@click.argument("threshold", type=int, required=False)
+def proactive_multiturn_threshold(threshold: int | None) -> None:
+    """Proactive multiturn threshold setting (in tokens)"""
+    config_proactive_multiturn_threshold(threshold)
 
 
 @cli.command()

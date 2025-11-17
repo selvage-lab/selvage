@@ -28,6 +28,7 @@ DEFAULT_SECTIONS = [
     "default",  # 기본값 설정
     "debug",  # 디버그 설정
     "language",  # 언어 설정
+    "multiturn",  # Multiturn 설정
 ]
 
 
@@ -258,6 +259,60 @@ def set_default_language(language: str) -> bool:
 
         console.error(
             f"Error occurred while setting default language: {str(e)}", exception=e
+        )
+        return False
+
+
+def get_proactive_multiturn_threshold() -> int:
+    """Proactive multiturn 모드 진입 기준 토큰 수를 반환합니다.
+
+    Returns:
+        int: 기준 토큰 수 (기본값: 200000)
+    """
+    try:
+        config = load_config()
+        fallback_threshold = 200000
+        return config["multiturn"].getint(
+            "proactive_threshold", fallback=fallback_threshold
+        )
+    except KeyError:
+        return 200000
+
+
+def set_proactive_multiturn_threshold(threshold: int) -> bool:
+    """Proactive multiturn 모드 진입 기준 토큰 수를 설정합니다.
+
+    Args:
+        threshold: 기준 토큰 수 (양수)
+
+    Returns:
+        bool: 성공 여부
+    """
+    try:
+        if threshold <= 0:
+            from selvage.src.utils.base_console import console
+
+            console.error("Threshold must be a positive integer.")
+            return False
+
+        config = load_config()
+        if "multiturn" not in config:
+            config["multiturn"] = {}
+        config["multiturn"]["proactive_threshold"] = str(threshold)
+        save_config(config)
+
+        from selvage.src.utils.base_console import console
+
+        console.success(
+            f"Proactive multiturn threshold has been set to {threshold:,} tokens."
+        )
+        return True
+    except Exception as e:
+        from selvage.src.utils.base_console import console
+
+        console.error(
+            f"Error occurred while setting proactive multiturn threshold: {str(e)}",
+            exception=e,
         )
         return False
 
