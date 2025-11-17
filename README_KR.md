@@ -15,7 +15,7 @@
 <!-- <p align="center"> <img src="[데모 GIF URL]" width="100%" alt="Selvage Demo"/> </p> -->
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/338766d9-535e-47cb-ad10-1f8ce069401d" width="100%" controls></video>
+  <video src="https://pub-96dcfc8e21ae4525bb6f566e02497d31.r2.dev/assets/489282979-338766d9-535e-47cb-ad10-1f8ce069401d.mp4" width="100%" controls></video>
 </p>
 
 **Selvage: 코드 리뷰도 엣지있게!**
@@ -186,11 +186,13 @@ selvage mcp로 메인 브랜치와 현재 브랜치를 리뷰하되 사용 모�
 #### 고급 워크플로우
 
 **멀티 모델 비교 리뷰**
+
 ```
 selvage mcp로 스테이징된 작업 내용을 gpt-5-high, claude-sonnet-4-thinking으로 각각 리뷰하고 결과를 비교해줘
 ```
 
 **단계별 코드 개선 워크플로우**
+
 ```
 1. selvage mcp로 현재 변경사항을 claude-sonnet-4-thinking으로 리뷰해줘
 2. 리뷰 피드백이 현재 코드베이스에 관해 유효한지 비판적으로 검토 후 우선순위를 알려줘
@@ -198,6 +200,7 @@ selvage mcp로 스테이징된 작업 내용을 gpt-5-high, claude-sonnet-4-thin
 ```
 
 **CI/CD 통합 시나리오**
+
 ```
 # PR 생성 전 코드 품질 검증
 selvage mcp로 PR 생성 전 코드 품질 검증을 위해 main 브랜치 대비 변경사항을 리뷰해줘
