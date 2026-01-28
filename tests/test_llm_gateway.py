@@ -105,6 +105,27 @@ class TestClaudeGateway(unittest.TestCase):
         mock_get_api_key.assert_called_once_with(ModelProvider.ANTHROPIC)
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
+    def test_init_with_opus_model(self, mock_get_api_key):
+        """Claude Opus 4.5 모델로 ClaudeGateway 초기화를 테스트합니다."""
+        # API 키 모킹
+        mock_get_api_key.return_value = "fake-api-key"
+
+        # Claude Opus 4.5 모델 가져오기
+        model_info = get_model_info("claude-opus-4.5-20251101")
+        self.assertIsNotNone(model_info)
+
+        # 게이트웨이 생성
+        gateway = ClaudeGateway(model_info)
+
+        # 검증
+        self.assertEqual(gateway.get_model_name(), "claude-opus-4.5-20251101")
+        self.assertEqual(gateway.model, model_info)
+        # Opus 모델의 pricing 검증
+        self.assertEqual(model_info["pricing"]["input"], 5.0)
+        self.assertEqual(model_info["pricing"]["output"], 25.0)
+        mock_get_api_key.assert_called_once_with(ModelProvider.ANTHROPIC)
+
+    @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
     def test_init_with_invalid_model_provider(self, mock_get_api_key):
         """잘못된 모델 제공자로 ClaudeGateway 초기화 시 예외 발생을 테스트합니다."""
         # API 키 모킹
@@ -161,7 +182,7 @@ class TestGoogleGateway(unittest.TestCase):
         # API 키 모킹
         mock_get_api_key.return_value = "fake-api-key"
 
-        model_info = get_model_info("gemini-2.5-pro")
+        model_info = get_model_info("gemini-3-pro")
         self.assertIsNotNone(model_info)
 
         # 게이트웨이 생성
@@ -212,10 +233,10 @@ class TestGoogleGateway(unittest.TestCase):
 
         # 테스트할 모델 가져오기 (test_init_with_valid_model과 동일 로직)
         try:
-            model_info = get_model_info("gemini-pro")
+            model_info = get_model_info("gemini-3-pro")
         except UnsupportedModelError:
             model_info: ModelInfoDict = {
-                "full_name": "gemini-2.5-pro",
+                "full_name": "gemini-3-pro",
                 "aliases": [],
                 "description": "Google 모델",
                 "provider": ModelProvider.GOOGLE,
@@ -229,7 +250,7 @@ class TestGoogleGateway(unittest.TestCase):
                 "context_limit": 100000,
             }
             print(
-                "Warning: 'gemini-2.5-pro' model not found in available_models. Using mock data for TestGoogleGateway."
+                "Warning: 'gemini-3-pro' model not found in available_models. Using mock data for TestGoogleGateway."
             )
         self.assertIsNotNone(model_info)
 
@@ -297,6 +318,27 @@ class TestOpenRouterGateway(unittest.TestCase):
         if original_openrouter_name:
             gateway.model["openrouter_name"] = original_openrouter_name
 
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": "test_openrouter_key"})
+    def test_init_with_new_openrouter_models(self):
+        """새로 추가된 OpenRouter 모델들 초기화 테스트"""
+        from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
+
+        # MiniMax M2.1 테스트
+        model_info = get_model_info("minimax-m2.1")
+        self.assertIsNotNone(model_info)
+        gateway = OpenRouterGateway(model_info)
+        self.assertEqual(gateway.get_model_name(), "minimax-m2.1")
+        result = gateway._convert_to_openrouter_model_name("minimax-m2.1")
+        self.assertEqual(result, "minimax/minimax-m2.1")
+
+        # GLM-4.7 테스트
+        model_info = get_model_info("glm-4.7")
+        self.assertIsNotNone(model_info)
+        gateway = OpenRouterGateway(model_info)
+        self.assertEqual(gateway.get_model_name(), "glm-4.7")
+        result = gateway._convert_to_openrouter_model_name("glm-4.7")
+        self.assertEqual(result, "z-ai/glm-4.7")
+
 
 class TestCreateLLMGateway(unittest.TestCase):
     @patch("selvage.src.llm_gateway.openai_gateway.get_api_key")
@@ -339,11 +381,11 @@ class TestCreateLLMGateway(unittest.TestCase):
         """OpenRouter First: Google 모델이 OpenRouterGateway로 처리되는지 테스트"""
         from selvage.src.llm_gateway.openrouter.gateway import OpenRouterGateway
 
-        gateway = GatewayFactory.create("gemini-2.5-pro")
+        gateway = GatewayFactory.create("gemini-3-pro")
 
         # 검증 - OpenRouter를 통해 처리됨
         self.assertIsInstance(gateway, OpenRouterGateway)
-        self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro")
+        self.assertEqual(gateway.get_model_name(), "gemini-3-pro")
 
     @patch("selvage.src.llm_gateway.google_gateway.get_api_key")
     @patch.dict(
@@ -353,11 +395,11 @@ class TestCreateLLMGateway(unittest.TestCase):
         """OpenRouter 키가 없을 때 Google 모델이 GoogleGateway로 처리되는지 테스트"""
         mock_get_api_key.return_value = "fake-api-key"
 
-        gateway = GatewayFactory.create("gemini-2.5-pro")
+        gateway = GatewayFactory.create("gemini-3-pro")
 
         # 검증 - 직접 GoogleGateway 사용
         self.assertIsInstance(gateway, GoogleGateway)
-        self.assertEqual(gateway.get_model_name(), "gemini-2.5-pro")
+        self.assertEqual(gateway.get_model_name(), "gemini-3-pro")
 
     # UnsupportedModelError 테스트
     @patch(
