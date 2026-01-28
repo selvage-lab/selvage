@@ -187,8 +187,8 @@ def test_selvage_review_workflow_in_container(
 
     verify_selvage_installation(container)
 
-    # 모델을 gemini-2.5-flash로 설정
-    exit_code, output = container.exec("selvage config model gemini-2.5-flash")
+    # 모델을 gemini-3-flash로 설정
+    exit_code, output = container.exec("selvage config model gemini-3-flash")
     assert exit_code == 0, "Model configuration should succeed"
 
     # 현실적인 프로덕션 코드 샘플로 초기 파일 생성

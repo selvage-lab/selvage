@@ -101,7 +101,7 @@ def test_empty_repository_handling(error_test_container) -> None:
 
     # 스테이징된 변경사항 없이 리뷰 시도
     exit_code, output = container.exec(
-        "bash -c 'cd /tmp/empty_repo && selvage review --staged --model gemini-2.5-flash'"
+        "bash -c 'cd /tmp/empty_repo && selvage review --staged --model gemini-3-flash'"
     )
 
     # 적절한 처리가 되어야 함 (에러이거나 적절한 메시지)
@@ -129,7 +129,7 @@ def test_non_git_directory_handling(error_test_container) -> None:
 
     # Git 저장소가 아닌 곳에서 리뷰 시도
     exit_code, output = container.exec(
-        "bash -c 'cd /tmp/non_git_dir && selvage review --staged --model gemini-2.5-flash'"
+        "bash -c 'cd /tmp/non_git_dir && selvage review --staged --model gemini-3-flash'"
     )
 
     # 적절한 에러 처리가 되어야 함
