@@ -93,13 +93,13 @@ class TestClaudeGateway(unittest.TestCase):
         mock_get_api_key.return_value = "fake-api-key"
 
         # 테스트할 모델 가져오기
-        model_info = get_model_info("claude-sonnet-4.5-20250929")
+        model_info = get_model_info("claude-sonnet-4.5")
         self.assertIsNotNone(model_info)
 
         # 게이트웨이 생성
         gateway = ClaudeGateway(model_info)
 
-        # 검증
+        # 검증 (get_model_name은 full_name을 반환)
         self.assertEqual(gateway.get_model_name(), "claude-sonnet-4.5-20250929")
         self.assertEqual(gateway.model, model_info)
         mock_get_api_key.assert_called_once_with(ModelProvider.ANTHROPIC)
@@ -111,13 +111,13 @@ class TestClaudeGateway(unittest.TestCase):
         mock_get_api_key.return_value = "fake-api-key"
 
         # Claude Opus 4.5 모델 가져오기
-        model_info = get_model_info("claude-opus-4.5-20251101")
+        model_info = get_model_info("claude-opus-4.5")
         self.assertIsNotNone(model_info)
 
         # 게이트웨이 생성
         gateway = ClaudeGateway(model_info)
 
-        # 검증
+        # 검증 (get_model_name은 full_name을 반환)
         self.assertEqual(gateway.get_model_name(), "claude-opus-4.5-20251101")
         self.assertEqual(gateway.model, model_info)
         # Opus 모델의 pricing 검증
@@ -164,7 +164,7 @@ class TestClaudeGateway(unittest.TestCase):
         mock_get_api_key.return_value = None
 
         # 테스트할 모델 가져오기
-        model_info = get_model_info("claude-sonnet-4.5-20250929")
+        model_info = get_model_info("claude-sonnet-4.5")
         self.assertIsNotNone(model_info)
 
         # 예외 발생 확인
@@ -270,11 +270,12 @@ class TestOpenRouterGateway(unittest.TestCase):
         """유효한 Claude 모델로 OpenRouterGateway 초기화 테스트"""
         from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
 
-        model_info = get_model_info("claude-sonnet-4.5-20250929")
+        model_info = get_model_info("claude-sonnet-4.5")
         self.assertIsNotNone(model_info)
 
         gateway = OpenRouterGateway(model_info)
 
+        # get_model_name은 full_name을 반환
         self.assertEqual(gateway.get_model_name(), "claude-sonnet-4.5-20250929")
         self.assertEqual(gateway.model, model_info)
 
@@ -283,7 +284,7 @@ class TestOpenRouterGateway(unittest.TestCase):
         from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
 
         with patch.dict(os.environ, {}, clear=True):
-            model_info = get_model_info("claude-sonnet-4.5-20250929")
+            model_info = get_model_info("claude-sonnet-4.5")
 
             with self.assertRaises(APIKeyNotFoundError) as context:
                 OpenRouterGateway(model_info)
@@ -296,9 +297,9 @@ class TestOpenRouterGateway(unittest.TestCase):
         from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
 
         # openrouter_name이 설정된 모델 테스트
-        model_info = get_model_info("claude-sonnet-4.5-20250929")
+        model_info = get_model_info("claude-sonnet-4.5")
         gateway = OpenRouterGateway(model_info)
-        result = gateway._convert_to_openrouter_model_name("claude-sonnet-4.5-20250929")
+        result = gateway._convert_to_openrouter_model_name("claude-sonnet-4.5")
         self.assertEqual(result, "anthropic/claude-sonnet-4.5")
 
         # alias로 접근하는 모델 테스트
@@ -361,9 +362,10 @@ class TestCreateLLMGateway(unittest.TestCase):
         """OpenRouter 키가 없을 때 Claude 모델이 ClaudeGateway로 처리되는지 테스트"""
         mock_get_api_key.return_value = "fake-claude-key"
 
-        gateway = GatewayFactory.create("claude-sonnet-4.5-20250929")
+        gateway = GatewayFactory.create("claude-sonnet-4.5")
 
         self.assertIsInstance(gateway, ClaudeGateway)
+        # get_model_name은 full_name을 반환
         self.assertEqual(gateway.get_model_name(), "claude-sonnet-4.5-20250929")
 
     @patch.dict(os.environ, {"OPENROUTER_API_KEY": "fake-openrouter-key"})
@@ -371,9 +373,10 @@ class TestCreateLLMGateway(unittest.TestCase):
         """OpenRouter 키가 있을 때 Claude 모델이 OpenRouterGateway로 처리되는지 테스트"""
         from selvage.src.llm_gateway.openrouter.gateway import OpenRouterGateway
 
-        gateway = GatewayFactory.create("claude-sonnet-4.5-20250929")
+        gateway = GatewayFactory.create("claude-sonnet-4.5")
 
         self.assertIsInstance(gateway, OpenRouterGateway)
+        # get_model_name은 full_name을 반환
         self.assertEqual(gateway.get_model_name(), "claude-sonnet-4.5-20250929")
 
     @patch.dict(os.environ, {"OPENROUTER_API_KEY": "fake-openrouter-key"})

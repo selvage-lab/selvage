@@ -44,7 +44,7 @@ class TestRequestParamsCreation(unittest.TestCase):
         """Claude 게이트웨이의 요청 파라미터 생성을 테스트합니다."""
         # 설정
         mock_get_api_key.return_value = "fake-api-key"
-        gateway = GatewayFactory.create("claude-sonnet-4.5-20250929")
+        gateway = GatewayFactory.create("claude-sonnet-4.5")
 
         # 테스트 메시지
         messages = COMMON_TEST_MESSAGES
@@ -52,11 +52,14 @@ class TestRequestParamsCreation(unittest.TestCase):
         # 테스트 실행
         params = gateway._create_request_params(messages)
 
-        # 검증
+        # 검증 (model은 full_name을 사용)
         self.assertEqual(params["model"], "claude-sonnet-4.5-20250929")
-        self.assertEqual(params["messages"], messages)
-        self.assertEqual(params["max_tokens"], 8192)  # Claude 특정 파라미터
-        self.assertEqual(params["temperature"], 0.0)  # 모델의 기본 파라미터
+        # Claude는 system 메시지를 별도 파라미터로 분리하므로 user 메시지만 남음
+        self.assertEqual(len(params["messages"]), 1)
+        self.assertEqual(params["messages"][0]["role"], "user")
+        # thinking 모드: max_output_tokens(64000) - budget_tokens(32000) + 16000 = 48000
+        self.assertEqual(params["max_tokens"], 48000)
+        self.assertEqual(params["temperature"], 1)  # thinking 모드 파라미터
 
     @patch.dict(os.environ, {"OPENROUTER_API_KEY": "fake-openrouter-key"})
     def test_google_create_request_params_via_openrouter(self):
