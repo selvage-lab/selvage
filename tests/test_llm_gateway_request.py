@@ -34,7 +34,7 @@ class TestRequestParamsCreation(unittest.TestCase):
         # 검증
         self.assertEqual(params["model"], "gpt-5.2-codex")
         self.assertEqual(params["messages"], messages)
-        self.assertEqual(params["reasoning_effort"], "medium")  # gpt-5 모델의 기본 파라미터
+        self.assertEqual(params["reasoning_effort"], "high")  # gpt-5.2-codex 모델의 기본 파라미터
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
     @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=True)  # OpenRouter 키 없음

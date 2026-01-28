@@ -8,8 +8,8 @@ models:
     description: "(recommend) OpenAI's most advanced agentic coding model optimized for software engineering (SWE-bench Pro 56.4%)"
     provider: "openai"
     params:
-      reasoning_effort: "medium"
-    thinking_mode: false
+      reasoning_effort: "high"
+    thinking_mode: true
     pricing:
       input: 1.75 # $1.75/1M tokens
       output: 14.0 # $14.00/1M tokens
@@ -18,7 +18,7 @@ models:
     openrouter_name: "openai/gpt-5.2-codex"
     openrouter_params:
       reasoning:
-        effort: "medium"
+        effort: "high"
 
   claude-opus-4.5:
     full_name: "claude-opus-4.5-20251101"
@@ -116,6 +116,8 @@ models:
     openrouter_name: "minimax/minimax-m2.1"
     openrouter_params:
       temperature: 0.0
+      reasoning:
+        max_tokens: 16000
 
   glm-4.7:
     full_name: "glm-4.7"
@@ -133,6 +135,9 @@ models:
     openrouter_name: "z-ai/glm-4.7"
     openrouter_params:
       temperature: 0.0
+      thinking:
+        type: "enabled"
+        max_tokens: 16000
 
   kimi-k2:
     full_name: "kimi-k2"
