@@ -56,6 +56,24 @@ models:
       reasoning:
         effort: "medium"
 
+  claude-opus-4.5-20251101:
+    full_name: "claude-opus-4.5-20251101"
+    aliases: ["claude-opus-4.5"]
+    description: "Anthropic's frontier reasoning model optimized for complex software engineering and agentic workflows"
+    provider: "anthropic"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    max_output_tokens: 32000
+    pricing:
+      input: 5.0
+      output: 25.0
+      description: "$5.00/$25.00 per 1M tokens"
+    context_limit: 200000
+    openrouter_name: "anthropic/claude-opus-4.5"
+    openrouter_params:
+      temperature: 0.0
+
   claude-sonnet-4.5-20250929:
     full_name: "claude-sonnet-4.5-20250929"
     aliases: ["claude-sonnet-4.5"]
@@ -97,10 +115,10 @@ models:
       reasoning:
         max_tokens: 20000
 
-  gemini-2.5-pro:
-    full_name: "gemini-2.5-pro"
-    aliases: ["gemini-2.5-pro"]
-    description: "(recommend) Large context processing and advanced reasoning task execution"
+  gemini-3-pro:
+    full_name: "gemini-3-pro"
+    aliases: ["gemini-3-pro"]
+    description: "(recommend) Google's most advanced reasoning model with 1M token context window"
     provider: "google"
     params:
       temperature: 0.0
@@ -108,16 +126,16 @@ models:
     pricing:
       input: 1.25
       output: 10.0
-      description: "$1.25/$10.00 per 1M tokens (Gemini 2.5 Pro)"
+      description: "$1.25/$10.00 per 1M tokens (Gemini 3 Pro)"
     context_limit: 1048576
-    openrouter_name: "google/gemini-2.5-pro"
+    openrouter_name: "google/gemini-3-pro-preview"
     openrouter_params:
       temperature: 0.0
 
-  gemini-2.5-flash:
-    full_name: "gemini-2.5-flash"
-    aliases: ["gemini-2.5-flash"]
-    description: "(recommend) Model optimized for response speed and cost efficiency"
+  gemini-3-flash:
+    full_name: "gemini-3-flash"
+    aliases: ["gemini-3-flash"]
+    description: "(recommend) High speed, high value thinking model for agentic workflows"
     provider: "google"
     params:
       temperature: 0.0
@@ -125,9 +143,43 @@ models:
     pricing:
       input: 0.15
       output: 0.6
-      description: "$0.15/$0.60 per 1M tokens (Gemini 2.5 Flash)"
+      description: "$0.15/$0.60 per 1M tokens (Gemini 3 Flash)"
     context_limit: 1048576
-    openrouter_name: "google/gemini-2.5-flash"
+    openrouter_name: "google/gemini-3-flash-preview"
+    openrouter_params:
+      temperature: 0.0
+
+  minimax-m2.1:
+    full_name: "minimax-m2.1"
+    aliases: ["minimax-m2.1", "minimax-m2"]
+    description: "(recommend) State-of-the-art open-source model optimized for coding and agentic workflows (SWE-bench 74.0%)"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.3
+      output: 1.2
+      description: "$0.30/$1.20 per 1M tokens"
+    context_limit: 1000000
+    openrouter_name: "minimax/minimax-m2.1"
+    openrouter_params:
+      temperature: 0.0
+
+  glm-4.7:
+    full_name: "glm-4.7"
+    aliases: ["glm-4.7"]
+    description: "(recommend) Zhipu AI's flagship open-source model with strong coding capabilities (SWE-bench 73.8%)"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.5
+      output: 2.0
+      description: "$0.50/$2.00 per 1M tokens"
+    context_limit: 200000
+    openrouter_name: "z-ai/glm-4.7"
     openrouter_params:
       temperature: 0.0
 
