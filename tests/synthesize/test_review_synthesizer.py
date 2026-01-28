@@ -519,9 +519,9 @@ class TestReviewSynthesizerLLMIntegration:
     def test_provider_specific_params_google(self) -> None:
         """Google 프로바이더 요청 파라미터 생성 테스트"""
 
-        synthesizer = ReviewSynthesizer("gemini-2.5-pro")
+        synthesizer = ReviewSynthesizer("gemini-3-pro")
         google_model_info = {
-            "full_name": "gemini-2.5-pro",
+            "full_name": "gemini-3-pro",
             "provider": ModelProvider.GOOGLE,
             "max_tokens": 8192,
         }
@@ -536,7 +536,7 @@ class TestReviewSynthesizerLLMIntegration:
         )
 
         # Then: Google 파라미터 확인
-        assert params["model"] == "gemini-2.5-pro"
+        assert params["model"] == "gemini-3-pro"
 
         # contents 형식 변환 확인 (단일 문자열로 결합)
         expected_contents = "test user message"

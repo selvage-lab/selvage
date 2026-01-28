@@ -169,7 +169,7 @@ class TestSynthesisAPIClient:
         """Google 요청 파라미터 생성 테스트"""
         # Given: Google 모델 정보
         google_model_info = {
-            "full_name": "gemini-2.5-pro",
+            "full_name": "gemini-3-pro",
             "provider": ModelProvider.GOOGLE,
         }
         messages = [
@@ -183,7 +183,7 @@ class TestSynthesisAPIClient:
         )
 
         # Then: Google 형식의 파라미터 생성
-        assert params["model"] == "gemini-2.5-pro"
+        assert params["model"] == "gemini-3-pro"
         # contents가 단일 문자열로 결합됨
         assert params["contents"] == "사용자 메시지"
         # generation_config에 system_instruction과 response_schema가 설정됨

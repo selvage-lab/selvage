@@ -101,7 +101,7 @@ class TestReviewSynthesizerRealIntegration:
         [
             "gpt-5",  # OpenAI
             "claude-sonnet-4",  # Anthropic (일반)
-            "gemini-2.5-flash",  # Google
+            "gemini-3-flash",  # Google
             "qwen3-coder",  # OpenRouter
             "claude-sonnet-4-thinking",
             "gpt-5-mini",
