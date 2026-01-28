@@ -26,7 +26,7 @@ class TestSynthesisAPIClient:
     def sample_model_info(self) -> ModelInfoDict:
         """테스트용 모델 정보 생성"""
         return {
-            "full_name": "gpt-5",
+            "full_name": "gpt-5.2-codex",
             "aliases": [],
             "description": "테스트 모델",
             "provider": ModelProvider.OPENAI,
@@ -34,7 +34,7 @@ class TestSynthesisAPIClient:
             "thinking_mode": False,
             "pricing": {"input": 2.5, "output": 10.0, "description": "test"},
             "context_limit": 128000,
-            "openrouter_name": "openai/gpt-5",
+            "openrouter_name": "openai/gpt-5.2-codex",
         }
 
     def test_initialization(self, api_client: SynthesisAPIClient) -> None:
@@ -90,7 +90,7 @@ class TestSynthesisAPIClient:
         assert result is not None
         assert result.summary == "통합된 요약입니다."
         assert cost is not None
-        assert cost.model == "gpt-5"  # sample_model_info의 full_name 사용
+        assert cost.model == "gpt-5.2-codex"  # sample_model_info의 full_name 사용
 
     @patch("selvage.src.multiturn.synthesis_api_client.get_api_key")
     def test_execute_synthesis_no_api_key(
@@ -130,7 +130,7 @@ class TestSynthesisAPIClient:
         )
 
         # Then: OpenAI 형식의 파라미터 생성
-        assert params["model"] == "gpt-5"
+        assert params["model"] == "gpt-5.2-codex"
         assert params["messages"] == messages
         assert params["max_completion_tokens"] == 5000
         assert params["reasoning_effort"] == "medium"
@@ -169,7 +169,7 @@ class TestSynthesisAPIClient:
         """Google 요청 파라미터 생성 테스트"""
         # Given: Google 모델 정보
         google_model_info = {
-            "full_name": "gemini-2.5-pro",
+            "full_name": "gemini-3-pro",
             "provider": ModelProvider.GOOGLE,
         }
         messages = [
@@ -183,7 +183,7 @@ class TestSynthesisAPIClient:
         )
 
         # Then: Google 형식의 파라미터 생성
-        assert params["model"] == "gemini-2.5-pro"
+        assert params["model"] == "gemini-3-pro"
         # contents가 단일 문자열로 결합됨
         assert params["contents"] == "사용자 메시지"
         # generation_config에 system_instruction과 response_schema가 설정됨
@@ -255,11 +255,11 @@ class TestSynthesisAPIClient:
         # Given: OpenAI 응답과 비용 계산 Mock
         mock_response = Mock()
         mock_response.usage = Mock()
-        mock_cost_estimator.return_value = EstimatedCost.get_zero_cost("gpt-5")
+        mock_cost_estimator.return_value = EstimatedCost.get_zero_cost("gpt-5.2-codex")
 
         # When: 비용 계산
         cost = api_client._calculate_synthesis_cost(
-            ModelProvider.OPENAI, mock_response, "gpt-5"
+            ModelProvider.OPENAI, mock_response, "gpt-5.2-codex"
         )
 
         # Then: 비용 계산기가 호출되어야 함

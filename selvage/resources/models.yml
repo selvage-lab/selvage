@@ -2,88 +2,57 @@
 # 새 모델 추가시 이 파일만 수정하면 됩니다.
 
 models:
-  gpt-5:
-    full_name: "gpt-5"
-    aliases: ["gpt-5-medium"]
-    description: "OpenAI's latest unified model combining advanced reasoning with fast response"
-    provider: "openai"
-    params:
-      reasoning_effort: "medium"
-    thinking_mode: false
-    pricing:
-      input: 1.25 # $1.25/1M tokens (공식)
-      output: 10.0 # $10.00/1M tokens (공식)
-      description: "$1.25/$10.00 per 1M tokens"
-    context_limit: 400000
-    openrouter_name: "openai/gpt-5"
-    openrouter_params:
-      reasoning:
-        effort: "medium"
-
-  gpt-5-high:
-    full_name: "gpt-5"
-    aliases: ["gpt-5-high"]
-    description: "Highest-level reasoning capability for complex code analysis and problem solving"
+  gpt-5.2-codex:
+    full_name: "gpt-5.2-codex"
+    aliases: ["gpt-5.2-codex", "gpt52-codex"]
+    description: "(recommend) OpenAI's most advanced agentic coding model optimized for software engineering (SWE-bench Pro 56.4%)"
     provider: "openai"
     params:
       reasoning_effort: "high"
-    thinking_mode: false
+    thinking_mode: true
     pricing:
-      input: 1.25
-      output: 10.0
-      description: "$1.25/$10.00 per 1M tokens"
+      input: 1.75 # $1.75/1M tokens
+      output: 14.0 # $14.00/1M tokens
+      description: "$1.75/$14.00 per 1M tokens"
     context_limit: 400000
-    openrouter_name: "openai/gpt-5"
+    openrouter_name: "openai/gpt-5.2-codex"
     openrouter_params:
       reasoning:
         effort: "high"
 
-  gpt-5-mini:
-    full_name: "gpt-5-mini"
-    aliases: ["gpt-5-mini"]
-    description: "Lightweight GPT-5 model providing fast response and cost efficiency"
-    provider: "openai"
-    params:
-      reasoning_effort: "medium"
-    thinking_mode: false
-    pricing:
-      input: 0.25 # $0.25/1M tokens (공식)
-      output: 2.0 # $2.00/1M tokens (공식)
-      description: "$0.25/$2.00 per 1M tokens"
-    context_limit: 400000
-    openrouter_name: "openai/gpt-5-mini"
-    openrouter_params:
-      reasoning:
-        effort: "medium"
-
-  claude-sonnet-4.5-20250929:
-    full_name: "claude-sonnet-4.5-20250929"
-    aliases: ["claude-sonnet-4.5"]
-    description: "Hybrid reasoning model optimized for advanced coding and command execution"
+  claude-opus-4.5:
+    full_name: "claude-opus-4.5-20251101"
+    aliases: ["claude-opus-4.5"]
+    description: "(recommend) Anthropic's frontier reasoning model with extended thinking for complex software engineering"
     provider: "anthropic"
     params:
-      temperature: 0.0
-    thinking_mode: false
-    max_output_tokens: 64000
-    pricing:
-      input: 3.0
-      output: 15.0
-      description: "$3.00/$15.00 per 1M tokens"
-    context_limit: 1000000
-    openrouter_name: "anthropic/claude-sonnet-4.5"
-    openrouter_params:
-      temperature: 0.0
-
-  claude-sonnet-4.5-20250929-thinking:
-    full_name: "claude-sonnet-4.5-20250929"
-    aliases: ["claude-sonnet-4.5-thinking"]
-    description: "(recommend) Hybrid reasoning model supporting extended thinking process"
-    provider: "anthropic"
-    params:
-      temperature: 1 # thinking 모드에서 더 다양한 사고 과정 생성을 위해 설정
+      temperature: 1
       thinking:
         type: "enabled"
-        budget_tokens: 20000
+        budget_tokens: 32000
+    thinking_mode: true
+    max_output_tokens: 32000
+    pricing:
+      input: 5.0
+      output: 25.0
+      description: "$5.00/$25.00 per 1M tokens"
+    context_limit: 200000
+    openrouter_name: "anthropic/claude-opus-4.5"
+    openrouter_params:
+      temperature: 1
+      reasoning:
+        max_tokens: 32000
+
+  claude-sonnet-4.5:
+    full_name: "claude-sonnet-4.5-20250929"
+    aliases: ["claude-sonnet-4.5"]
+    description: "(recommend) Hybrid reasoning model with extended thinking for advanced coding"
+    provider: "anthropic"
+    params:
+      temperature: 1
+      thinking:
+        type: "enabled"
+        budget_tokens: 32000
     thinking_mode: true
     max_output_tokens: 64000
     pricing:
@@ -95,12 +64,12 @@ models:
     openrouter_params:
       temperature: 1
       reasoning:
-        max_tokens: 20000
+        max_tokens: 32000
 
-  gemini-2.5-pro:
-    full_name: "gemini-2.5-pro"
-    aliases: ["gemini-2.5-pro"]
-    description: "(recommend) Large context processing and advanced reasoning task execution"
+  gemini-3-pro:
+    full_name: "gemini-3-pro"
+    aliases: ["gemini-3-pro"]
+    description: "(recommend) Google's most advanced reasoning model with 1M token context window"
     provider: "google"
     params:
       temperature: 0.0
@@ -108,16 +77,16 @@ models:
     pricing:
       input: 1.25
       output: 10.0
-      description: "$1.25/$10.00 per 1M tokens (Gemini 2.5 Pro)"
+      description: "$1.25/$10.00 per 1M tokens (Gemini 3 Pro)"
     context_limit: 1048576
-    openrouter_name: "google/gemini-2.5-pro"
+    openrouter_name: "google/gemini-3-pro-preview"
     openrouter_params:
       temperature: 0.0
 
-  gemini-2.5-flash:
-    full_name: "gemini-2.5-flash"
-    aliases: ["gemini-2.5-flash"]
-    description: "(recommend) Model optimized for response speed and cost efficiency"
+  gemini-3-flash:
+    full_name: "gemini-3-flash"
+    aliases: ["gemini-3-flash"]
+    description: "(recommend) High speed, high value thinking model for agentic workflows"
     provider: "google"
     params:
       temperature: 0.0
@@ -125,11 +94,50 @@ models:
     pricing:
       input: 0.15
       output: 0.6
-      description: "$0.15/$0.60 per 1M tokens (Gemini 2.5 Flash)"
+      description: "$0.15/$0.60 per 1M tokens (Gemini 3 Flash)"
     context_limit: 1048576
-    openrouter_name: "google/gemini-2.5-flash"
+    openrouter_name: "google/gemini-3-flash-preview"
     openrouter_params:
       temperature: 0.0
+
+  minimax-m2.1:
+    full_name: "minimax-m2.1"
+    aliases: ["minimax-m2.1", "minimax-m2"]
+    description: "(recommend) State-of-the-art open-source model optimized for coding and agentic workflows (SWE-bench 74.0%)"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.3
+      output: 1.2
+      description: "$0.30/$1.20 per 1M tokens"
+    context_limit: 1000000
+    openrouter_name: "minimax/minimax-m2.1"
+    openrouter_params:
+      temperature: 0.0
+      reasoning:
+        max_tokens: 16000
+
+  glm-4.7:
+    full_name: "glm-4.7"
+    aliases: ["glm-4.7"]
+    description: "(recommend) Zhipu AI's flagship open-source model with strong coding capabilities (SWE-bench 73.8%)"
+    provider: "openrouter"
+    params:
+      temperature: 0.0
+    thinking_mode: false
+    pricing:
+      input: 0.5
+      output: 2.0
+      description: "$0.50/$2.00 per 1M tokens"
+    context_limit: 200000
+    openrouter_name: "z-ai/glm-4.7"
+    openrouter_params:
+      temperature: 0.0
+      thinking:
+        type: "enabled"
+        max_tokens: 16000
 
   kimi-k2:
     full_name: "kimi-k2"

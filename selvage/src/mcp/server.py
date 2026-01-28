@@ -1,6 +1,7 @@
 """Selvage MCP 서버 구현"""
 
 import sys
+import warnings
 
 from fastmcp import FastMCP
 
@@ -9,13 +10,31 @@ from selvage.src.mcp.tools.review_tools import register_review_tools
 from selvage.src.mcp.tools.utility_tools import register_utility_tools
 
 
+def _setup_mcp_environment() -> None:
+    """MCP 환경을 설정합니다.
+
+    stdout에 출력되는 모든 것을 차단하고, 로깅과 경고를 stderr로 리다이렉트합니다.
+    """
+    # MCP 모드 활성화 (가장 먼저 설정)
+    set_mcp_mode(True)
+
+    # 콘솔 인스턴스 재설정 (MCP 모드 반영)
+    from selvage.src.utils.base_console import reset_console
+
+    reset_console()
+
+    # warnings를 stderr로 강제 리다이렉트
+    warnings.showwarning = lambda msg, cat, _fn, _ln, _file=None, _line=None: print(
+        f"{cat.__name__}: {msg}", file=sys.stderr
+    )
+
+
 class SelvageMCPServer:
     """Selvage MCP 서버 메인 클래스"""
 
     def __init__(self, name: str = "Selvage Code Review Server") -> None:
-        # MCP 모드 활성화 (프로세스 시작시 한번만)
-        # 이후 모든 BaseConsole은 자동으로 stderr 사용
-        set_mcp_mode(True)
+        # MCP 환경 설정 (stdout 보호)
+        _setup_mcp_environment()
 
         self.name = name
         self.mcp = FastMCP(name)
@@ -34,7 +53,8 @@ class SelvageMCPServer:
             transport: 전송 방식 ("stdio" 또는 "sse")
         """
         if transport == "stdio":
-            await self.mcp.run()
+            # show_banner=False: stdout에 배너 출력 방지 (MCP 프로토콜 보호)
+            await self.mcp.run(show_banner=False)
         else:
             # HTTP/SSE 모드는 향후 구현
             raise NotImplementedError(f"Transport {transport} is not yet supported")
@@ -71,8 +91,9 @@ def main_sync() -> None:
     print(f"Tools info: {server.get_tools_info()}", file=sys.stderr)
 
     # FastMCP 서버 직접 실행 (asyncio.run 사용하지 않음)
+    # show_banner=False: stdout에 배너 출력 방지 (MCP 프로토콜 보호)
     try:
-        server.mcp.run()
+        server.mcp.run(show_banner=False)
     except KeyboardInterrupt:
         print("Server stopped by user", file=sys.stderr)
     except Exception as e:

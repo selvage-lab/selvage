@@ -1,5 +1,41 @@
 # Change Log
 
+## [0.3.0] - 2026-01-28
+
+### Added
+
+#### feat: Latest AI Model Updates and MCP Stability Improvements
+
+**Core Changes**
+
+- **Latest Model Support**: Added GPT-5.2-Codex (OpenAI), Claude Opus 4.5 (Anthropic), MiniMax M2.1, GLM-4.7, and other cutting-edge AI models
+- **Simplified Model Configuration**: Removed date suffixes and `-thinking` variants from Claude models, enabled thinking mode by default
+- **Enhanced MCP Protocol Protection**: Improved output stream management to prevent stdout pollution
+- **High Reasoning Mode Activation**: Applied high reasoning settings to all major models
+
+**Detailed Implementation**
+
+- **Model Upgrades**:
+  - `gpt-5`, `gpt-5-high`, `gpt-5-mini` → `gpt-5.2-codex` (reasoning_effort: high)
+  - `gemini-2.5-pro/flash` → `gemini-3-pro/flash`
+  - `claude-sonnet-4.5-20250929`, `claude-sonnet-4.5-20250929-thinking` → `claude-sonnet-4.5` (thinking default)
+  - `claude-opus-4.5-20251101` → `claude-opus-4.5` (thinking default)
+- **MCP Server Improvements**:
+  - Added FastMCP `show_banner=False` option
+  - Redirected warnings to stderr
+  - Introduced lazy initialization pattern for BaseConsole (Proxy pattern)
+  - Improved MCP mode awareness in logging system
+- **Enhanced Reasoning Settings**:
+  - `gpt-5.2-codex`: reasoning_effort "high"
+  - `minimax-m2.1`: reasoning.max_tokens 16000
+  - `glm-4.7`: thinking.type "enabled", max_tokens 16000
+  - `claude-*`: budget_tokens 32000
+
+### Breaking Changes
+
+- Removed legacy model names (`gpt-5`, `gpt-5-mini`, `gemini-2.5-flash`, etc.)
+- Removed date suffixes from Claude model names (`claude-sonnet-4.5-20250929` → `claude-sonnet-4.5`)
+
 ## [0.2.0] - 2025-11-17
 
 ### Added

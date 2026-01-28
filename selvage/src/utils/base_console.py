@@ -87,5 +87,34 @@ class BaseConsole:
             return False
 
 
-# 전역 콘솔 인스턴스 (기본 기능만)
-console = BaseConsole()
+# 전역 콘솔 인스턴스 (lazy 초기화)
+# MCP 모드가 설정된 후 생성되도록 함수로 접근
+_console_instance: BaseConsole | None = None
+
+
+def get_console() -> BaseConsole:
+    """전역 콘솔 인스턴스를 반환합니다 (lazy 초기화)."""
+    global _console_instance
+    if _console_instance is None:
+        _console_instance = BaseConsole()
+    return _console_instance
+
+
+def reset_console() -> None:
+    """전역 콘솔 인스턴스를 재설정합니다.
+
+    MCP 모드 변경 후 호출하여 새 설정을 반영합니다.
+    """
+    global _console_instance
+    _console_instance = None
+
+
+# 하위 호환성을 위한 프록시 객체
+class _ConsoleProxy:
+    """BaseConsole 메서드를 전역 인스턴스로 위임하는 프록시."""
+
+    def __getattr__(self, name: str) -> Any:  # noqa: ANN401
+        return getattr(get_console(), name)
+
+
+console = _ConsoleProxy()

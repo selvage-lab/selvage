@@ -71,14 +71,14 @@ def setup_project_with_git(container, project_path: str) -> None:
 
 
 def configure_selvage_model(
-    container, project_path: str, model: str = "gemini-2.5-flash"
+    container, project_path: str, model: str = "gemini-3-flash"
 ) -> None:
     """selvage 모델 설정을 수행하는 헬퍼 함수
 
     Args:
         container: Docker 컨테이너 인스턴스
         project_path: 프로젝트 경로
-        model: 사용할 모델명 (기본값: gemini-2.5-flash)
+        model: 사용할 모델명 (기본값: gemini-3-flash)
     """
     exit_code, output = container.exec(
         f"bash -c 'cd {project_path} && selvage config model {model}'"

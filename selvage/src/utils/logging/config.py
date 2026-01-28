@@ -6,6 +6,7 @@
 
 import logging
 import logging.handlers
+import sys
 from pathlib import Path
 
 from selvage.src.utils.platform_utils import get_platform_config_dir
@@ -48,6 +49,16 @@ def should_enable_console_logging() -> bool:
         return console.is_debug_mode()
     except ImportError:
         # 순환 임포트 방지를 위한 fallback
+        return False
+
+
+def _is_mcp_mode() -> bool:
+    """MCP 모드 여부를 확인합니다."""
+    try:
+        from selvage.src.config import is_mcp_mode
+
+        return is_mcp_mode()
+    except (ImportError, AttributeError, Exception):
         return False
 
 
@@ -135,11 +146,15 @@ def setup_logging(
     # 로그 포맷 설정
     formatter = logging.Formatter(log_format)
 
-    # 콘솔 로깅 설정 (디버그 모드일 때만)
-    log_to_console = should_enable_console_logging()
+    # 콘솔 로깅 설정
+    # MCP 모드: 콘솔 로깅 비활성화 (stdout 보호를 위해)
+    # 일반 모드: 디버그 모드일 때만 활성화
+    mcp_mode = _is_mcp_mode()
+    log_to_console = not mcp_mode and should_enable_console_logging()
 
     if log_to_console:
-        console_handler = logging.StreamHandler()
+        # 일반 모드: stderr로 출력 (기본값이지만 명시적으로 지정)
+        console_handler = logging.StreamHandler(stream=sys.stderr)
         console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
 
