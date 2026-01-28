@@ -2,56 +2,20 @@
 # 새 모델 추가시 이 파일만 수정하면 됩니다.
 
 models:
-  gpt-5:
-    full_name: "gpt-5"
-    aliases: ["gpt-5-medium"]
-    description: "OpenAI's latest unified model combining advanced reasoning with fast response"
+  gpt-5.2-codex:
+    full_name: "gpt-5.2-codex"
+    aliases: ["gpt-5.2-codex", "gpt52-codex"]
+    description: "(recommend) OpenAI's most advanced agentic coding model optimized for software engineering (SWE-bench Pro 56.4%)"
     provider: "openai"
     params:
       reasoning_effort: "medium"
     thinking_mode: false
     pricing:
-      input: 1.25 # $1.25/1M tokens (공식)
-      output: 10.0 # $10.00/1M tokens (공식)
-      description: "$1.25/$10.00 per 1M tokens"
+      input: 1.75 # $1.75/1M tokens
+      output: 14.0 # $14.00/1M tokens
+      description: "$1.75/$14.00 per 1M tokens"
     context_limit: 400000
-    openrouter_name: "openai/gpt-5"
-    openrouter_params:
-      reasoning:
-        effort: "medium"
-
-  gpt-5-high:
-    full_name: "gpt-5"
-    aliases: ["gpt-5-high"]
-    description: "Highest-level reasoning capability for complex code analysis and problem solving"
-    provider: "openai"
-    params:
-      reasoning_effort: "high"
-    thinking_mode: false
-    pricing:
-      input: 1.25
-      output: 10.0
-      description: "$1.25/$10.00 per 1M tokens"
-    context_limit: 400000
-    openrouter_name: "openai/gpt-5"
-    openrouter_params:
-      reasoning:
-        effort: "high"
-
-  gpt-5-mini:
-    full_name: "gpt-5-mini"
-    aliases: ["gpt-5-mini"]
-    description: "Lightweight GPT-5 model providing fast response and cost efficiency"
-    provider: "openai"
-    params:
-      reasoning_effort: "medium"
-    thinking_mode: false
-    pricing:
-      input: 0.25 # $0.25/1M tokens (공식)
-      output: 2.0 # $2.00/1M tokens (공식)
-      description: "$0.25/$2.00 per 1M tokens"
-    context_limit: 400000
-    openrouter_name: "openai/gpt-5-mini"
+    openrouter_name: "openai/gpt-5.2-codex"
     openrouter_params:
       reasoning:
         effort: "medium"

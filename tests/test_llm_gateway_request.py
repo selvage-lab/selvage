@@ -23,7 +23,7 @@ class TestRequestParamsCreation(unittest.TestCase):
         """OpenAI 게이트웨이의 요청 파라미터 생성을 테스트합니다."""
         # 설정
         mock_get_api_key.return_value = "fake-api-key"
-        gateway = GatewayFactory.create("gpt-5")
+        gateway = GatewayFactory.create("gpt-5.2-codex")
 
         # 테스트 메시지
         messages = COMMON_TEST_MESSAGES
@@ -32,7 +32,7 @@ class TestRequestParamsCreation(unittest.TestCase):
         params = gateway._create_request_params(messages)
 
         # 검증
-        self.assertEqual(params["model"], "gpt-5")
+        self.assertEqual(params["model"], "gpt-5.2-codex")
         self.assertEqual(params["messages"], messages)
         self.assertEqual(params["reasoning_effort"], "medium")  # gpt-5 모델의 기본 파라미터
 
