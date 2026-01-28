@@ -153,7 +153,7 @@ class TestOpenRouterFirst(unittest.TestCase):
             "selvage.src.llm_gateway.google_gateway.GoogleGateway"
         ) as mock_gateway:
             # When
-            result = GatewayFactory.create("gemini-2.5-pro")
+            result = GatewayFactory.create("gemini-3-pro")
 
             # Then
             mock_gateway.assert_called_once()

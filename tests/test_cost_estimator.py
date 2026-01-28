@@ -135,8 +135,8 @@ class TestCostEstimator:
     @pytest.mark.parametrize(
         "model_name,prompt_token_count,candidates_token_count,expected_input_cost,expected_output_cost",
         [
-            ("gemini-2.5-pro", 1000, 500, 1.25, 10.0),  # $1.25/$10.00 per 1M
-            ("gemini-2.5-flash", 2000, 800, 0.15, 0.6),  # $0.15/$0.60 per 1M
+            ("gemini-3-pro", 1000, 500, 1.25, 10.0),  # $1.25/$10.00 per 1M
+            ("gemini-3-flash", 2000, 800, 0.15, 0.6),  # $0.15/$0.60 per 1M
         ],
     )
     def test_estimate_cost_from_gemini_usage(

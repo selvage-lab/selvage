@@ -285,7 +285,7 @@ def test_google_context_limit_workflow():
     if not os.getenv("GEMINI_API_KEY"):
         pytest.skip("GEMINI_API_KEY not found")
 
-    model_name = "gemini-2.5-flash"
+    model_name = "gemini-3-flash"
     context_limit = 1048576  # Gemini의 높은 context limit
 
     print("\\n=== Google Gemini Context Limit 워크플로우 테스트 ===")
