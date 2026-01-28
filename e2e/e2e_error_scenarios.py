@@ -3,6 +3,7 @@
 import pytest
 from testcontainers.core.generic import DockerContainer
 
+from e2e.conftest import setup_git_repo_in_container
 from e2e.helpers import verify_selvage_installation
 
 
@@ -39,23 +40,8 @@ def test_not_config_default_model_handling(error_test_container) -> None:
     # TestPyPI에서 selvage 설치
     verify_selvage_installation(container)
 
-    # 빈 저장소 생성 및 git init
-    exit_code, output = container.exec(
-        "bash -c 'mkdir -p /tmp/empty_repo && cd /tmp/empty_repo && git init'"
-    )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/empty_repo && git config user.email test@example.com'"
-    )
-    assert exit_code == 0, "Git config should succeed"
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/empty_repo && git config user.name \"Test User\"'"
-    )
-    assert exit_code == 0, "Git config should succeed"
+    # 테스트 저장소 설정
+    setup_git_repo_in_container(container, "/tmp/empty_repo")
 
     # 스테이징된 변경사항 없이 리뷰 시도
     exit_code, output = container.exec(
@@ -81,23 +67,8 @@ def test_empty_repository_handling(error_test_container) -> None:
     # TestPyPI에서 selvage 설치
     verify_selvage_installation(container)
 
-    # 빈 저장소 생성 및 git init
-    exit_code, output = container.exec(
-        "bash -c 'mkdir -p /tmp/empty_repo && cd /tmp/empty_repo && git init'"
-    )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/empty_repo && git config user.email test@example.com'"
-    )
-    assert exit_code == 0, "Git config should succeed"
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/empty_repo && git config user.name \"Test User\"'"
-    )
-    assert exit_code == 0, "Git config should succeed"
+    # 테스트 저장소 설정
+    setup_git_repo_in_container(container, "/tmp/empty_repo")
 
     # 스테이징된 변경사항 없이 리뷰 시도
     exit_code, output = container.exec(

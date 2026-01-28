@@ -1,8 +1,9 @@
 """End-to-End 테스트를 위한 pytest 설정 및 fixture들."""
 
 import subprocess
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 def pytest_configure(config):
@@ -33,28 +34,34 @@ def pytest_sessionstart(session):
             ["docker", "images", "-q", "selvage-testpypi:latest"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
-        
+
         if not result.stdout.strip():
             print("🚀 TestPyPI Docker image not found. Building...")
             _build_testpypi_image()
         else:
             # 이미지가 24시간 이상 오래된 경우 재빌드
             creation_time = subprocess.run(
-                ["docker", "images", "--format", "{{.CreatedAt}}", "selvage-testpypi:latest"],
+                [
+                    "docker",
+                    "images",
+                    "--format",
+                    "{{.CreatedAt}}",
+                    "selvage-testpypi:latest",
+                ],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
             ).stdout.strip()
-            
+
             print(f"📦 TestPyPI Docker image found (created: {creation_time})")
-            
+
             # 선택사항: 주기적 재빌드 로직
             # 현재는 수동으로 재빌드하도록 메시지만 출력
             print("💡 최신 selvage 버전을 원하면 다음 명령어를 실행하세요:")
             print("   ./scripts/build_testpypi_image.sh")
-            
+
     except subprocess.CalledProcessError as e:
         print(f"⚠️  Docker image check failed: {e}")
 
@@ -64,21 +71,31 @@ def _build_testpypi_image():
     try:
         project_root = Path(__file__).parent.parent
         build_script = project_root / "scripts" / "build_testpypi_image.sh"
-        
+
         if build_script.exists():
             subprocess.run([str(build_script)], check=True, cwd=project_root)
         else:
             # 빌드 스크립트가 없으면 직접 빌드
-            timestamp = subprocess.run(["date", "+%s"], capture_output=True, text=True).stdout.strip()
-            subprocess.run([
-                "docker", "build",
-                "--no-cache",
-                "--build-arg", f"CACHEBUST={timestamp}",
-                "-t", "selvage-testpypi:latest",
-                "-f", "e2e/dockerfiles/testpypi/Dockerfile",
-                "."
-            ], check=True, cwd=project_root)
-            
+            timestamp = subprocess.run(
+                ["date", "+%s"], capture_output=True, text=True
+            ).stdout.strip()
+            subprocess.run(
+                [
+                    "docker",
+                    "build",
+                    "--no-cache",
+                    "--build-arg",
+                    f"CACHEBUST={timestamp}",
+                    "-t",
+                    "selvage-testpypi:latest",
+                    "-f",
+                    "e2e/dockerfiles/testpypi/Dockerfile",
+                    ".",
+                ],
+                check=True,
+                cwd=project_root,
+            )
+
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to build TestPyPI Docker image: {e}")
         raise
@@ -89,6 +106,36 @@ def pytest_ignore_collect(collection_path, config):
     """E2E 테스트에서는 전역 필터링을 무시합니다."""
     # E2E 테스트 실행시에는 아무것도 필터링하지 않음
     return False
+
+
+def setup_git_repo_in_container(container, repo_path: str = "/tmp/test_repo") -> str:
+    """컨테이너 내에 Git 저장소를 설정합니다.
+
+    Args:
+        container: Docker 컨테이너 인스턴스
+        repo_path: 저장소 경로 (기본값: /tmp/test_repo)
+
+    Returns:
+        설정된 저장소 경로
+    """
+    # Git 저장소 초기화
+    exit_code, output = container.exec(
+        f"bash -c 'mkdir -p {repo_path} && cd {repo_path} && git init'"
+    )
+    assert exit_code == 0, f"Git init failed: {output.decode('utf-8', errors='ignore')}"
+
+    # Git 설정
+    exit_code, _ = container.exec(
+        f"bash -c 'cd {repo_path} && git config user.email test@example.com'"
+    )
+    assert exit_code == 0, "Git config email failed"
+
+    exit_code, _ = container.exec(
+        f"bash -c 'cd {repo_path} && git config user.name \"Test User\"'"
+    )
+    assert exit_code == 0, "Git config name failed"
+
+    return repo_path
 
 
 @pytest.fixture

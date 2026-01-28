@@ -3,6 +3,7 @@
 import pytest
 from testcontainers.core.generic import DockerContainer
 
+from e2e.conftest import setup_git_repo_in_container
 from e2e.helpers import verify_selvage_installation
 
 
@@ -65,23 +66,8 @@ def test_no_api_key_configuration(clean_api_key_container) -> None:
     # TestPyPI에서 selvage 설치 확인
     verify_selvage_installation(container)
 
-    # 테스트 저장소 생성 및 git init
-    exit_code, output = container.exec(
-        "bash -c 'mkdir -p /tmp/no_key_test && cd /tmp/no_key_test && git init'"
-    )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/no_key_test && git config user.email test@example.com'"
-    )
-    assert exit_code == 0, "Git config should succeed"
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/no_key_test && git config user.name \"Test User\"'"
-    )
-    assert exit_code == 0, "Git config should succeed"
+    # 테스트 저장소 설정
+    repo_path = setup_git_repo_in_container(container, "/tmp/no_key_test")
 
     # 테스트 파일 생성
     exit_code, output = container.exec(
@@ -111,7 +97,7 @@ def test_no_api_key_configuration(clean_api_key_container) -> None:
     "model,expected_provider",
     [
         ("gemini-3-flash", "gemini"),
-        ("gpt-5", "openai"),
+        ("gpt52-codex", "openai"),
         ("claude-sonnet-4.5", "anthropic"),
         ("qwen3-coder", "openrouter"),
     ],
@@ -125,23 +111,8 @@ def test_invalid_api_key_per_provider(
     # TestPyPI에서 selvage 설치 확인
     verify_selvage_installation(container)
 
-    # 테스트 저장소 생성 및 git init
-    exit_code, output = container.exec(
-        "bash -c 'mkdir -p /tmp/invalid_key_test && cd /tmp/invalid_key_test && git init'"
-    )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/invalid_key_test && git config user.email test@example.com'"
-    )
-    assert exit_code == 0, "Git config should succeed"
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/invalid_key_test && git config user.name \"Test User\"'"
-    )
-    assert exit_code == 0, "Git config should succeed"
+    # 테스트 저장소 설정
+    repo_path = setup_git_repo_in_container(container, "/tmp/invalid_key_test")
 
     # 테스트 파일 생성
     exit_code, output = container.exec(
@@ -180,7 +151,7 @@ def test_invalid_api_key_per_provider(
     "model,missing_env_vars",
     [
         ("gemini-3-pro", ["GEMINI_API_KEY", "OPENROUTER_API_KEY"]),
-        ("gpt-5", ["OPENAI_API_KEY", "OPENROUTER_API_KEY"]),
+        ("gpt52-codex", ["OPENAI_API_KEY", "OPENROUTER_API_KEY"]),
         ("claude-sonnet-4.5", ["ANTHROPIC_API_KEY", "OPENROUTER_API_KEY"]),
         ("qwen3-coder", ["OPENROUTER_API_KEY"]),
     ],
@@ -194,23 +165,8 @@ def test_missing_provider_specific_keys(
     # TestPyPI에서 selvage 설치 확인
     verify_selvage_installation(container)
 
-    # 테스트 저장소 생성 및 git init
-    exit_code, output = container.exec(
-        "bash -c 'mkdir -p /tmp/missing_key_test && cd /tmp/missing_key_test && git init'"
-    )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/missing_key_test && git config user.email test@example.com'"
-    )
-    assert exit_code == 0, "Git config should succeed"
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/missing_key_test && git config user.name \"Test User\"'"
-    )
-    assert exit_code == 0, "Git config should succeed"
+    # 테스트 저장소 설정
+    repo_path = setup_git_repo_in_container(container, "/tmp/missing_key_test")
 
     # 테스트 파일 생성
     exit_code, output = container.exec(
@@ -235,7 +191,7 @@ def test_missing_provider_specific_keys(
 
 
 @pytest.mark.parametrize(
-    "model", ["gemini-3-pro", "gpt-5", "claude-sonnet-4.5", "qwen3-coder"]
+    "model", ["gemini-3-pro", "gpt52-codex", "claude-sonnet-4.5", "qwen3-coder"]
 )
 def test_openrouter_fallback_success(openrouter_only_container, model: str) -> None:
     """OpenRouter API 키만 있을 때 다양한 모델들이 성공하는지 테스트."""
@@ -244,23 +200,8 @@ def test_openrouter_fallback_success(openrouter_only_container, model: str) -> N
     # TestPyPI에서 selvage 설치 확인
     verify_selvage_installation(container)
 
-    # 테스트 저장소 생성 및 git init
-    exit_code, output = container.exec(
-        "bash -c 'mkdir -p /tmp/openrouter_test && cd /tmp/openrouter_test && git init'"
-    )
-    assert exit_code == 0, (
-        f"Git init should succeed. Output: {output.decode('utf-8', errors='ignore')}"
-    )
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/openrouter_test && git config user.email test@example.com'"
-    )
-    assert exit_code == 0, "Git config should succeed"
-
-    exit_code, output = container.exec(
-        "bash -c 'cd /tmp/openrouter_test && git config user.name \"Test User\"'"
-    )
-    assert exit_code == 0, "Git config should succeed"
+    # 테스트 저장소 설정
+    repo_path = setup_git_repo_in_container(container, "/tmp/openrouter_test")
 
     # 테스트 파일 생성
     exit_code, output = container.exec(
