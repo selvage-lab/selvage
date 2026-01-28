@@ -1,5 +1,41 @@
 # Change Log
 
+## [0.3.0] - 2026-01-28
+
+### Added
+
+#### feat: 최신 AI 모델 업데이트 및 MCP 안정성 개선
+
+**핵심 변경사항**
+
+- **최신 모델 추가**: GPT-5.2-Codex (OpenAI), Claude Opus 4.5 (Anthropic), MiniMax M2.1, GLM-4.7 등 최신 AI 모델 지원
+- **모델 설정 단순화**: Claude 모델에서 날짜 접미사와 `-thinking` 변형 제거, thinking 모드 기본 활성화
+- **MCP 프로토콜 보호 강화**: stdout 오염 방지를 위한 출력 스트림 관리 개선
+- **고급 추론 모드 활성화**: 모든 주요 모델에 high reasoning 설정 적용
+
+**세부 구현사항**
+
+- **모델 업그레이드**:
+  - `gpt-5`, `gpt-5-high`, `gpt-5-mini` → `gpt-5.2-codex` (reasoning_effort: high)
+  - `gemini-2.5-pro/flash` → `gemini-3-pro/flash`
+  - `claude-sonnet-4.5-20250929`, `claude-sonnet-4.5-20250929-thinking` → `claude-sonnet-4.5` (thinking 기본)
+  - `claude-opus-4.5-20251101` → `claude-opus-4.5` (thinking 기본)
+- **MCP 서버 개선**:
+  - FastMCP `show_banner=False` 옵션 추가
+  - warnings를 stderr로 리다이렉트
+  - BaseConsole 지연 초기화 패턴 도입 (Proxy 패턴)
+  - 로깅 시스템의 MCP 모드 인식 개선
+- **추론 설정 강화**:
+  - `gpt-5.2-codex`: reasoning_effort "high"
+  - `minimax-m2.1`: reasoning.max_tokens 16000
+  - `glm-4.7`: thinking.type "enabled", max_tokens 16000
+  - `claude-*`: budget_tokens 32000
+
+### Breaking Changes
+
+- 기존 모델명 (`gpt-5`, `gpt-5-mini`, `gemini-2.5-flash` 등) 제거
+- Claude 모델명에서 날짜 접미사 제거 (`claude-sonnet-4.5-20250929` → `claude-sonnet-4.5`)
+
 ## [0.2.0] - 2025-11-17
 
 ### Added
