@@ -9,7 +9,7 @@ models:
     provider: "openai"
     params:
       reasoning_effort: "high"
-    thinking_mode: true
+    thinking_mode: false
     pricing:
       input: 1.75 # $1.75/1M tokens
       output: 14.0 # $14.00/1M tokens
