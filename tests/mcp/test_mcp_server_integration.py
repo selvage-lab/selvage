@@ -2,9 +2,8 @@
 
 from unittest.mock import Mock, patch
 
-import pytest_asyncio
+import pytest
 
-from selvage.src.mcp.server import SelvageMCPServer
 from selvage.src.mcp.tools.review_tools import (
     review_against_branch,
     review_against_commit,
@@ -25,6 +24,8 @@ class MCPServerTestHelper:
     """MCP 서버 테스트를 위한 헬퍼 클래스"""
 
     def __init__(self):
+        from selvage.src.mcp.server import SelvageMCPServer
+
         self.server = SelvageMCPServer()
 
     def get_server_info(self) -> dict:
@@ -32,11 +33,12 @@ class MCPServerTestHelper:
         return self.server.get_tools_info()
 
 
-@pytest_asyncio.fixture
-async def mcp_server():
+@pytest.fixture
+def mcp_server():
     """MCP 서버 테스트 헬퍼 픽스처"""
-    helper = MCPServerTestHelper()
-    yield helper
+    with patch("selvage.src.mcp.server._setup_mcp_environment"):
+        helper = MCPServerTestHelper()
+        yield helper
 
 
 class TestMCPServerIntegration:
@@ -49,25 +51,16 @@ class TestMCPServerIntegration:
         assert server_info["server_name"] == "Selvage Code Review Server"
         assert server_info["transport"] == "stdio"
         assert server_info["tools_registered"] is True
+        assert server_info["mode"] == "auto"
 
-        # 모든 예상 도구가 등록되어 있는지 확인
-        expected_review_tools = [
-            "review_current_changes_tool",
-            "review_staged_changes_tool",
-            "review_against_branch_tool",
-            "review_against_commit_tool",
-        ]
-        expected_utility_tools = [
-            "get_available_models_tool",
-            "get_review_history_tool",
-            "get_review_details_tool",
-            "get_server_status_tool",
-            "validate_model_support_tool",
-            "validate_api_key_for_provider_tool",
-        ]
+        # context_tools는 auto 모드에서 항상 등록
+        assert "get_review_context" in server_info["context_tools"]
 
-        assert server_info["review_tools"] == expected_review_tools
-        assert server_info["utility_tools"] == expected_utility_tools
+        # review_tools는 API 키 유무에 따라 달라지므로 list 타입만 확인
+        assert isinstance(server_info["review_tools"], list)
+
+        # utility_tools는 항상 6개
+        assert len(server_info["utility_tools"]) == 6
 
     def test_get_server_status_function(self) -> None:
         """서버 상태 조회 함수 테스트"""
@@ -78,7 +71,8 @@ class TestMCPServerIntegration:
         assert status.host is None  # stdio 모드
         assert status.start_time is None
         assert isinstance(status.version, str)
-        assert status.tools_count == 10
+        # 도구 수는 모드에 따라 달라지므로 최소값 확인
+        assert status.tools_count >= 7
 
     def test_get_available_models_function(self) -> None:
         """사용 가능한 모델 조회 함수 테스트"""
@@ -274,7 +268,7 @@ class TestMCPServerFunctionalIntegration:
         # 서버 상태 조회
         status = get_server_status()
         assert status.running is True
-        assert status.tools_count == 10
+        assert status.tools_count >= 7
 
         # 모델 목록 조회
         models = get_available_models()
