@@ -200,7 +200,10 @@ def _execute_review_workflow(
 
 def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
     """
-    Review unstaged changes in the repository with AI.
+    Review unstaged changes using an independent LLM API call.
+    Requires an API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.).
+    If no API key is available, use get_review_context instead
+    to let the agent perform the review directly.
 
     Args:
         model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
@@ -227,7 +230,9 @@ def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
 
 def review_staged_changes(model: str, repo_path: str = ".") -> ReviewResult:
     """
-    Review staged changes with AI.
+    Review staged changes using an independent LLM API call.
+    Requires an API key. If no API key is available,
+    use get_review_context instead.
 
     Args:
         model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
@@ -256,7 +261,9 @@ def review_against_branch(
     model: str, target_branch: str, repo_path: str = "."
 ) -> ReviewResult:
     """
-    Review differences between current branch and specified branch with AI.
+    Review differences between current and target branch using an
+    independent LLM API call. Requires an API key. If no API key
+    is available, use get_review_context instead.
 
     Args:
         model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
@@ -286,7 +293,9 @@ def review_against_commit(
     model: str, target_commit: str, repo_path: str = "."
 ) -> ReviewResult:
     """
-    Review changes from specified commit to HEAD with AI.
+    Review changes from specified commit to HEAD using an independent
+    LLM API call. Requires an API key. If no API key is available,
+    use get_review_context instead.
 
     Args:
         model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
