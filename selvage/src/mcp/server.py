@@ -159,11 +159,16 @@ def run_server(mode: str = "auto") -> None:
 
 
 def __getattr__(name: str) -> FastMCP:
-    """fastmcp dev 호환을 위한 모듈 레벨 lazy attribute.
+    """fastmcp dev 호환을 위한 모듈 레벨 lazy attribute (PEP 562).
 
     fastmcp dev는 모듈에서 mcp, server, app 변수를 찾는다.
-    테스트 시에는 접근하지 않으므로 side effect 없음.
+    _setup_mcp_environment 없이 가볍게 FastMCP만 생성하여
+    set_mcp_mode 중복 호출 문제를 회피한다.
     """
     if name in ("mcp", "app"):
-        return SelvageMCPServer().mcp
+        dev_app = FastMCP("Selvage Code Review Server")
+        register_context_tools(dev_app)
+        register_review_tools(dev_app)
+        register_utility_tools(dev_app)
+        return dev_app
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
