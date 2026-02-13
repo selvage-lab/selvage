@@ -1,6 +1,5 @@
 """Selvage MCP 서버 구현"""
 
-import os
 import sys
 import warnings
 
@@ -9,15 +8,10 @@ from fastmcp import FastMCP
 from selvage.src.config import set_mcp_mode
 from selvage.src.mcp.tools.context_tools import register_context_tools
 from selvage.src.mcp.tools.review_tools import register_review_tools
-from selvage.src.mcp.tools.utility_tools import register_utility_tools
-
-VALID_MODES = ("auto", "delegated", "independent")
-
-_API_KEY_ENV_VARS = (
-    "OPENAI_API_KEY",
-    "ANTHROPIC_API_KEY",
-    "GEMINI_API_KEY",
-    "OPENROUTER_API_KEY",
+from selvage.src.mcp.tools.utility_tools import (
+    UTILITY_TOOL_NAMES,
+    register_utility_tools,
+    set_total_tools_count,
 )
 
 
@@ -40,64 +34,43 @@ def _setup_mcp_environment() -> None:
     )
 
 
-def _has_any_api_key() -> bool:
-    """LLM API 키가 하나라도 설정되어 있는지 확인합니다."""
-    return any(os.getenv(var) for var in _API_KEY_ENV_VARS)
-
-
 class SelvageMCPServer:
     """Selvage MCP 서버 메인 클래스"""
 
     def __init__(
         self,
         name: str = "Selvage Code Review Server",
-        mode: str = "auto",
     ) -> None:
-        if mode not in VALID_MODES:
-            raise ValueError(
-                f"Invalid mode: {mode}. Supported modes: {', '.join(VALID_MODES)}"
-            )
-
         # MCP 환경 설정 (stdout 보호)
         _setup_mcp_environment()
 
         self.name = name
-        self.mode = mode
         self.mcp = FastMCP(name)
         self._registered_review_tools: list[str] = []
         self._registered_context_tools: list[str] = []
         self._register_tools()
 
     def _register_tools(self) -> None:
-        """모드에 따라 MCP 도구들을 등록합니다."""
-        should_register_review = False
-        should_register_context = False
+        """MCP 도구들을 등록합니다."""
+        register_context_tools(self.mcp)
+        self._registered_context_tools = [
+            "get_review_context",
+            "get_file_review_context",
+        ]
 
-        if self.mode == "auto":
-            should_register_context = True
-            should_register_review = _has_any_api_key()
-        elif self.mode == "delegated":
-            should_register_context = True
-        elif self.mode == "independent":
-            should_register_review = True
-
-        if should_register_review:
-            register_review_tools(self.mcp)
-            self._registered_review_tools = [
-                "review_current_changes",
-                "review_staged_changes",
-                "review_against_branch",
-                "review_against_commit",
-            ]
-
-        if should_register_context:
-            register_context_tools(self.mcp)
-            self._registered_context_tools = [
-                "get_review_context",
-                "get_file_review_context",
-            ]
+        register_review_tools(self.mcp)
+        self._registered_review_tools = [
+            "review_changes",
+        ]
 
         register_utility_tools(self.mcp)
+
+        total_count = (
+            len(self._registered_review_tools)
+            + len(self._registered_context_tools)
+            + len(UTILITY_TOOL_NAMES)
+        )
+        set_total_tools_count(total_count)
 
     async def run(self, transport: str = "stdio") -> None:
         """MCP 서버를 실행합니다."""
@@ -111,7 +84,6 @@ class SelvageMCPServer:
         return {
             "server_name": self.name,
             "transport": "stdio",
-            "mode": self.mode,
             "tools_registered": True,
             "review_tools": self._registered_review_tools,
             "context_tools": self._registered_context_tools,
@@ -126,11 +98,11 @@ class SelvageMCPServer:
         }
 
 
-def main_sync(mode: str = "auto") -> None:
+def main_sync() -> None:
     """MCP 서버 동기 엔트리 포인트"""
-    server = SelvageMCPServer(mode=mode)
+    server = SelvageMCPServer()
 
-    print(f"Starting {server.name} (mode={mode})...", file=sys.stderr)
+    print(f"Starting {server.name}...", file=sys.stderr)
     print(f"Tools info: {server.get_tools_info()}", file=sys.stderr)
 
     try:
@@ -143,22 +115,15 @@ def main_sync(mode: str = "auto") -> None:
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mode",
-        choices=list(VALID_MODES),
-        default="auto",
-        help="Tool registration mode (default: auto)",
-    )
-    args = parser.parse_args()
-    main_sync(mode=args.mode)
+    main_sync()
 
 
-def run_server(mode: str = "auto") -> None:
+def run_server() -> None:
     """서버를 실행합니다 (외부 호출용)"""
-    main_sync(mode=mode)
+    main_sync()
+
+
+_dev_app: FastMCP | None = None
 
 
 def __getattr__(name: str) -> FastMCP:
@@ -167,11 +132,14 @@ def __getattr__(name: str) -> FastMCP:
     fastmcp dev는 모듈에서 mcp, server, app 변수를 찾는다.
     _setup_mcp_environment 없이 가볍게 FastMCP만 생성하여
     set_mcp_mode 중복 호출 문제를 회피한다.
+    인스턴스는 캐싱하여 매 접근 시 재생성하지 않는다.
     """
+    global _dev_app
     if name in ("mcp", "app"):
-        dev_app = FastMCP("Selvage Code Review Server")
-        register_context_tools(dev_app)
-        register_review_tools(dev_app)
-        register_utility_tools(dev_app)
-        return dev_app
+        if _dev_app is None:
+            _dev_app = FastMCP("Selvage Code Review Server")
+            register_context_tools(_dev_app)
+            register_review_tools(_dev_app)
+            register_utility_tools(_dev_app)
+        return _dev_app
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

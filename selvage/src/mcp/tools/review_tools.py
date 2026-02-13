@@ -198,9 +198,18 @@ def _execute_review_workflow(
         )
 
 
-def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
+VALID_MODES = ("unstaged", "staged", "branch", "commit")
+
+
+def review_changes(
+    model: str,
+    repo_path: str = ".",
+    mode: str = "unstaged",
+    target_branch: str | None = None,
+    target_commit: str | None = None,
+) -> ReviewResult:
     """
-    Review unstaged changes using an independent LLM API call.
+    Review code changes using an independent LLM API call.
     Requires an API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.).
     If no API key is available, use get_review_context instead
     to let the agent perform the review directly.
@@ -208,6 +217,9 @@ def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
     Args:
         model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
         repo_path: Git repository path (default: current directory)
+        mode: Diff mode - "unstaged" (default), "staged", "branch", or "commit"
+        target_branch: Target branch for "branch" mode (e.g., "main")
+        target_commit: Target commit hash for "commit" mode (e.g., "abc1234")
 
     Returns:
         ReviewResult:
@@ -221,109 +233,38 @@ def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
             - timestamp: str (ISO 8601)
             - error_message: str | None
     """
+    if mode not in VALID_MODES:
+        return ReviewResult(
+            success=False,
+            model_used=model,
+            error_message=(
+                f"Invalid mode: {mode}. Supported modes: {', '.join(VALID_MODES)}"
+            ),
+        )
+
+    if mode == "branch" and not target_branch:
+        return ReviewResult(
+            success=False,
+            model_used=model,
+            error_message='target_branch is required for "branch" mode.',
+        )
+
+    if mode == "commit" and not target_commit:
+        return ReviewResult(
+            success=False,
+            model_used=model,
+            error_message='target_commit is required for "commit" mode.',
+        )
+
     return _execute_review_workflow(
         model=model,
         repo_path=repo_path,
-        staged=False,
-    )
-
-
-def review_staged_changes(model: str, repo_path: str = ".") -> ReviewResult:
-    """
-    Review staged changes using an independent LLM API call.
-    Requires an API key. If no API key is available,
-    use get_review_context instead.
-
-    Args:
-        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-        repo_path: Git repository path (default: current directory)
-
-    Returns:
-        ReviewResult:
-            - success: bool
-            - response: ReviewResponse | None
-            - estimated_cost: float (USD)
-            - model_used: str
-            - files_reviewed: list[str]
-            - log_id: str | None
-            - log_path: str | None
-            - timestamp: str (ISO 8601)
-            - error_message: str | None
-    """
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        staged=True,
-    )
-
-
-def review_against_branch(
-    model: str, target_branch: str, repo_path: str = "."
-) -> ReviewResult:
-    """
-    Review differences between current and target branch using an
-    independent LLM API call. Requires an API key. If no API key
-    is available, use get_review_context instead.
-
-    Args:
-        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-        target_branch: Target branch to compare (e.g., main, develop)
-        repo_path: Git repository path (default: current directory)
-
-    Returns:
-        ReviewResult:
-            - success: bool
-            - response: ReviewResponse | None
-            - estimated_cost: float (USD)
-            - model_used: str
-            - files_reviewed: list[str]
-            - log_id: str | None
-            - log_path: str | None
-            - timestamp: str (ISO 8601)
-            - error_message: str | None
-    """
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        target_branch=target_branch,
-    )
-
-
-def review_against_commit(
-    model: str, target_commit: str, repo_path: str = "."
-) -> ReviewResult:
-    """
-    Review changes from specified commit to HEAD using an independent
-    LLM API call. Requires an API key. If no API key is available,
-    use get_review_context instead.
-
-    Args:
-        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-        target_commit: Base commit hash (e.g., abc1234)
-        repo_path: Git repository path (default: current directory)
-
-    Returns:
-        ReviewResult:
-            - success: bool
-            - response: ReviewResponse | None
-            - estimated_cost: float (USD)
-            - model_used: str
-            - files_reviewed: list[str]
-            - log_id: str | None
-            - log_path: str | None
-            - timestamp: str (ISO 8601)
-            - error_message: str | None
-    """
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        target_commit=target_commit,
+        staged=(mode == "staged"),
+        target_branch=target_branch if mode == "branch" else None,
+        target_commit=target_commit if mode == "commit" else None,
     )
 
 
 def register_review_tools(mcp: FastMCP) -> None:
     """리뷰 관련 MCP 도구들을 등록합니다."""
-    mcp.tool()(review_current_changes)
-    mcp.tool()(review_staged_changes)
-    mcp.tool()(review_against_branch)
-    mcp.tool()(review_against_commit)
+    mcp.tool()(review_changes)
