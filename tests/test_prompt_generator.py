@@ -877,3 +877,75 @@ class TestPromptConstants:
 
         # Then - 항상 동일한 결과 반환
         assert rule1 == rule2 == rule3
+
+
+class TestPromptGeneratorDelegated:
+    """delegated 모드 프롬프트 생성 테스트"""
+
+    def test_delegated_prompt_excludes_json_output(self):
+        """delegated 프롬프트에 JSON 출력 형식이 없는지 확인"""
+        generator = PromptGenerator()
+        prompt = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False, delegated=True
+        )
+
+        assert "Output (JSON) Format" not in prompt
+        assert "Score Rubric" not in prompt
+        assert "NEVER include any output other than the JSON" not in prompt
+
+    def test_delegated_prompt_includes_review_guidelines(self):
+        """delegated 프롬프트에 리뷰 가이드라인이 포함되는지 확인"""
+        generator = PromptGenerator()
+        prompt = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False, delegated=True
+        )
+
+        assert "Input (JSON) Structure" in prompt
+        assert "after_code" in prompt
+        assert "context_type" in prompt
+
+    def test_delegated_prompt_includes_review_instructions(self):
+        """delegated 프롬프트에 Review Instructions가 포함되는지 확인"""
+        generator = PromptGenerator()
+        prompt = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False, delegated=True
+        )
+
+        assert "Verification Principle" in prompt
+        assert "Priority Guidance" in prompt
+        assert "Delegated Mode" in prompt
+
+    def test_delegated_prompt_template_variables_replaced(self):
+        """delegated 프롬프트 템플릿 변수가 치환되는지 확인"""
+        generator = PromptGenerator()
+
+        prompt_with_rule = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=True, delegated=True
+        )
+        prompt_without_rule = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False, delegated=True
+        )
+
+        template_variables = [
+            "{{LANGUAGE}}",
+            "{{ENTIRELY_NEW_CONTENT_RULE}}",
+        ]
+
+        for template_var in template_variables:
+            assert template_var not in prompt_with_rule
+            assert template_var not in prompt_without_rule
+
+    def test_non_delegated_prompt_unchanged(self):
+        """delegated=False(기본값)일 때 기존 v4 프롬프트와 동일한지 확인"""
+        generator = PromptGenerator()
+
+        prompt_default = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False
+        )
+        prompt_explicit = generator._get_code_review_system_prompt(
+            is_include_entirely_new_content=False, delegated=False
+        )
+
+        assert prompt_default == prompt_explicit
+        assert "Output (JSON) Format" in prompt_default
+        assert "Score Rubric" in prompt_default
