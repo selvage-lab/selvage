@@ -1,15 +1,22 @@
 """MCP context tools implementation - 에이전트 위임 리뷰 모드"""
 
+import json
+import logging
+
 from fastmcp import FastMCP
 
 from selvage.src.diff_parser import parse_git_diff
+from selvage.src.mcp.context_store import DelegatedContextStore
 from selvage.src.utils.git_utils import get_diff_content
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.token.models import ReviewRequest
 
-from ..models.responses import ReviewContextResult
+from ..models.responses import FileReviewContextResult, ReviewContextResult
+
+logger = logging.getLogger(__name__)
 
 VALID_MODES = ("unstaged", "staged", "branch", "commit")
+CONTEXT_SIZE_LIMIT = 50_000  # 문자 수 기준
 
 REVIEW_OUTPUT_SCHEMA: dict = {
     "type": "json_schema",
@@ -142,13 +149,50 @@ def get_review_context(
             "file_languages": _get_language_stats(diff_result),
         }
 
-        # 8. 결과 반환
-        return ReviewContextResult(
+        # 8. 결과 생성
+        messages = prompt.to_messages()
+        result = ReviewContextResult(
             success=True,
             system_prompt=prompt.system_prompt.content,
-            review_targets=prompt.to_messages(),
+            review_targets=messages,
             output_format=REVIEW_OUTPUT_SCHEMA,
             metadata=metadata,
+        )
+
+        # 9. 크기 체크 - 초과 시 로컬 저장 후 경량 응답 반환
+        serialized = result.model_dump_json()
+        if len(serialized) <= CONTEXT_SIZE_LIMIT:
+            return result
+
+        file_list = _extract_file_list(messages)
+        store = DelegatedContextStore()
+        store.cleanup_expired()
+        context_id = store.save(
+            {
+                "system_prompt": result.system_prompt,
+                "review_targets": result.review_targets,
+                "output_format": result.output_format,
+                "metadata": result.metadata,
+                "file_list": file_list,
+            }
+        )
+
+        logger.info(
+            "Context size %d exceeds limit %d, split into %d files (context_id=%s)",
+            len(serialized),
+            CONTEXT_SIZE_LIMIT,
+            len(file_list),
+            context_id,
+        )
+
+        return ReviewContextResult(
+            success=True,
+            system_prompt=result.system_prompt,
+            review_targets=[],
+            output_format=result.output_format,
+            metadata=metadata,
+            context_id=context_id,
+            file_list=file_list,
         )
 
     except Exception as e:
@@ -156,6 +200,63 @@ def get_review_context(
             success=False,
             error_message=f"An error occurred: {str(e)}",
         )
+
+
+def get_file_review_context(
+    context_id: str,
+    file_path: str,
+) -> FileReviewContextResult:
+    """
+    Retrieve the review context for a specific file from a split context.
+    Use this only when get_review_context returned a context_id (meaning the
+    full context exceeded the size limit).
+
+    The calling agent should call this tool in parallel for each file in the
+    file_list returned by get_review_context.
+
+    Args:
+        context_id: Context ID returned by get_review_context
+        file_path: File path to retrieve (from file_list)
+
+    Returns:
+        FileReviewContextResult:
+            - success: bool
+            - file_path: str (requested file path)
+            - review_target: dict (the file's review context with role + content)
+            - error_message: str | None
+    """
+    store = DelegatedContextStore()
+    target = store.load_file_context(context_id, file_path)
+    if target is None:
+        return FileReviewContextResult(
+            success=False,
+            file_path=file_path,
+            error_message=f"File '{file_path}' not found in context '{context_id}'",
+        )
+    return FileReviewContextResult(
+        success=True,
+        file_path=file_path,
+        review_target=target,
+    )
+
+
+def _extract_file_list(messages: list[dict]) -> list[str]:
+    """to_messages() 결과에서 user role 메시지의 file_name을 추출합니다."""
+    file_list: list[str] = []
+    for msg in messages:
+        if msg.get("role") != "user":
+            continue
+        content = msg.get("content", "")
+        if not isinstance(content, str):
+            continue
+        try:
+            data = json.loads(content)
+            file_name = data.get("file_name")
+            if file_name:
+                file_list.append(file_name)
+        except (json.JSONDecodeError, TypeError, AttributeError):
+            continue
+    return file_list
 
 
 def _get_language_stats(diff_result: object) -> dict[str, int]:
@@ -170,3 +271,4 @@ def _get_language_stats(diff_result: object) -> dict[str, int]:
 def register_context_tools(mcp: FastMCP) -> None:
     """에이전트 위임 리뷰 도구를 등록합니다."""
     mcp.tool()(get_review_context)
+    mcp.tool()(get_file_review_context)

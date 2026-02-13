@@ -24,7 +24,7 @@ from ..models.responses import (
 MAX_HISTORY_LIMIT = 50  # 성능 및 메모리 사용량 고려
 MIN_HISTORY_LIMIT = 1
 DEFAULT_HISTORY_LIMIT = 10
-TOTAL_MCP_TOOLS_COUNT = 10  # 리뷰 도구 4개 + 유틸리티 도구 6개
+TOTAL_MCP_TOOLS_COUNT = 11  # 리뷰 도구 4개 + 컨텍스트 도구 2개 + 유틸리티 도구 6개
 
 
 def get_available_models() -> list[ModelInfo]:

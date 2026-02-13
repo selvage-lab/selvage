@@ -1,12 +1,19 @@
 """에이전트 위임 리뷰 도구 테스트"""
 
+import json
+
 from unittest.mock import MagicMock, patch
 
 from selvage.src.diff_parser.models.diff_result import DiffResult
 from selvage.src.diff_parser.models.file_diff import FileDiff
-from selvage.src.mcp.models.responses import ReviewContextResult
+from selvage.src.mcp.models.responses import (
+    FileReviewContextResult,
+    ReviewContextResult,
+)
 from selvage.src.mcp.tools.context_tools import (
+    CONTEXT_SIZE_LIMIT,
     REVIEW_OUTPUT_SCHEMA,
+    get_file_review_context,
     get_review_context,
     register_context_tools,
 )
@@ -295,10 +302,176 @@ class TestGetReviewContext:
         assert "recommendations" in REVIEW_OUTPUT_SCHEMA["schema"]["properties"]
 
     def test_register_context_tools(self) -> None:
-        """context 도구 등록 테스트"""
+        """context 도구 등록 테스트 - get_review_context + get_file_review_context"""
         mock_mcp = MagicMock()
         mock_mcp.tool.return_value = lambda fn: fn
 
         register_context_tools(mock_mcp)
 
-        mock_mcp.tool.assert_called_once()
+        assert mock_mcp.tool.call_count == 2
+
+
+class TestContextSplitting:
+    """컨텍스트 분할 동작 테스트"""
+
+    @patch("selvage.src.mcp.tools.context_tools.PromptGenerator")
+    @patch("selvage.src.mcp.tools.context_tools.parse_git_diff")
+    @patch("selvage.src.mcp.tools.context_tools.get_diff_content")
+    def test_small_context_returns_full_data(
+        self,
+        mock_get_diff: MagicMock,
+        mock_parse: MagicMock,
+        mock_prompt_gen_cls: MagicMock,
+    ) -> None:
+        """크기 이내 시 context_id가 None이고 review_targets에 데이터 존재"""
+        mock_get_diff.return_value = "diff --git a/app.py b/app.py\n..."
+        mock_parse.return_value = _make_diff_result()
+
+        mock_prompt = MagicMock()
+        mock_prompt.system_prompt = MagicMock(content="short prompt")
+        mock_prompt.to_messages.return_value = [
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+        mock_prompt_gen_cls.return_value.create_code_review_prompt.return_value = (
+            mock_prompt
+        )
+
+        result = get_review_context(repo_path="/test/repo")
+
+        assert result.success is True
+        assert result.context_id is None
+        assert result.file_list == []
+        assert len(result.review_targets) == 1
+
+    @patch("selvage.src.mcp.tools.context_tools.DelegatedContextStore")
+    @patch("selvage.src.mcp.tools.context_tools.PromptGenerator")
+    @patch("selvage.src.mcp.tools.context_tools.parse_git_diff")
+    @patch("selvage.src.mcp.tools.context_tools.get_diff_content")
+    def test_large_context_returns_split(
+        self,
+        mock_get_diff: MagicMock,
+        mock_parse: MagicMock,
+        mock_prompt_gen_cls: MagicMock,
+        mock_store_cls: MagicMock,
+    ) -> None:
+        """크기 초과 시 context_id 존재, file_list에 파일명 포함, review_targets 비어있음"""
+        mock_get_diff.return_value = "diff --git a/app.py b/app.py\n..."
+        mock_parse.return_value = _make_diff_result()
+
+        # CONTEXT_SIZE_LIMIT을 초과하는 큰 콘텐츠 생성
+        large_content = "x" * (CONTEXT_SIZE_LIMIT + 1000)
+        mock_prompt = MagicMock()
+        mock_prompt.system_prompt = MagicMock(content="system prompt")
+        mock_prompt.to_messages.return_value = [
+            {"role": "user", "content": json.dumps({"file_name": "app.py", "data": large_content})},
+            {"role": "user", "content": json.dumps({"file_name": "utils.py", "data": large_content})},
+        ]
+        mock_prompt_gen_cls.return_value.create_code_review_prompt.return_value = (
+            mock_prompt
+        )
+
+        mock_store = MagicMock()
+        mock_store.save.return_value = "ctx-1234567890-abcdef12"
+        mock_store.cleanup_expired.return_value = 0
+        mock_store_cls.return_value = mock_store
+
+        result = get_review_context(repo_path="/test/repo")
+
+        assert result.success is True
+        assert result.context_id == "ctx-1234567890-abcdef12"
+        assert result.file_list == ["app.py", "utils.py"]
+        assert result.review_targets == []
+        assert result.system_prompt == "system prompt"
+        assert result.output_format is not None
+        mock_store.save.assert_called_once()
+        mock_store.cleanup_expired.assert_called_once()
+
+
+class TestGetFileReviewContext:
+    """get_file_review_context 도구 테스트"""
+
+    @patch("selvage.src.mcp.tools.context_tools.DelegatedContextStore")
+    def test_file_context_found(self, mock_store_cls: MagicMock) -> None:
+        """정상적으로 파일 컨텍스트 조회"""
+        mock_store = MagicMock()
+        mock_store.load_file_context.return_value = {
+            "role": "user",
+            "content": '{"file_name": "app.py", "diff": "..."}',
+        }
+        mock_store_cls.return_value = mock_store
+
+        result = get_file_review_context(
+            context_id="ctx-1234567890-abcdef12",
+            file_path="app.py",
+        )
+
+        assert result.success is True
+        assert result.file_path == "app.py"
+        assert result.review_target is not None
+        assert result.review_target["role"] == "user"
+        assert result.error_message is None
+
+    @patch("selvage.src.mcp.tools.context_tools.DelegatedContextStore")
+    def test_file_context_not_found(self, mock_store_cls: MagicMock) -> None:
+        """존재하지 않는 파일 조회 시 에러 반환"""
+        mock_store = MagicMock()
+        mock_store.load_file_context.return_value = None
+        mock_store_cls.return_value = mock_store
+
+        result = get_file_review_context(
+            context_id="ctx-1234567890-abcdef12",
+            file_path="nonexistent.py",
+        )
+
+        assert result.success is False
+        assert result.file_path == "nonexistent.py"
+        assert result.review_target is None
+        assert "nonexistent.py" in result.error_message
+
+    @patch("selvage.src.mcp.tools.context_tools.DelegatedContextStore")
+    def test_invalid_context_id(self, mock_store_cls: MagicMock) -> None:
+        """잘못된 context_id로 조회 시 에러 반환"""
+        mock_store = MagicMock()
+        mock_store.load_file_context.return_value = None
+        mock_store_cls.return_value = mock_store
+
+        result = get_file_review_context(
+            context_id="ctx-invalid-12345678",
+            file_path="app.py",
+        )
+
+        assert result.success is False
+        assert "ctx-invalid-12345678" in result.error_message
+
+
+class TestFileReviewContextResultModel:
+    """FileReviewContextResult 모델 테스트"""
+
+    def test_success_result(self) -> None:
+        """성공 결과 생성 테스트"""
+        result = FileReviewContextResult(
+            success=True,
+            file_path="app.py",
+            review_target={"role": "user", "content": "test"},
+        )
+        assert result.success is True
+        assert result.file_path == "app.py"
+        assert result.error_message is None
+
+    def test_error_result(self) -> None:
+        """에러 결과 생성 테스트"""
+        result = FileReviewContextResult(
+            success=False,
+            file_path="app.py",
+            error_message="File not found",
+        )
+        assert result.success is False
+        assert result.review_target is None
+        assert result.error_message == "File not found"
+
+    def test_default_values(self) -> None:
+        """기본값 테스트"""
+        result = FileReviewContextResult(success=True)
+        assert result.file_path is None
+        assert result.review_target is None
+        assert result.error_message is None

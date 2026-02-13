@@ -92,7 +92,10 @@ class SelvageMCPServer:
 
         if should_register_context:
             register_context_tools(self.mcp)
-            self._registered_context_tools = ["get_review_context"]
+            self._registered_context_tools = [
+                "get_review_context",
+                "get_file_review_context",
+            ]
 
         register_utility_tools(self.mcp)
 
