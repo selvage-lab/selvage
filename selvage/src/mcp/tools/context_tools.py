@@ -139,7 +139,9 @@ def get_review_context(
         )
 
         # 6. 프롬프트 생성 (Smart Context 포함)
-        prompt = PromptGenerator().create_code_review_prompt(review_request)
+        prompt = PromptGenerator().create_code_review_prompt(
+            review_request, delegated=True
+        )
 
         # 7. 메타데이터 구성
         metadata = {
@@ -155,7 +157,7 @@ def get_review_context(
             success=True,
             system_prompt=prompt.system_prompt.content,
             review_targets=messages,
-            output_format=REVIEW_OUTPUT_SCHEMA,
+            output_format=None,
             metadata=metadata,
         )
 

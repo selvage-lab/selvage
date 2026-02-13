@@ -382,7 +382,7 @@ class TestContextSplitting:
         assert result.file_list == ["app.py", "utils.py"]
         assert result.review_targets == []
         assert result.system_prompt == "system prompt"
-        assert result.output_format is not None
+        assert result.output_format is None
         mock_store.save.assert_called_once()
         mock_store.cleanup_expired.assert_called_once()
 
@@ -475,3 +475,64 @@ class TestFileReviewContextResultModel:
         assert result.file_path is None
         assert result.review_target is None
         assert result.error_message is None
+
+
+class TestDelegatedPrompt:
+    """delegated 모드 프롬프트 관련 테스트"""
+
+    @patch("selvage.src.mcp.tools.context_tools.PromptGenerator")
+    @patch("selvage.src.mcp.tools.context_tools.parse_git_diff")
+    @patch("selvage.src.mcp.tools.context_tools.get_diff_content")
+    def test_get_review_context_uses_delegated_prompt(
+        self,
+        mock_get_diff: MagicMock,
+        mock_parse: MagicMock,
+        mock_prompt_gen_cls: MagicMock,
+    ) -> None:
+        """get_review_context가 delegated=True로 프롬프트를 생성하는지 확인"""
+        mock_get_diff.return_value = "diff --git a/app.py b/app.py\n..."
+        mock_parse.return_value = _make_diff_result()
+
+        mock_prompt = MagicMock()
+        mock_prompt.system_prompt = MagicMock(content="delegated prompt")
+        mock_prompt.to_messages.return_value = [
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+
+        mock_prompt_gen = MagicMock()
+        mock_prompt_gen.create_code_review_prompt.return_value = mock_prompt
+        mock_prompt_gen_cls.return_value = mock_prompt_gen
+
+        get_review_context(repo_path="/test/repo")
+
+        mock_prompt_gen.create_code_review_prompt.assert_called_once()
+        call_kwargs = mock_prompt_gen.create_code_review_prompt.call_args
+        assert call_kwargs[1]["delegated"] is True
+
+    @patch("selvage.src.mcp.tools.context_tools.PromptGenerator")
+    @patch("selvage.src.mcp.tools.context_tools.parse_git_diff")
+    @patch("selvage.src.mcp.tools.context_tools.get_diff_content")
+    def test_output_format_is_none(
+        self,
+        mock_get_diff: MagicMock,
+        mock_parse: MagicMock,
+        mock_prompt_gen_cls: MagicMock,
+    ) -> None:
+        """delegated 모드에서 output_format이 None인지 확인"""
+        mock_get_diff.return_value = "diff --git a/app.py b/app.py\n..."
+        mock_parse.return_value = _make_diff_result()
+
+        mock_prompt = MagicMock()
+        mock_prompt.system_prompt = MagicMock(content="delegated prompt")
+        mock_prompt.to_messages.return_value = [
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+
+        mock_prompt_gen = MagicMock()
+        mock_prompt_gen.create_code_review_prompt.return_value = mock_prompt
+        mock_prompt_gen_cls.return_value = mock_prompt_gen
+
+        result = get_review_context(repo_path="/test/repo")
+
+        assert result.success is True
+        assert result.output_format is None
