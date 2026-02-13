@@ -156,3 +156,14 @@ if __name__ == "__main__":
 def run_server(mode: str = "auto") -> None:
     """서버를 실행합니다 (외부 호출용)"""
     main_sync(mode=mode)
+
+
+def __getattr__(name: str) -> FastMCP:
+    """fastmcp dev 호환을 위한 모듈 레벨 lazy attribute.
+
+    fastmcp dev는 모듈에서 mcp, server, app 변수를 찾는다.
+    테스트 시에는 접근하지 않으므로 side effect 없음.
+    """
+    if name in ("mcp", "app"):
+        return SelvageMCPServer().mcp
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
