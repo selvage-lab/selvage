@@ -4,12 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from selvage.src.mcp.tools.review_tools import (
-    review_against_branch,
-    review_against_commit,
-    review_current_changes,
-    review_staged_changes,
-)
+from selvage.src.mcp.tools.review_tools import review_changes
 from selvage.src.mcp.tools.utility_tools import (
     get_available_models,
     get_review_details,
@@ -51,13 +46,12 @@ class TestMCPServerIntegration:
         assert server_info["server_name"] == "Selvage Code Review Server"
         assert server_info["transport"] == "stdio"
         assert server_info["tools_registered"] is True
-        assert server_info["mode"] == "auto"
 
-        # context_tools는 auto 모드에서 항상 등록
+        # context_tools는 항상 등록
         assert "get_review_context" in server_info["context_tools"]
 
-        # review_tools는 API 키 유무에 따라 달라지므로 list 타입만 확인
-        assert isinstance(server_info["review_tools"], list)
+        # review_tools는 항상 등록
+        assert len(server_info["review_tools"]) == 1
 
         # utility_tools는 항상 6개
         assert len(server_info["utility_tools"]) == 6
@@ -142,11 +136,10 @@ class TestMCPServerIntegration:
         assert details.error_message is not None
 
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_current_changes_function(self, mock_workflow: Mock) -> None:
-        """현재 변경사항 리뷰 함수 테스트"""
+    def test_review_changes_unstaged(self, mock_workflow: Mock) -> None:
+        """unstaged mode 리뷰 함수 테스트"""
         from selvage.src.mcp.models.responses import ReviewResult
 
-        # Mock 설정
         mock_result = ReviewResult(
             success=True,
             estimated_cost=0.05,
@@ -155,25 +148,25 @@ class TestMCPServerIntegration:
         )
         mock_workflow.return_value = mock_result
 
-        # 함수 호출
-        result = review_current_changes(
+        result = review_changes(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
         )
 
-        # 검증
         assert result.success is True
         assert result.model_used == "claude-sonnet-4.5"
-        assert result.response is None  # response는 선택적 필드
+        assert result.response is None
         mock_workflow.assert_called_once_with(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
             staged=False,
+            target_branch=None,
+            target_commit=None,
         )
 
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_staged_changes_function(self, mock_workflow: Mock) -> None:
-        """스테이징된 변경사항 리뷰 함수 테스트"""
+    def test_review_changes_staged(self, mock_workflow: Mock) -> None:
+        """staged mode 리뷰 함수 테스트"""
         from selvage.src.mcp.models.responses import ReviewResult
 
         mock_workflow.return_value = ReviewResult(
@@ -181,18 +174,24 @@ class TestMCPServerIntegration:
             model_used="claude-sonnet-4.5",
         )
 
-        result = review_staged_changes(model="claude-sonnet-4.5", repo_path="/test/repo")
+        result = review_changes(
+            model="claude-sonnet-4.5",
+            repo_path="/test/repo",
+            mode="staged",
+        )
 
         assert result.success is True
         mock_workflow.assert_called_once_with(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
             staged=True,
+            target_branch=None,
+            target_commit=None,
         )
 
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_against_branch_function(self, mock_workflow: Mock) -> None:
-        """브랜치 대비 리뷰 함수 테스트"""
+    def test_review_changes_branch(self, mock_workflow: Mock) -> None:
+        """branch mode 리뷰 함수 테스트"""
         from selvage.src.mcp.models.responses import ReviewResult
 
         mock_workflow.return_value = ReviewResult(
@@ -200,8 +199,9 @@ class TestMCPServerIntegration:
             model_used="claude-sonnet-4.5",
         )
 
-        result = review_against_branch(
+        result = review_changes(
             model="claude-sonnet-4.5",
+            mode="branch",
             target_branch="main",
             repo_path="/test/repo",
         )
@@ -210,12 +210,14 @@ class TestMCPServerIntegration:
         mock_workflow.assert_called_once_with(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
+            staged=False,
             target_branch="main",
+            target_commit=None,
         )
 
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_against_commit_function(self, mock_workflow: Mock) -> None:
-        """커밋 대비 리뷰 함수 테스트"""
+    def test_review_changes_commit(self, mock_workflow: Mock) -> None:
+        """commit mode 리뷰 함수 테스트"""
         from selvage.src.mcp.models.responses import ReviewResult
 
         mock_workflow.return_value = ReviewResult(
@@ -223,8 +225,9 @@ class TestMCPServerIntegration:
             model_used="claude-sonnet-4.5",
         )
 
-        result = review_against_commit(
+        result = review_changes(
             model="claude-sonnet-4.5",
+            mode="commit",
             target_commit="abc1234",
             repo_path="/test/repo",
         )
@@ -233,6 +236,8 @@ class TestMCPServerIntegration:
         mock_workflow.assert_called_once_with(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
+            staged=False,
+            target_branch=None,
             target_commit="abc1234",
         )
 

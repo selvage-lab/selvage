@@ -1,121 +1,60 @@
-"""MCP 서버 모드별 도구 등록 테스트"""
+"""MCP 서버 통합 도구 등록 테스트"""
 
-import os
 from unittest.mock import patch
 
-import pytest
 
-from selvage.src.mcp.server import _has_any_api_key
-
-
-class TestServerModeToolRegistration:
-    """서버 모드에 따른 도구 등록 테스트"""
+class TestUnifiedToolRegistration:
+    """모든 도구가 항상 등록되는지 테스트"""
 
     @patch("selvage.src.mcp.server._setup_mcp_environment")
-    @patch.dict(os.environ, {}, clear=True)
-    def test_auto_mode_without_api_keys(self, _mock_setup) -> None:
-        """auto 모드 + API 키 없음 -> context 도구만 등록"""
-        from selvage.src.mcp.server import SelvageMCPServer
-
-        server = SelvageMCPServer(mode="auto")
-        info = server.get_tools_info()
-
-        assert "get_review_context" in info["context_tools"]
-        assert info["review_tools"] == []
-
-    @patch("selvage.src.mcp.server._setup_mcp_environment")
-    @patch.dict(
-        os.environ,
-        {"ANTHROPIC_API_KEY": "test-key"},
-        clear=False,
-    )
-    def test_auto_mode_with_api_key(self, _mock_setup) -> None:
-        """auto 모드 + API 키 있음 -> 모든 도구 등록"""
-        from selvage.src.mcp.server import SelvageMCPServer
-
-        server = SelvageMCPServer(mode="auto")
-        info = server.get_tools_info()
-
-        assert len(info["review_tools"]) == 4
-        assert "get_review_context" in info["context_tools"]
-
-    @patch("selvage.src.mcp.server._setup_mcp_environment")
-    def test_delegated_mode(self, _mock_setup) -> None:
-        """delegated 모드 -> context 도구만 등록"""
-        from selvage.src.mcp.server import SelvageMCPServer
-
-        server = SelvageMCPServer(mode="delegated")
-        info = server.get_tools_info()
-
-        assert info["review_tools"] == []
-        assert "get_review_context" in info["context_tools"]
-
-    @patch("selvage.src.mcp.server._setup_mcp_environment")
-    def test_independent_mode(self, _mock_setup) -> None:
-        """independent 모드 -> review 도구만 등록"""
-        from selvage.src.mcp.server import SelvageMCPServer
-
-        server = SelvageMCPServer(mode="independent")
-        info = server.get_tools_info()
-
-        assert len(info["review_tools"]) == 4
-        assert info["context_tools"] == []
-
-    @patch("selvage.src.mcp.server._setup_mcp_environment")
-    def test_default_mode_is_auto(self, _mock_setup) -> None:
-        """기본 모드는 auto"""
+    def test_all_tools_always_registered(self, _mock_setup) -> None:
+        """context + review + utility 도구가 모두 등록되는지 확인"""
         from selvage.src.mcp.server import SelvageMCPServer
 
         server = SelvageMCPServer()
-        assert server.mode == "auto"
-
-    def test_invalid_mode_raises_error(self) -> None:
-        """잘못된 모드는 ValueError 발생"""
-        from selvage.src.mcp.server import SelvageMCPServer
-
-        with pytest.raises(ValueError, match="Invalid mode"):
-            SelvageMCPServer(mode="invalid")
-
-    @patch("selvage.src.mcp.server._setup_mcp_environment")
-    def test_get_tools_info_includes_mode(self, _mock_setup) -> None:
-        """get_tools_info에 mode 필드가 포함되는지 테스트"""
-        from selvage.src.mcp.server import SelvageMCPServer
-
-        server = SelvageMCPServer(mode="delegated")
         info = server.get_tools_info()
 
-        assert info["mode"] == "delegated"
+        assert len(info["context_tools"]) == 2
+        assert "get_review_context" in info["context_tools"]
+        assert "get_file_review_context" in info["context_tools"]
+
+        assert len(info["review_tools"]) == 1
+        assert "review_changes" in info["review_tools"]
+
+        assert len(info["utility_tools"]) == 6
+
+    @patch("selvage.src.mcp.server._setup_mcp_environment")
+    def test_no_mode_parameter(self, _mock_setup) -> None:
+        """SelvageMCPServer()에 mode 파라미터 없이 정상 생성"""
+        from selvage.src.mcp.server import SelvageMCPServer
+
+        server = SelvageMCPServer()
+        assert server.name == "Selvage Code Review Server"
+
+    @patch("selvage.src.mcp.server._setup_mcp_environment")
+    def test_get_tools_info_no_mode_field(self, _mock_setup) -> None:
+        """get_tools_info에 mode 필드가 없는지 확인"""
+        from selvage.src.mcp.server import SelvageMCPServer
+
+        server = SelvageMCPServer()
+        info = server.get_tools_info()
+
+        assert "mode" not in info
 
     @patch("selvage.src.mcp.server._setup_mcp_environment")
     def test_utility_tools_always_registered(self, _mock_setup) -> None:
-        """utility 도구는 모든 모드에서 등록"""
+        """utility 도구 6개가 등록되는지 확인"""
         from selvage.src.mcp.server import SelvageMCPServer
 
-        for mode in ("auto", "delegated", "independent"):
-            server = SelvageMCPServer(mode=mode)
-            info = server.get_tools_info()
-            assert len(info["utility_tools"]) == 6
+        server = SelvageMCPServer()
+        info = server.get_tools_info()
 
-
-class TestHasAnyApiKey:
-    """API 키 존재 여부 확인 함수 테스트"""
-
-    @patch.dict(os.environ, {}, clear=True)
-    def test_no_api_keys(self) -> None:
-        assert _has_any_api_key() is False
-
-    @patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test"}, clear=True)
-    def test_anthropic_key_only(self) -> None:
-        assert _has_any_api_key() is True
-
-    @patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}, clear=True)
-    def test_openrouter_key_only(self) -> None:
-        assert _has_any_api_key() is True
-
-    @patch.dict(os.environ, {"OPENAI_API_KEY": "test"}, clear=True)
-    def test_openai_key_only(self) -> None:
-        assert _has_any_api_key() is True
-
-    @patch.dict(os.environ, {"GEMINI_API_KEY": "test"}, clear=True)
-    def test_gemini_key_only(self) -> None:
-        assert _has_any_api_key() is True
+        expected_utility_tools = [
+            "get_available_models",
+            "get_review_history",
+            "get_review_details",
+            "get_server_status",
+            "validate_model_support",
+            "validate_api_key_for_provider",
+        ]
+        assert info["utility_tools"] == expected_utility_tools
