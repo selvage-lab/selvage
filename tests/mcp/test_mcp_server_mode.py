@@ -40,11 +40,11 @@ class TestServerModeToolRegistration:
         assert "get_review_context" in info["context_tools"]
 
     @patch("selvage.src.mcp.server._setup_mcp_environment")
-    def test_agent_mode(self, _mock_setup) -> None:
-        """agent 모드 -> context 도구만 등록"""
+    def test_delegated_mode(self, _mock_setup) -> None:
+        """delegated 모드 -> context 도구만 등록"""
         from selvage.src.mcp.server import SelvageMCPServer
 
-        server = SelvageMCPServer(mode="agent")
+        server = SelvageMCPServer(mode="delegated")
         info = server.get_tools_info()
 
         assert info["review_tools"] == []
@@ -81,17 +81,17 @@ class TestServerModeToolRegistration:
         """get_tools_info에 mode 필드가 포함되는지 테스트"""
         from selvage.src.mcp.server import SelvageMCPServer
 
-        server = SelvageMCPServer(mode="agent")
+        server = SelvageMCPServer(mode="delegated")
         info = server.get_tools_info()
 
-        assert info["mode"] == "agent"
+        assert info["mode"] == "delegated"
 
     @patch("selvage.src.mcp.server._setup_mcp_environment")
     def test_utility_tools_always_registered(self, _mock_setup) -> None:
         """utility 도구는 모든 모드에서 등록"""
         from selvage.src.mcp.server import SelvageMCPServer
 
-        for mode in ("auto", "agent", "independent"):
+        for mode in ("auto", "delegated", "independent"):
             server = SelvageMCPServer(mode=mode)
             info = server.get_tools_info()
             assert len(info["utility_tools"]) == 6

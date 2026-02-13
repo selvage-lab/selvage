@@ -753,11 +753,11 @@ def models() -> None:
 @cli.command()
 @click.option(
     "--mode",
-    type=click.Choice(["auto", "agent", "independent"]),
+    type=click.Choice(["auto", "delegated", "independent"]),
     default="auto",
     help="Tool registration mode. "
     "auto: detect API keys, "
-    "agent: context-only (no API key needed), "
+    "delegated: context-only (no API key needed), "
     "independent: review tools only (API key required)",
 )
 def mcp(mode: str) -> None:

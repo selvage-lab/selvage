@@ -11,7 +11,7 @@ from selvage.src.mcp.tools.context_tools import register_context_tools
 from selvage.src.mcp.tools.review_tools import register_review_tools
 from selvage.src.mcp.tools.utility_tools import register_utility_tools
 
-VALID_MODES = ("auto", "agent", "independent")
+VALID_MODES = ("auto", "delegated", "independent")
 
 _API_KEY_ENV_VARS = (
     "OPENAI_API_KEY",
@@ -76,7 +76,7 @@ class SelvageMCPServer:
         if self.mode == "auto":
             should_register_context = True
             should_register_review = _has_any_api_key()
-        elif self.mode == "agent":
+        elif self.mode == "delegated":
             should_register_context = True
         elif self.mode == "independent":
             should_register_review = True
