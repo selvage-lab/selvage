@@ -5,11 +5,17 @@
 """
 
 import json
+import logging
+import re
 import time
 import uuid
 from pathlib import Path
 
 from selvage.src.utils.platform_utils import get_platform_config_dir
+
+logger = logging.getLogger(__name__)
+
+_CONTEXT_ID_PATTERN = re.compile(r"^ctx-\d+-[0-9a-f]{8}$")
 
 
 class DelegatedContextStore:
@@ -36,11 +42,11 @@ class DelegatedContextStore:
             context_id: "ctx-{unix_timestamp}-{uuid_hex[:8]}" 형태의 고유 ID
         """
         context_id = f"ctx-{int(time.time())}-{uuid.uuid4().hex[:8]}"
-        context_data["created_at"] = time.time()
+        data_to_save = {**context_data, "created_at": time.time()}
 
         file_path = self.store_dir / f"{context_id}.json"
         file_path.write_text(
-            json.dumps(context_data, ensure_ascii=False), encoding="utf-8"
+            json.dumps(data_to_save, ensure_ascii=False), encoding="utf-8"
         )
 
         return context_id
@@ -62,8 +68,14 @@ class DelegatedContextStore:
         review_targets = data.get("review_targets", [])
         for target in review_targets:
             content = target.get("content", "")
-            if isinstance(content, str) and file_path in content:
-                return target
+            if not isinstance(content, str):
+                continue
+            try:
+                parsed = json.loads(content)
+                if parsed.get("file_name") == file_path:
+                    return target
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
 
         return None
 
@@ -95,9 +107,21 @@ class DelegatedContextStore:
                 deleted += 1
         return deleted
 
+    @staticmethod
+    def _validate_context_id(context_id: str) -> bool:
+        """context_id가 유효한 형식인지 검증합니다."""
+        return bool(_CONTEXT_ID_PATTERN.match(context_id))
+
     def _load_context(self, context_id: str) -> dict | None:
         """컨텍스트 ID로 JSON 파일을 로드합니다."""
+        if not self._validate_context_id(context_id):
+            logger.warning("Invalid context_id format: %s", context_id)
+            return None
         file_path = self.store_dir / f"{context_id}.json"
         if not file_path.exists():
             return None
-        return json.loads(file_path.read_text(encoding="utf-8"))
+        try:
+            return json.loads(file_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("Failed to load context %s: %s", context_id, e)
+            return None

@@ -128,3 +128,51 @@ class TestDelegatedContextStore:
         assert parts[0] == 'ctx'
         assert parts[1].isdigit()  # unix timestamp
         assert len(parts[2]) == 8  # uuid hex[:8]
+
+    def test_save_does_not_mutate_input(self, tmp_path) -> None:
+        """save()가 입력 dict를 변이시키지 않는지 테스트"""
+        store = DelegatedContextStore(store_dir=tmp_path)
+        data = {'review_targets': [], 'metadata': {}}
+        original_keys = set(data.keys())
+
+        store.save(data)
+
+        assert set(data.keys()) == original_keys
+        assert 'created_at' not in data
+
+    def test_path_traversal_rejected(self, tmp_path) -> None:
+        """경로 순회 공격 시도가 차단되는지 테스트"""
+        store = DelegatedContextStore(store_dir=tmp_path)
+
+        assert store.load_metadata('../../etc/passwd') is None
+        assert store.load_file_context('../secret', 'file.py') is None
+        assert store.load_metadata('ctx-notanumber-abcd1234') is None
+
+    def test_valid_context_id_accepted(self, tmp_path) -> None:
+        """유효한 context_id 형식이 허용되는지 테스트"""
+        store = DelegatedContextStore(store_dir=tmp_path)
+
+        assert store._validate_context_id('ctx-1770967425-82244dea')
+        assert store._validate_context_id('ctx-0-00000000')
+
+    def test_invalid_context_id_rejected(self, tmp_path) -> None:
+        """유효하지 않은 context_id 형식이 거부되는지 테스트"""
+        store = DelegatedContextStore(store_dir=tmp_path)
+
+        assert not store._validate_context_id('')
+        assert not store._validate_context_id('ctx-abc-12345678')
+        assert not store._validate_context_id('ctx-123-1234567')  # hex 7자리
+        assert not store._validate_context_id('ctx-123-123456789')  # hex 9자리
+        assert not store._validate_context_id('../../etc/passwd')
+        assert not store._validate_context_id('ctx-123-ZZZZZZZZ')  # 비-hex 문자
+
+    def test_corrupted_json_returns_none(self, tmp_path) -> None:
+        """손상된 JSON 파일 로드 시 None 반환 테스트"""
+        store = DelegatedContextStore(store_dir=tmp_path)
+
+        corrupted_file = tmp_path / 'ctx-1234567890-abcdef01.json'
+        corrupted_file.write_text('{ invalid json content', encoding='utf-8')
+
+        result = store.load_metadata('ctx-1234567890-abcdef01')
+
+        assert result is None
