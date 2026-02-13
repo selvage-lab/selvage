@@ -1,5 +1,28 @@
 # Change Log
 
+## [0.4.0] - 2026-02-13
+
+### Added
+
+#### feat: Agent-Delegated Review Mode (get_review_context MCP Tool)
+
+**Core Changes**
+
+- **New get_review_context tool**: Returns structured review context (diff + Smart Context + system prompt) so host agents (Claude Code, Cursor, Antigravity) can perform code reviews using their own LLM without requiring an API key
+- **Server mode system**: `--mode auto|agent|independent` option for controlling tool registration strategy
+  - `auto` (default): Dynamically registers context + review tools based on API key auto-detection
+  - `agent`: Registers context tools only (no API key required)
+  - `independent`: Registers review tools only (API key required)
+- **Claude Code plugin**: Added `.claude/skills/review/SKILL.md` skill and `.claude/agents/selvage-reviewer.md` agent definitions
+
+**Detailed Implementation**
+
+- **ReviewContextResult model**: Pydantic response model containing system_prompt, review_targets, output_format, and metadata
+- **Context engine separation**: Extracted prompt generation and context extraction logic from the existing LLM call pipeline for reuse
+- **API key auto-detection**: `_has_any_api_key()` function automatically determines tool availability based on OPENAI/ANTHROPIC/GEMINI/OPENROUTER key presence
+- **CLI integration**: Support for `selvage mcp --mode agent` to run in agent-only mode
+- **Review tool docstring improvements**: Added guidance to use `get_review_context` as an alternative when no API key is available
+
 ## [0.3.0] - 2026-01-28
 
 ### Added
