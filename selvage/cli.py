@@ -751,24 +751,13 @@ def models() -> None:
 
 
 @cli.command()
-@click.option(
-    "--mode",
-    type=click.Choice(["auto", "delegated", "independent"]),
-    default="auto",
-    help="Tool registration mode. "
-    "auto: detect API keys, "
-    "delegated: context-only (no API key needed), "
-    "independent: review tools only (API key required)",
-)
-def mcp(mode: str) -> None:
+def mcp() -> None:
     """Start MCP (Model Context Protocol) server"""
     import subprocess
     import sys
 
     try:
         cmd = [sys.executable, "-m", "selvage.src.mcp.server"]
-        if mode != "auto":
-            cmd.extend(["--mode", mode])
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         print(

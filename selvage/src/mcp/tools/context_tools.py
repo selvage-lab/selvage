@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 VALID_MODES = ("unstaged", "staged", "branch", "commit")
 CONTEXT_SIZE_LIMIT = 50_000  # 문자 수 기준
 
+# NOTE: delegated 모드에서는 output_format=None으로 반환하므로 현재 미사용.
+# independent 모드 구현 시 활용 예정이므로 유지.
 REVIEW_OUTPUT_SCHEMA: dict = {
     "type": "json_schema",
     "schema": {
@@ -71,8 +73,8 @@ def get_review_context(
 
     Unlike review_* tools which call an external LLM API and return
     finished results, this tool returns the raw review context (system
-    prompt, file diffs with AST-based smart context, and expected output
-    schema) so the agent can review the code directly.
+    prompt and file diffs with AST-based smart context) so the agent
+    can review the code directly in free-form text.
 
     Args:
         repo_path: Git repository path (default: current directory)
@@ -85,9 +87,11 @@ def get_review_context(
             - success: bool
             - system_prompt: str (code review system prompt)
             - review_targets: list[dict] (per-file context with hunks)
-            - output_format: dict (expected review result JSON schema)
+            - output_format: None (delegated mode uses free-form output)
             - metadata: dict (files_count, total_additions, total_deletions, etc.)
             - error_message: str | None
+            - context_id: str | None (set when context exceeds size limit)
+            - file_list: list[str] | None (files available via get_file_review_context)
     """
     try:
         # 1. 모드 검증

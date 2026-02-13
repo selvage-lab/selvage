@@ -102,9 +102,12 @@ class DelegatedContextStore:
         cutoff = time.time() - (ttl_minutes * 60)
         deleted = 0
         for file_path in self.store_dir.glob("ctx-*.json"):
-            if file_path.stat().st_mtime < cutoff:
-                file_path.unlink()
-                deleted += 1
+            try:
+                if file_path.stat().st_mtime < cutoff:
+                    file_path.unlink()
+                    deleted += 1
+            except OSError as e:
+                logger.warning("Failed to clean up %s: %s", file_path, e)
         return deleted
 
     @staticmethod
