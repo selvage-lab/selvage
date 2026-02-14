@@ -128,7 +128,7 @@ def test_updatable_progress():
 
     # 시나리오 2: 전환 상황
     print("\n2. Long context 전환 시나리오")
-    progress2 = display.create_updatable_progress("gpt-5.2-codex")
+    progress2 = display.create_updatable_progress("gpt-5.3-codex")
     progress2.start()
     time.sleep(2)
     progress2.update_message("컨텍스트 한계 초과 감지!")

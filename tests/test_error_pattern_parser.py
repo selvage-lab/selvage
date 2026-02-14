@@ -194,7 +194,7 @@ class TestErrorPatternParser:
                 "message": (
                     "OpenAI is requiring a key to access this model, "
                     "which you can add in https://openrouter.ai/settings/integrations "
-                    "- you can also switch to gpt-5-chat or gpt-5.2-codex."
+                    "- you can also switch to gpt-5-chat or gpt-5.3-codex."
                 )
             }
         }

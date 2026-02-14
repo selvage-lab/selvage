@@ -116,7 +116,7 @@ def test_openai_context_limit_workflow():
     if not os.getenv("OPENAI_API_KEY"):
         pytest.skip("OPENAI_API_KEY not found")
 
-    model_name = "gpt-5.2-codex"
+    model_name = "gpt-5.3-codex"
     context_limit = 1000000
 
     print("\\n=== OpenAI Context Limit 워크플로우 테스트 ===")

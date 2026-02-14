@@ -303,7 +303,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": ModelProvider.OPENAI,
-            "full_name": "gpt-5.2-codex",
+            "full_name": "gpt-5.3-codex",
         }
 
         # ReviewRequest Mock 생성
@@ -312,7 +312,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
             diff_content="test diff",
             processed_diff=diff_result,
             file_paths=["test.py"],
-            model="gpt-5.2-codex",
+            model="gpt-5.3-codex",
             repo_path="/test/repo",
         )
 
@@ -334,7 +334,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
         with open(log_path, encoding="utf-8") as f:
             log_data = json.load(f)
 
-        self.assertEqual(log_data["model"]["name"], "gpt-5.2-codex")
+        self.assertEqual(log_data["model"]["name"], "gpt-5.3-codex")
         self.assertEqual(log_data["status"], "SUCCESS")
 
     @patch("selvage.cli.get_model_info")
@@ -350,7 +350,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": ModelProvider.OPENAI,
-            "full_name": "gpt-5.2-codex",
+            "full_name": "gpt-5.3-codex",
         }
 
         # ReviewRequest Mock 생성
@@ -359,7 +359,7 @@ class TestCLIReviewLogDirOption(unittest.TestCase):
             diff_content="test diff",
             processed_diff=diff_result,
             file_paths=["test.py"],
-            model="gpt-5.2-codex",
+            model="gpt-5.3-codex",
             repo_path="/test/repo",
         )
 

@@ -62,7 +62,7 @@ class TestMultiturnReviewExecutorIntegration:
         max_tokens = int(get_model_context_limit(model_name))
         return TokenInfo(actual_tokens=actual_tokens, max_tokens=max_tokens)
 
-    @pytest.fixture(params=["gpt-5.2-codex"])
+    @pytest.fixture(params=["gpt-5.3-codex"])
     def model_name(self, request) -> str:
         """테스트할 모델들"""
         return request.param

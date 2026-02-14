@@ -24,14 +24,14 @@ class TestOpenAIGateway(unittest.TestCase):
         mock_get_api_key.return_value = "fake-api-key"
 
         # 테스트할 모델 가져오기
-        model_info = get_model_info("gpt-5.2-codex")
+        model_info = get_model_info("gpt-5.3-codex")
         self.assertIsNotNone(model_info)
 
         # 게이트웨이 생성
         gateway = OpenAIGateway(model_info)
 
         # 검증
-        self.assertEqual(gateway.get_model_name(), "gpt-5.2-codex")
+        self.assertEqual(gateway.get_model_name(), "gpt-5.3-codex")
         self.assertEqual(gateway.model, model_info)
         mock_get_api_key.assert_called_once_with(ModelProvider.OPENAI)
 
@@ -74,7 +74,7 @@ class TestOpenAIGateway(unittest.TestCase):
         mock_get_api_key.return_value = None
 
         # 테스트할 모델 가져오기
-        model_info = get_model_info("gpt-5.2-codex")
+        model_info = get_model_info("gpt-5.3-codex")
         self.assertIsNotNone(model_info)
 
         # 예외 발생 확인
@@ -111,14 +111,14 @@ class TestClaudeGateway(unittest.TestCase):
         mock_get_api_key.return_value = "fake-api-key"
 
         # Claude Opus 4.5 모델 가져오기
-        model_info = get_model_info("claude-opus-4.5")
+        model_info = get_model_info("claude-opus-4.6")
         self.assertIsNotNone(model_info)
 
         # 게이트웨이 생성
         gateway = ClaudeGateway(model_info)
 
         # 검증 (get_model_name은 full_name을 반환)
-        self.assertEqual(gateway.get_model_name(), "claude-opus-4.5-20251101")
+        self.assertEqual(gateway.get_model_name(), "claude-opus-4-6-20260204")
         self.assertEqual(gateway.model, model_info)
         # Opus 모델의 pricing 검증
         self.assertEqual(model_info["pricing"]["input"], 5.0)
@@ -133,7 +133,7 @@ class TestClaudeGateway(unittest.TestCase):
 
         # 실제 존재하는 OpenAI 모델 정보를 반환하도록 모킹
         openai_model_info: ModelInfoDict = {
-            "full_name": "gpt-5.2-codex",
+            "full_name": "gpt-5.3-codex",
             "aliases": [],
             "description": "OpenAI 모델",
             "provider": ModelProvider.OPENAI,  # Claude가 아닌 다른 제공자
@@ -154,7 +154,7 @@ class TestClaudeGateway(unittest.TestCase):
             ClaudeGateway(openai_model_info)
 
         # 예외 속성 검증
-        self.assertEqual(context.exception.model_name, "gpt-5.2-codex")
+        self.assertEqual(context.exception.model_name, "gpt-5.3-codex")
         self.assertEqual(context.exception.expected_provider, ModelProvider.ANTHROPIC)
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
@@ -201,7 +201,7 @@ class TestGoogleGateway(unittest.TestCase):
 
         # 실제 존재하는 OpenAI 모델 정보를 반환하도록 모킹 (Claude 테스트와 유사)
         openai_model_info: ModelInfoDict = {
-            "full_name": "gpt-5.2-codex",
+            "full_name": "gpt-5.3-codex",
             "aliases": [],
             "description": "OpenAI 모델",
             "provider": ModelProvider.OPENAI,  # Google이 아닌 다른 제공자
@@ -222,7 +222,7 @@ class TestGoogleGateway(unittest.TestCase):
             GoogleGateway(openai_model_info)
 
         # 예외 속성 검증
-        self.assertEqual(context.exception.model_name, "gpt-5.2-codex")
+        self.assertEqual(context.exception.model_name, "gpt-5.3-codex")
         self.assertEqual(context.exception.expected_provider, ModelProvider.GOOGLE)
 
     @patch("selvage.src.llm_gateway.google_gateway.get_api_key")
@@ -325,20 +325,20 @@ class TestOpenRouterGateway(unittest.TestCase):
         from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
 
         # MiniMax M2.1 테스트
-        model_info = get_model_info("minimax-m2.1")
+        model_info = get_model_info("minimax-m2.5")
         self.assertIsNotNone(model_info)
         gateway = OpenRouterGateway(model_info)
-        self.assertEqual(gateway.get_model_name(), "minimax-m2.1")
-        result = gateway._convert_to_openrouter_model_name("minimax-m2.1")
-        self.assertEqual(result, "minimax/minimax-m2.1")
+        self.assertEqual(gateway.get_model_name(), "minimax-m2.5")
+        result = gateway._convert_to_openrouter_model_name("minimax-m2.5")
+        self.assertEqual(result, "minimax/minimax-m2.5")
 
         # GLM-4.7 테스트
-        model_info = get_model_info("glm-4.7")
+        model_info = get_model_info("glm-5")
         self.assertIsNotNone(model_info)
         gateway = OpenRouterGateway(model_info)
-        self.assertEqual(gateway.get_model_name(), "glm-4.7")
-        result = gateway._convert_to_openrouter_model_name("glm-4.7")
-        self.assertEqual(result, "z-ai/glm-4.7")
+        self.assertEqual(gateway.get_model_name(), "glm-5")
+        result = gateway._convert_to_openrouter_model_name("glm-5")
+        self.assertEqual(result, "z-ai/glm-5")
 
 
 class TestCreateLLMGateway(unittest.TestCase):
@@ -348,11 +348,11 @@ class TestCreateLLMGateway(unittest.TestCase):
         """OpenAI 모델명으로 get_llm_gateway 호출 시 실제 OpenAIGateway 반환을 테스트합니다."""
         mock_get_api_key.return_value = "fake-api-key"
 
-        gateway = GatewayFactory.create("gpt-5.2-codex")
+        gateway = GatewayFactory.create("gpt-5.3-codex")
 
         # 검증 - 실제 OpenAIGateway 인스턴스인지 확인
         self.assertIsInstance(gateway, OpenAIGateway)
-        self.assertEqual(gateway.get_model_name(), "gpt-5.2-codex")
+        self.assertEqual(gateway.get_model_name(), "gpt-5.3-codex")
 
     @patch("selvage.src.llm_gateway.claude_gateway.get_api_key")
     @patch.dict(
