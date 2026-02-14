@@ -1,0 +1,13 @@
+{
+  "name": "selvage",
+  "version": "0.4.0",
+  "description": "AST-based smart context code review engine for Claude Code",
+  "author": {
+    "name": "Selvage Team",
+    "email": "contact@selvage.me"
+  },
+  "homepage": "https://selvage.me",
+  "repository": "https://github.com/selvage-lab/selvage",
+  "license": "Apache-2.0",
+  "keywords": ["code-review", "ast", "smart-context", "diff-analysis"]
+}
