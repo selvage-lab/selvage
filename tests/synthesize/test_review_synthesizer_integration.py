@@ -99,12 +99,12 @@ class TestReviewSynthesizerRealIntegration:
     @pytest.mark.parametrize(
         "model_name",
         [
-            "gpt-5.3-codex",  # OpenAI
+            "gpt-5.2-codex",  # OpenAI
             "claude-sonnet-4",  # Anthropic (일반)
             "gemini-3-flash",  # Google
             "qwen3-coder",  # OpenRouter
             "claude-sonnet-4-thinking",
-            "gpt-5.3-codex",
+            "gpt-5.2-codex",
         ],
     )
     def test_integration_with_complex_dataset(
@@ -199,7 +199,7 @@ class TestReviewSynthesizerRealIntegration:
     ) -> None:
         """실제 API 비용 추적 통합 테스트"""
         # Given: 저렴한 모델로 비용 추적 테스트
-        model_name = "gpt-5.3-codex"
+        model_name = "gpt-5.2-codex"
         synthesizer = ReviewSynthesizer(model_name)
 
         # When: 실제 API 호출

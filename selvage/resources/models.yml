@@ -2,9 +2,9 @@
 # 새 모델 추가시 이 파일만 수정하면 됩니다.
 
 models:
-  gpt-5.3-codex:
-    full_name: "gpt-5.3-codex"
-    aliases: ["gpt-5.3-codex"]
+  gpt-5.2-codex:
+    full_name: "gpt-5.2-codex"
+    aliases: ["gpt-5.2-codex"]
     description: "(recommend) OpenAI's most capable agentic coding model with stronger reasoning (SWE-Lancer IC Diamond 81.4%)"
     provider: "openai"
     params:
@@ -15,7 +15,7 @@ models:
       output: 14.0 # $14.00/1M tokens
       description: "$1.75/$14.00 per 1M tokens"
     context_limit: 400000
-    openrouter_name: "openai/gpt-5.3-codex"
+    openrouter_name: "openai/gpt-5.2-codex"
     openrouter_params:
       reasoning:
         effort: "high"

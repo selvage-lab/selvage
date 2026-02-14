@@ -1,5 +1,6 @@
 """MCP review tools implementation"""
 
+import logging
 from dataclasses import dataclass
 
 from fastmcp import FastMCP
@@ -16,6 +17,8 @@ from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.token.models import EstimatedCost, ReviewRequest, ReviewResponse
 
 from ..models.responses import DiffContentResult, ReviewResult, ValidationResult
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -191,6 +194,7 @@ def _execute_review_workflow(
         )
 
     except Exception as e:
+        logger.exception("Unexpected error in _execute_review_workflow")
         return ReviewResult(
             success=False,
             model_used=model,

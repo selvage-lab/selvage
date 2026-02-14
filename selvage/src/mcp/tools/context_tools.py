@@ -121,8 +121,8 @@ def get_review_context(
         diff_text = get_diff_content(
             repo_path=repo_path,
             staged=staged,
-            target_commit=target_commit,
-            target_branch=target_branch,
+            target_commit=target_commit if diff_scope == "commit" else None,
+            target_branch=target_branch if diff_scope == "branch" else None,
         )
 
         if not diff_text:
@@ -203,6 +203,7 @@ def get_review_context(
         )
 
     except Exception as e:
+        logger.exception("Unexpected error in get_review_context")
         return ReviewContextResult(
             success=False,
             error_message=f"An error occurred: {str(e)}",
