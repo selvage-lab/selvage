@@ -94,7 +94,7 @@ class TestReviewChanges:
         review_changes(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
-            mode="staged",
+            diff_scope="staged",
         )
 
         mock_workflow.assert_called_once_with(
@@ -116,7 +116,7 @@ class TestReviewChanges:
         review_changes(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
-            mode="branch",
+            diff_scope="branch",
             target_branch="main",
         )
 
@@ -139,7 +139,7 @@ class TestReviewChanges:
         review_changes(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
-            mode="commit",
+            diff_scope="commit",
             target_commit="abc1234",
         )
 
@@ -155,18 +155,18 @@ class TestReviewChanges:
         """잘못된 mode가 에러를 반환하는지 테스트"""
         result = review_changes(
             model="claude-sonnet-4.5",
-            mode="invalid",
+            diff_scope="invalid",
         )
 
         assert result.success is False
-        assert "Invalid mode" in result.error_message
+        assert "Invalid diff_scope" in result.error_message
         assert "invalid" in result.error_message
 
     def test_branch_mode_without_target_branch_returns_error(self) -> None:
         """branch mode에서 target_branch 누락 시 에러 반환 테스트"""
         result = review_changes(
             model="claude-sonnet-4.5",
-            mode="branch",
+            diff_scope="branch",
         )
 
         assert result.success is False
@@ -176,7 +176,7 @@ class TestReviewChanges:
         """commit mode에서 target_commit 누락 시 에러 반환 테스트"""
         result = review_changes(
             model="claude-sonnet-4.5",
-            mode="commit",
+            diff_scope="commit",
         )
 
         assert result.success is False

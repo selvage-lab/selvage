@@ -15,7 +15,7 @@ from ..models.responses import FileReviewContextResult, ReviewContextResult
 
 logger = logging.getLogger(__name__)
 
-VALID_MODES = ("unstaged", "staged", "branch", "commit")
+VALID_DIFF_SCOPES = ("unstaged", "staged", "branch", "commit")
 CONTEXT_SIZE_LIMIT = 50_000  # 문자 수 기준
 
 # NOTE: delegated 모드에서는 output_format=None으로 반환하므로 현재 미사용.
@@ -63,7 +63,7 @@ REVIEW_OUTPUT_SCHEMA: dict = {
 
 def get_review_context(
     repo_path: str = ".",
-    mode: str = "unstaged",
+    diff_scope: str = "unstaged",
     target_branch: str | None = None,
     target_commit: str | None = None,
 ) -> ReviewContextResult:
@@ -78,9 +78,9 @@ def get_review_context(
 
     Args:
         repo_path: Git repository path (default: current directory)
-        mode: Diff mode - "unstaged" (default), "staged", "branch", or "commit"
-        target_branch: Target branch for "branch" mode (e.g., "main")
-        target_commit: Target commit hash for "commit" mode (e.g., "abc1234")
+        diff_scope: Diff scope - "unstaged" (default), "staged", "branch", or "commit"
+        target_branch: Target branch for "branch" scope (e.g., "main")
+        target_commit: Target commit hash for "commit" scope (e.g., "abc1234")
 
     Returns:
         ReviewContextResult:
@@ -95,28 +95,29 @@ def get_review_context(
     """
     try:
         # 1. 모드 검증
-        if mode not in VALID_MODES:
+        if diff_scope not in VALID_DIFF_SCOPES:
             return ReviewContextResult(
                 success=False,
                 error_message=(
-                    f"Invalid mode: {mode}. Supported modes: {', '.join(VALID_MODES)}"
+                    f"Invalid diff_scope: {diff_scope}. "
+                    f"Supported: {', '.join(VALID_DIFF_SCOPES)}"
                 ),
             )
 
         # 2. 모드별 파라미터 검증
-        if mode == "branch" and not target_branch:
+        if diff_scope == "branch" and not target_branch:
             return ReviewContextResult(
                 success=False,
-                error_message='target_branch is required for "branch" mode.',
+                error_message='target_branch is required when diff_scope is "branch".',
             )
-        if mode == "commit" and not target_commit:
+        if diff_scope == "commit" and not target_commit:
             return ReviewContextResult(
                 success=False,
-                error_message='target_commit is required for "commit" mode.',
+                error_message='target_commit is required when diff_scope is "commit".',
             )
 
         # 3. Git diff 추출
-        staged = mode == "staged"
+        staged = diff_scope == "staged"
         diff_text = get_diff_content(
             repo_path=repo_path,
             staged=staged,

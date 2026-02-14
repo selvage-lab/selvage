@@ -178,7 +178,7 @@ class TestGetReviewContext:
             mock_prompt
         )
 
-        result = get_review_context(repo_path="/test/repo", mode="staged")
+        result = get_review_context(repo_path="/test/repo", diff_scope="staged")
 
         mock_get_diff.assert_called_once_with(
             repo_path="/test/repo",
@@ -209,7 +209,7 @@ class TestGetReviewContext:
         )
 
         result = get_review_context(
-            repo_path="/test/repo", mode="branch", target_branch="main"
+            repo_path="/test/repo", diff_scope="branch", target_branch="main"
         )
 
         mock_get_diff.assert_called_once_with(
@@ -241,7 +241,7 @@ class TestGetReviewContext:
         )
 
         result = get_review_context(
-            repo_path="/test/repo", mode="commit", target_commit="abc1234"
+            repo_path="/test/repo", diff_scope="commit", target_commit="abc1234"
         )
 
         mock_get_diff.assert_called_once_with(
@@ -265,21 +265,21 @@ class TestGetReviewContext:
 
     def test_invalid_mode(self) -> None:
         """잘못된 모드 입력 테스트"""
-        result = get_review_context(repo_path="/test/repo", mode="invalid")
+        result = get_review_context(repo_path="/test/repo", diff_scope="invalid")
 
         assert result.success is False
         assert result.error_message is not None
 
     def test_branch_mode_without_target(self) -> None:
         """branch 모드에서 target_branch 누락 테스트"""
-        result = get_review_context(repo_path="/test/repo", mode="branch")
+        result = get_review_context(repo_path="/test/repo", diff_scope="branch")
 
         assert result.success is False
         assert "target_branch" in result.error_message
 
     def test_commit_mode_without_target(self) -> None:
         """commit 모드에서 target_commit 누락 테스트"""
-        result = get_review_context(repo_path="/test/repo", mode="commit")
+        result = get_review_context(repo_path="/test/repo", diff_scope="commit")
 
         assert result.success is False
         assert "target_commit" in result.error_message

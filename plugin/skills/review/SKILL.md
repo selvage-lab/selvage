@@ -7,7 +7,7 @@ allowed-tools:
   - Read
   - Glob
   - Grep
-argument-hint: "[mode] [target] (e.g., 'staged', 'branch main', 'commit abc1234')"
+argument-hint: "(e.g., 'staged', 'branch main', 'commit abc1234')"
 ---
 
 # Selvage Code Review Skill

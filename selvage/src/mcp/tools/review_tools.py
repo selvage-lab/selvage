@@ -198,13 +198,13 @@ def _execute_review_workflow(
         )
 
 
-VALID_MODES = ("unstaged", "staged", "branch", "commit")
+VALID_DIFF_SCOPES = ("unstaged", "staged", "branch", "commit")
 
 
 def review_changes(
     model: str,
     repo_path: str = ".",
-    mode: str = "unstaged",
+    diff_scope: str = "unstaged",
     target_branch: str | None = None,
     target_commit: str | None = None,
 ) -> ReviewResult:
@@ -217,9 +217,9 @@ def review_changes(
     Args:
         model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
         repo_path: Git repository path (default: current directory)
-        mode: Diff mode - "unstaged" (default), "staged", "branch", or "commit"
-        target_branch: Target branch for "branch" mode (e.g., "main")
-        target_commit: Target commit hash for "commit" mode (e.g., "abc1234")
+        diff_scope: Diff scope - "unstaged" (default), "staged", "branch", or "commit"
+        target_branch: Target branch for "branch" scope (e.g., "main")
+        target_commit: Target commit hash for "commit" scope (e.g., "abc1234")
 
     Returns:
         ReviewResult:
@@ -233,35 +233,36 @@ def review_changes(
             - timestamp: str (ISO 8601)
             - error_message: str | None
     """
-    if mode not in VALID_MODES:
+    if diff_scope not in VALID_DIFF_SCOPES:
         return ReviewResult(
             success=False,
             model_used=model,
             error_message=(
-                f"Invalid mode: {mode}. Supported modes: {', '.join(VALID_MODES)}"
+                f"Invalid diff_scope: {diff_scope}. "
+                f"Supported: {', '.join(VALID_DIFF_SCOPES)}"
             ),
         )
 
-    if mode == "branch" and not target_branch:
+    if diff_scope == "branch" and not target_branch:
         return ReviewResult(
             success=False,
             model_used=model,
-            error_message='target_branch is required for "branch" mode.',
+            error_message='target_branch is required when diff_scope is "branch".',
         )
 
-    if mode == "commit" and not target_commit:
+    if diff_scope == "commit" and not target_commit:
         return ReviewResult(
             success=False,
             model_used=model,
-            error_message='target_commit is required for "commit" mode.',
+            error_message='target_commit is required when diff_scope is "commit".',
         )
 
     return _execute_review_workflow(
         model=model,
         repo_path=repo_path,
-        staged=(mode == "staged"),
-        target_branch=target_branch if mode == "branch" else None,
-        target_commit=target_commit if mode == "commit" else None,
+        staged=(diff_scope == "staged"),
+        target_branch=target_branch if diff_scope == "branch" else None,
+        target_commit=target_commit if diff_scope == "commit" else None,
     )
 
 

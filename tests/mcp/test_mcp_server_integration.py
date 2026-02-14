@@ -177,7 +177,7 @@ class TestMCPServerIntegration:
         result = review_changes(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
-            mode="staged",
+            diff_scope="staged",
         )
 
         assert result.success is True
@@ -201,7 +201,7 @@ class TestMCPServerIntegration:
 
         result = review_changes(
             model="claude-sonnet-4.5",
-            mode="branch",
+            diff_scope="branch",
             target_branch="main",
             repo_path="/test/repo",
         )
@@ -227,7 +227,7 @@ class TestMCPServerIntegration:
 
         result = review_changes(
             model="claude-sonnet-4.5",
-            mode="commit",
+            diff_scope="commit",
             target_commit="abc1234",
             repo_path="/test/repo",
         )
