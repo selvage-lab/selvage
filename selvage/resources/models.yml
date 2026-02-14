@@ -139,26 +139,26 @@ models:
         type: "enabled"
         max_tokens: 16000
 
-  kimi-k2:
-    full_name: "kimi-k2"
-    aliases: ["kimi-k2"]
+  kimi-k2.5:
+    full_name: "kimi-k2.5"
+    aliases: ["kimi-k2.5"]
     description: "Moonshot AI's large context processing model"
     provider: "openrouter"
     params:
       temperature: 0.0
     thinking_mode: false
     pricing:
-      input: 0.14
-      output: 2.49
-      description: "$0.14/$2.49 per 1M tokens"
-    context_limit: 131000
-    openrouter_name: "moonshotai/kimi-k2"
+      input: 0.45
+      output: 2.25
+      description: "$0.45/$2.25 per 1M tokens"
+    context_limit: 262144
+    openrouter_name: "moonshotai/kimi-k2.5"
     openrouter_params:
       temperature: 0.0
 
-  kimi-k2-free:
-    full_name: "kimi-k2-free"
-    aliases: ["kimi-k2-free"]
+  kimi-k2.5-free:
+    full_name: "kimi-k2.5-free"
+    aliases: ["kimi-k2.5-free"]
     description: "Moonshot AI's large context processing model (free)"
     provider: "openrouter"
     params:
@@ -169,7 +169,7 @@ models:
       output: 0.0
       description: "Free tier"
     context_limit: 32768
-    openrouter_name: "moonshotai/kimi-k2:free"
+    openrouter_name: "moonshotai/kimi-k2.5:free"
     openrouter_params:
       temperature: 0.0
 
