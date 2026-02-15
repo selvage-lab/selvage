@@ -19,48 +19,6 @@ logger = logging.getLogger(__name__)
 VALID_DIFF_SCOPES = ("unstaged", "staged", "branch", "commit")
 CONTEXT_SIZE_LIMIT = 50_000  # 문자 수 기준
 
-# NOTE: delegated 모드에서는 output_format=None으로 반환하므로 현재 미사용.
-# 향후 구조화된 출력이 필요한 경우를 위해 스키마 정의를 유지.
-REVIEW_OUTPUT_SCHEMA: dict = {
-    "type": "json_schema",
-    "schema": {
-        "properties": {
-            "issues": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "type": {
-                            "type": "string",
-                            "enum": [
-                                "bug",
-                                "security",
-                                "performance",
-                                "style",
-                                "design",
-                            ],
-                        },
-                        "file": {"type": "string"},
-                        "description": {"type": "string"},
-                        "suggestion": {"type": "string"},
-                        "severity": {
-                            "type": "string",
-                            "enum": ["info", "warning", "error"],
-                        },
-                        "target_code": {"type": "string"},
-                        "suggested_code": {"type": "string"},
-                    },
-                    "required": ["type", "file", "description", "severity"],
-                },
-            },
-            "summary": {"type": "string"},
-            "score": {"type": "number", "minimum": 0, "maximum": 10},
-            "recommendations": {"type": "array", "items": {"type": "string"}},
-        },
-        "required": ["issues", "summary", "score", "recommendations"],
-    },
-}
-
 
 def get_review_context(
     repo_path: str = ".",

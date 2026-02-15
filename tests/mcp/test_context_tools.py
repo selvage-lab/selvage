@@ -1,7 +1,6 @@
 """에이전트 위임 리뷰 도구 테스트"""
 
 import json
-
 from unittest.mock import MagicMock, patch
 
 from selvage.src.diff_parser.models.diff_result import DiffResult
@@ -12,7 +11,6 @@ from selvage.src.mcp.models.responses import (
 )
 from selvage.src.mcp.tools.context_tools import (
     CONTEXT_SIZE_LIMIT,
-    REVIEW_OUTPUT_SCHEMA,
     _extract_file_list,
     _get_language_stats,
     get_file_review_context,
@@ -29,9 +27,7 @@ class TestReviewContextResultModel:
         result = ReviewContextResult(
             success=True,
             system_prompt="You are a code reviewer...",
-            review_targets=[
-                {"role": "user", "content": '{"file_name": "app.py"}'}
-            ],
+            review_targets=[{"role": "user", "content": '{"file_name": "app.py"}'}],
             output_format={"type": "json_schema", "schema": {}},
             metadata={"files_count": 1, "total_additions": 10, "total_deletions": 3},
         )
@@ -438,13 +434,6 @@ class TestGetReviewContext:
             target_branch=None,
         )
 
-    def test_output_format_contains_schema(self) -> None:
-        """output_format에 리뷰 스키마가 포함되는지 테스트"""
-        assert "issues" in REVIEW_OUTPUT_SCHEMA["schema"]["properties"]
-        assert "summary" in REVIEW_OUTPUT_SCHEMA["schema"]["properties"]
-        assert "score" in REVIEW_OUTPUT_SCHEMA["schema"]["properties"]
-        assert "recommendations" in REVIEW_OUTPUT_SCHEMA["schema"]["properties"]
-
     def test_register_context_tools(self) -> None:
         """context 도구 등록 테스트 - get_review_context + get_file_review_context"""
         mock_mcp = MagicMock()
@@ -507,8 +496,14 @@ class TestContextSplitting:
         mock_prompt = MagicMock()
         mock_prompt.system_prompt = MagicMock(content="system prompt")
         mock_prompt.to_messages.return_value = [
-            {"role": "user", "content": json.dumps({"file_name": "app.py", "data": large_content})},
-            {"role": "user", "content": json.dumps({"file_name": "utils.py", "data": large_content})},
+            {
+                "role": "user",
+                "content": json.dumps({"file_name": "app.py", "data": large_content}),
+            },
+            {
+                "role": "user",
+                "content": json.dumps({"file_name": "utils.py", "data": large_content}),
+            },
         ]
         mock_prompt_gen_cls.return_value.create_code_review_prompt.return_value = (
             mock_prompt
