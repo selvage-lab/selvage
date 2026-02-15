@@ -50,6 +50,8 @@ With smart context analysis (AST-based) that's accurate and cost-effective, plus
 - **🎯 Optimized Context Analysis**: Tree-sitter based AST analysis automatically extracts the smallest code blocks containing changed lines along with their dependency statements, providing contextually optimized information for each situation
 - **🔄 Automatic Multi-turn Processing**: Automatic prompt splitting when context limits are exceeded, supporting stable large-scale code reviews (Large Context Mode now auto-triggers once total tokens exceed 200k, even without provider errors)
 - **🤖 MCP Mode Support**: Register as MCP mode in Cursor, Claude Code, etc., and request code reviews through natural language like "Review current changes"
+- **🔌 Claude Code Plugin**: Install via marketplace with a single command — includes dedicated `/review` skill and `selvage-reviewer` agent for seamless integration
+- **🧠 Agent-Delegated Review (`get_review_context`)**: Returns structured review context (diff + Smart Context + system prompt) so host agents (Claude Code, Cursor, Antigravity, etc.) can perform code reviews with their own LLM — **no API key required**
 - **📖 Open Source**: Freely use and modify under Apache-2.0 License
 
 ## 🚀 Quick Start
@@ -132,6 +134,31 @@ Register in Cursor's MCP configuration file (path may vary depending on user env
 
 #### Claude Code Integration
 
+##### Method A: Plugin via Marketplace (Recommended)
+
+Install the Selvage plugin from the marketplace to get the dedicated `/review` skill and `selvage-reviewer` agent:
+
+```bash
+# Step 1: Add Selvage marketplace
+/plugin marketplace add selvage-lab/selvage
+
+# Step 2: Install the plugin
+/plugin install selvage@selvage-lab-selvage
+```
+
+After installation, use the `/review` skill directly:
+
+```
+/review                      # Review unstaged changes
+/review staged               # Review staged changes
+/review branch main          # Review against main branch
+/review commit abc1234       # Review from specific commit
+```
+
+> 💡 **No API key required!** The plugin uses `get_review_context` to leverage Claude Code's own LLM for code review, so no external API key is needed.
+
+##### Method B: MCP Server Registration
+
 ```bash
 # Method 1: Using environment variables (if already set)
 claude mcp add selvage -- uvx selvage mcp
@@ -182,6 +209,23 @@ Review current branch against main branch using selvage mcp
 # Review with automatic model selection
 Review current branch against main branch using selvage mcp, automatically selecting appropriate model
 ```
+
+#### Agent-Delegated Review (No API Key Required)
+
+The `get_review_context` tool returns structured review context so host agents can perform code reviews with their own LLM — **no Selvage API key needed**.
+
+```
+# Request agent-delegated review context
+Get review context for current changes using selvage mcp, then review the code
+
+# Agent-delegated review for staged changes
+Get review context for staged changes using selvage mcp
+
+# Agent-delegated review against branch
+Get review context comparing current branch to main using selvage mcp
+```
+
+> 💡 **How it works**: Selvage extracts diff + AST-based Smart Context + system prompt and returns it as structured context. The host agent (Claude Code, Cursor, Antigravity, etc.) then performs the review directly with its own LLM, without needing an external API key.
 
 #### Advanced Workflows
 

@@ -50,6 +50,8 @@
 - **🎯 최적화된 컨텍스트 분석**: Tree-sitter 기반 AST 분석을 통해 변경 라인이 속하는 가장 작은 코드 블록과 dependency statement를 자동 추출하여 상황에 따라 최적화된 컨텍스트 제공
 - **🔄 자동 멀티턴 처리**: 컨텍스트 제한 초과 시 프롬프트를 자동 분할하여 안정적인 대용량 코드 리뷰 지원 (총 토큰이 약 200k(tiktoken 기준)을 넘으면 LLM 오류 여부와 관계없이 자동으로 Large Context Mode 실행)
 - **🤖 MCP 모드 지원**: Cursor, Claude Code 등에 MCP 모드로 등록하여 "현재 변경사항 리뷰해줘" 같은 자연어로 대화하며 코드 리뷰 요청
+- **🔌 Claude Code 플러그인**: 마켓플레이스에서 한 줄 명령으로 설치 — 전용 `/review` 스킬과 `selvage-reviewer` 에이전트 포함
+- **🧠 Agent-Delegated Review (`get_review_context`)**: diff + Smart Context + 시스템 프롬프트를 구조화된 컨텍스트로 반환하여 호스트 에이전트(Claude Code, Cursor, Antigravity 등)가 자체 LLM으로 코드 리뷰 수행 — **API 키 불필요**
 - **📖 오픈소스**: Apache-2.0 라이선스로 자유롭게 사용 및 수정 가능
 
 ## 🚀 빠른 시작
@@ -132,6 +134,31 @@ Cursor의 MCP 설정 파일에 등록 (경로는 사용자 환경에 따라 다�
 
 #### Claude Code 연동
 
+##### 방법 A: 마켓플레이스 플러그인 설치 (권장)
+
+Selvage 플러그인을 마켓플레이스에서 설치하면 전용 `/review` 스킬과 `selvage-reviewer` 에이전트를 사용할 수 있습니다:
+
+```bash
+# 1단계: Selvage 마켓플레이스 추가
+/plugin marketplace add selvage-lab/selvage
+
+# 2단계: 플러그인 설치
+/plugin install selvage@selvage-lab-selvage
+```
+
+설치 후 `/review` 스킬로 바로 리뷰 가능:
+
+```
+/review                      # unstaged 변경사항 리뷰
+/review staged               # staged 변경사항 리뷰
+/review branch main          # main 브랜치와 비교 리뷰
+/review commit abc1234       # 특정 커밋부터 리뷰
+```
+
+> 💡 **API 키 불필요!** 플러그인은 `get_review_context`를 사용하여 Claude Code 자체 LLM으로 코드 리뷰를 수행하므로 외부 API 키가 필요 없습니다.
+
+##### 방법 B: MCP 서버 등록
+
 ```bash
 # 방법 1: 환경변수 사용 (이미 설정한 경우)
 claude mcp add selvage -- uvx selvage mcp
@@ -182,6 +209,23 @@ selvage mcp로 메인 브랜치와 현재 브랜치를 비교해서 리뷰해줘
 # 모델 자동 선택 리뷰
 selvage mcp로 메인 브랜치와 현재 브랜치를 리뷰하되 사용 모델을 확인해서 선정해서 리뷰해줘
 ```
+
+#### Agent-Delegated Review (API 키 불필요)
+
+`get_review_context` 도구는 구조화된 리뷰 컨텍스트를 반환하여 호스트 에이전트가 자체 LLM으로 코드 리뷰를 수행할 수 있습니다 — **Selvage API 키 불필요**.
+
+```
+# 에이전트 위임 리뷰 컨텍스트 요청
+selvage mcp로 현재 변경사항의 리뷰 컨텍스트를 가져와서 코드 리뷰해줘
+
+# staged 변경사항 에이전트 위임 리뷰
+selvage mcp로 스테이징된 변경사항의 리뷰 컨텍스트를 가져와줘
+
+# 브랜치 비교 에이전트 위임 리뷰
+selvage mcp로 현재 브랜치와 main 비교 리뷰 컨텍스트를 가져와줘
+```
+
+> 💡 **작동 원리**: Selvage가 diff + AST 기반 Smart Context + 시스템 프롬프트를 추출하고 구조화된 컨텍스트로 반환합니다. 호스트 에이전트(Claude Code, Cursor, Antigravity 등)가 자체 LLM으로 직접 리뷰를 수행하므로 외부 API 키가 필요 없습니다.
 
 #### 고급 워크플로우
 
