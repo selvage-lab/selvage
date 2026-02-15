@@ -216,3 +216,7 @@ scripts/prepare_integration_test_data.py
 
 .serena
 .mcp.json
+.infisical.json
+
+# 개인 데모/테스트 워크스페이스
+demo_workspace/
