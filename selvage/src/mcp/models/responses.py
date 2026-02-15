@@ -137,3 +137,53 @@ class ReviewDetailsResult(BaseModel):
     success: bool = Field(description="Review retrieval success status")
     data: dict | None = Field(None, description="Review response data")
     error_message: str | None = Field(None, description="Error message (on failure)")
+
+
+class ReviewContextResult(BaseModel):
+    """에이전트 위임 리뷰용 컨텍스트 응답 모델
+
+    get_review_context 도구에서 반환되는 구조화된 리뷰 컨텍스트입니다.
+    에이전트가 이 데이터를 기반으로 직접 코드 리뷰를 수행합니다.
+
+    컨텍스트가 CONTEXT_SIZE_LIMIT 이내이면 review_targets에 전체 데이터가 포함됩니다.
+    초과 시에는 context_id와 file_list가 반환되며, 에이전트가
+    get_file_review_context(context_id, file_path)로 파일별 조회합니다.
+    """
+
+    success: bool = Field(description="컨텍스트 생성 성공 여부")
+    system_prompt: str | None = Field(None, description="코드 리뷰 시스템 프롬프트")
+    review_targets: list[dict] = Field(
+        default_factory=list,
+        description="파일별 리뷰 컨텍스트 (system_prompt에 이어서 처리)",
+    )
+    output_format: dict | None = Field(
+        None, description="기대하는 리뷰 결과 JSON 스키마"
+    )
+    metadata: dict = Field(
+        default_factory=dict,
+        description="파일 수, 변경 라인 수 등 메타데이터",
+    )
+    error_message: str | None = Field(None, description="에러 메시지 (실패 시)")
+    context_id: str | None = Field(
+        None,
+        description="분할 조회용 컨텍스트 ID (컨텍스트 초과 시에만 존재)",
+    )
+    file_list: list[str] = Field(
+        default_factory=list,
+        description="리뷰 대상 파일 목록 (분할 시에만 존재)",
+    )
+
+
+class FileReviewContextResult(BaseModel):
+    """파일별 리뷰 컨텍스트 응답 모델
+
+    get_file_review_context 도구에서 반환되는 개별 파일 리뷰 컨텍스트입니다.
+    get_review_context가 context_id를 반환한 경우에만 사용합니다.
+    """
+
+    success: bool = Field(description="파일 컨텍스트 조회 성공 여부")
+    file_path: str | None = Field(None, description="요청한 파일 경로")
+    review_target: dict | None = Field(
+        None, description="해당 파일의 리뷰 컨텍스트 (role + content)"
+    )
+    error_message: str | None = Field(None, description="에러 메시지")

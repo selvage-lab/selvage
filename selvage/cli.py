@@ -757,11 +757,13 @@ def mcp() -> None:
     import sys
 
     try:
-        # MCP 서버 실행 (stdout은 MCP 프로토콜용이므로 메시지 출력 금지)
-        subprocess.run([sys.executable, "-m", "selvage.src.mcp.server"], check=True)
+        cmd = [sys.executable, "-m", "selvage.src.mcp.server"]
+        subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
-        # 에러 메시지는 stderr로 출력
-        print(f"MCP server failed with exit code {e.returncode}", file=sys.stderr)
+        print(
+            f"MCP server failed with exit code {e.returncode}",
+            file=sys.stderr,
+        )
         sys.exit(e.returncode)
     except KeyboardInterrupt:
         print("\nMCP server stopped by user.", file=sys.stderr)

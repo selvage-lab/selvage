@@ -24,7 +24,23 @@ from ..models.responses import (
 MAX_HISTORY_LIMIT = 50  # 성능 및 메모리 사용량 고려
 MIN_HISTORY_LIMIT = 1
 DEFAULT_HISTORY_LIMIT = 10
-TOTAL_MCP_TOOLS_COUNT = 10  # 리뷰 도구 4개 + 유틸리티 도구 6개
+
+UTILITY_TOOL_NAMES = (
+    "get_available_models",
+    "get_review_history",
+    "get_review_details",
+    "get_server_status",
+    "validate_model_support",
+    "validate_api_key_for_provider",
+)
+
+_total_tools_count: int = len(UTILITY_TOOL_NAMES)
+
+
+def set_total_tools_count(count: int) -> None:
+    """서버 초기화 시 실제 등록된 도구 수를 설정합니다."""
+    global _total_tools_count
+    _total_tools_count = count
 
 
 def get_available_models() -> list[ModelInfo]:
@@ -62,14 +78,9 @@ def get_available_models() -> list[ModelInfo]:
             model_list.append(model_info)
 
         return model_list
-    except (ImportError, AttributeError, KeyError) as e:
-        # 예상 가능한 설정 관련 오류만 처리
-        logging.warning(f"Failed to load model configuration: {e}")
-        return []
     except Exception as e:
-        # 예상치 못한 오류는 로깅 후 재발생
-        logging.error(f"Unexpected error in get_available_models: {e}")
-        raise
+        logging.error("Failed to load model configuration: %s", e, exc_info=True)
+        raise RuntimeError(f"Failed to load model configuration: {e}") from e
 
 
 def get_review_history(
@@ -162,6 +173,7 @@ def get_review_details(log_id: str) -> ReviewDetailsResult:
             error_message=None,
         )
     except Exception as e:
+        logging.exception("Failed to retrieve review details for log_id=%s", log_id)
         return ReviewDetailsResult(
             success=False,
             data=None,
@@ -182,7 +194,7 @@ def get_server_status() -> ServerStatus:
         host=None,  # stdio 모드이므로 호스트 없음
         start_time=None,  # 시작 시간 추적하지 않음
         version=__version__,
-        tools_count=TOTAL_MCP_TOOLS_COUNT,
+        tools_count=_total_tools_count,
     )
 
 
@@ -229,6 +241,7 @@ def validate_model_support(model: str) -> ModelValidationResult:
             provider=provider.get_display_name(),
         )
     except Exception as e:
+        logging.exception("Failed to validate model support for model=%s", model)
         return ModelValidationResult(
             valid=False,
             error_message=f"An error occurred while validating model support: {str(e)}",
@@ -296,6 +309,7 @@ def validate_api_key_for_provider(model: str) -> ApiKeyValidationResult:
             api_key_configured=True,
         )
     except Exception as e:
+        logging.exception("Failed to validate API key for model=%s", model)
         return ApiKeyValidationResult(
             valid=False,
             error_message=f"An error occurred while validating API key: {str(e)}",

@@ -225,7 +225,7 @@ def test_anthropic_context_limit_workflow():
     "model_name,context_limit",
     [
         ("qwen3-coder", 1000000),
-        ("kimi-k2", 200000),
+        ("kimi-k2.5", 200000),
     ],
 )
 def test_openrouter_context_limit_workflow(model_name, context_limit):

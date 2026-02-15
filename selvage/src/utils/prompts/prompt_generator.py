@@ -23,6 +23,7 @@ from .prompt_constants import get_entirely_new_content_rule
 
 PROMPT_PATH = "selvage.resources.prompt"
 PROMPT_FILE_NAME = "code_review_system_prompt"
+PROMPT_FILE_NAME_DELEGATED = "code_review_system_prompt_delegated"
 VERSION = "v4"
 
 
@@ -31,16 +32,21 @@ class PromptGenerator:
 
     @classmethod
     def _get_code_review_system_prompt(
-        cls, is_include_entirely_new_content: bool
+        cls, is_include_entirely_new_content: bool, delegated: bool = False
     ) -> str:
         """코드 리뷰 시스템 프롬프트를 불러옵니다.
+
+        Args:
+            is_include_entirely_new_content: 새로 추가된 파일 규칙 포함 여부
+            delegated: delegated 모드 전용 프롬프트 사용 여부
 
         Returns:
             str: 코드 리뷰 시스템 프롬프트
         """
         try:
+            file_name = PROMPT_FILE_NAME_DELEGATED if delegated else PROMPT_FILE_NAME
             file_ref = importlib.resources.files(f"{PROMPT_PATH}.{VERSION}").joinpath(
-                f"{PROMPT_FILE_NAME}_{VERSION}.txt"
+                f"{file_name}_{VERSION}.txt"
             )
             with importlib.resources.as_file(file_ref) as file_path:
                 prompt_content = file_path.read_text(encoding="utf-8")
@@ -62,16 +68,17 @@ class PromptGenerator:
 
                 return prompt_content
         except Exception as e:
+            file_name = PROMPT_FILE_NAME_DELEGATED if delegated else PROMPT_FILE_NAME
             error_message = (
                 f"시스템 프롬프트 파일을 찾을 수 없습니다 "
-                f"(경로: '{PROMPT_PATH}.{VERSION}/{PROMPT_FILE_NAME}_{VERSION}.txt'). "
+                f"(경로: '{PROMPT_PATH}.{VERSION}/{file_name}_{VERSION}.txt'). "
                 f"원본 오류: {e}"
             )
             console.error(error_message, exception=e)
             raise FileNotFoundError(error_message) from e
 
     def create_code_review_prompt(
-        self, review_request: ReviewRequest
+        self, review_request: ReviewRequest, delegated: bool = False
     ) -> ReviewPromptWithFileContent:
         """코드 리뷰 요청으로부터 파일 내용을 포함한 프롬프트를 생성합니다.
 
@@ -82,7 +89,8 @@ class PromptGenerator:
             ReviewPromptWithFileContent: 생성된 파일 내용 포함 리뷰 프롬프트 객체
         """
         system_prompt_content = self._get_code_review_system_prompt(
-            is_include_entirely_new_content=review_request.is_include_entirely_new_content()
+            is_include_entirely_new_content=review_request.is_include_entirely_new_content(),
+            delegated=delegated,
         )
 
         # 시스템 프롬프트 생성

@@ -549,9 +549,9 @@ class TestReviewSynthesizerLLMIntegration:
     def test_provider_specific_params_openrouter(self) -> None:
         """OpenRouter 프로바이더 요청 파라미터 생성 테스트"""
 
-        synthesizer = ReviewSynthesizer("kimi-k2")
+        synthesizer = ReviewSynthesizer("kimi-k2.5")
         openrouter_model_info = {
-            "full_name": "kimi-k2",
+            "full_name": "kimi-k2.5",
             "provider": ModelProvider.OPENROUTER,
             "max_tokens": 4096,
             "openrouter_name": "moonshot-v1/moonshot-v1-128k",

@@ -156,7 +156,7 @@ def test_long_context_transition():
     display = ReviewDisplay()
 
     # 1. 업데이트 가능한 진행 상황 표시 시작 (CLI와 동일)
-    progress = display.create_updatable_progress("kimi-k2")  # 실제 사용한 모델명
+    progress = display.create_updatable_progress("kimi-k2.5")  # 실제 사용한 모델명
     progress.start()
 
     try:
@@ -170,7 +170,7 @@ def test_long_context_transition():
         progress.stop()
 
         # 5. 새로운 progress 인스턴스 생성 (깨끗한 화면에서 시작)
-        multiturn_progress = display.create_updatable_progress("kimi-k2")
+        multiturn_progress = display.create_updatable_progress("kimi-k2.5")
         multiturn_progress.start()
         multiturn_progress.update_message(
             "Context limit reached! Processing in long context mode..."
@@ -265,7 +265,7 @@ def test_cli_exact_reproduction():
 
     # CLI에서와 동일한 방식
     display = ReviewDisplay()
-    progress = display.create_updatable_progress("kimi-k2")
+    progress = display.create_updatable_progress("kimi-k2.5")
     progress.start()
 
     try:
@@ -281,7 +281,7 @@ def test_cli_exact_reproduction():
             progress.stop()
 
             # 새로운 progress 인스턴스 생성 (깨끗한 화면에서 시작)
-            multiturn_progress = display.create_updatable_progress("kimi-k2")
+            multiturn_progress = display.create_updatable_progress("kimi-k2.5")
             multiturn_progress.start()
             multiturn_progress.update_message(
                 "Context limit reached! Processing in long context mode..."

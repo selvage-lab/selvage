@@ -1,5 +1,24 @@
 # Change Log
 
+## [0.4.0] - 2026-02-13
+
+### Added
+
+#### feat: Agent-Delegated Review Mode (get_review_context MCP Tool)
+
+**Core Changes**
+
+- **New get_review_context tool**: Returns structured review context (diff + Smart Context + system prompt) so host agents (Claude Code, Cursor, Antigravity) can perform code reviews using their own LLM without requiring an API key
+- **Large context splitting**: When review context exceeds size limit, stores locally and supports per-file retrieval via `get_file_review_context`
+- **Claude Code plugin**: Added `.claude/skills/review/SKILL.md` skill and `.claude/agents/selvage-reviewer.md` agent definitions
+
+**Detailed Implementation**
+
+- **ReviewContextResult model**: Pydantic response model containing system_prompt, review_targets, output_format, and metadata
+- **Context engine separation**: Extracted prompt generation and context extraction logic from the existing LLM call pipeline for reuse
+- **DelegatedContextStore**: Local file storage for large diff contexts with per-file retrieval and TTL-based cleanup (60 minutes)
+- **Review tool docstring improvements**: Added guidance to use `get_review_context` as an alternative when no API key is available
+
 ## [0.3.0] - 2026-01-28
 
 ### Added

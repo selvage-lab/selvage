@@ -10,10 +10,7 @@ from selvage.src.config import APIKeyNotFoundError, ModelProvider
 from selvage.src.mcp.models.responses import ReviewResult
 from selvage.src.mcp.tools.review_tools import (
     register_review_tools,
-    review_against_branch,
-    review_against_commit,
-    review_current_changes,
-    review_staged_changes,
+    review_changes,
 )
 
 
@@ -28,23 +25,22 @@ class TestReviewToolsRegistration:
     def test_register_review_tools_registers_all_tools(
         self, mock_fastmcp: Mock
     ) -> None:
-        """register_review_tools가 모든 도구를 등록해야 함"""
+        """register_review_tools가 도구를 등록해야 함"""
         mock_mcp_instance = Mock()
         mock_fastmcp.return_value = mock_mcp_instance
 
         register_review_tools(mock_mcp_instance)
 
-        # tool 데코레이터가 4번 호출되어야 함 (4개 리뷰 도구)
-        assert mock_mcp_instance.tool.call_count == 4
+        # tool 데코레이터가 1번 호출되어야 함 (review_changes 1개)
+        assert mock_mcp_instance.tool.call_count == 1
 
 
-class TestReviewCurrentChanges:
-    """review_current_changes 도구 테스트"""
+class TestReviewChanges:
+    """review_changes 통합 도구 테스트"""
 
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_current_changes_success(self, mock_workflow: Mock) -> None:
-        """현재 변경사항 리뷰 성공 테스트"""
-        # Mock 설정
+    def test_unstaged_mode_default(self, mock_workflow: Mock) -> None:
+        """기본 mode(unstaged) 리뷰 성공 테스트"""
         mock_result = ReviewResult(
             success=True,
             estimated_cost=0.05,
@@ -53,26 +49,25 @@ class TestReviewCurrentChanges:
         )
         mock_workflow.return_value = mock_result
 
-        # 실행
-        result = review_current_changes(
+        result = review_changes(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
         )
 
-        # 검증
         assert result.success is True
         assert result.model_used == "claude-sonnet-4.5"
-        assert result.response is None  # response는 선택적 필드
+        assert result.response is None
         mock_workflow.assert_called_once_with(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
             staged=False,
+            target_branch=None,
+            target_commit=None,
         )
 
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_current_changes_failure(self, mock_workflow: Mock) -> None:
-        """현재 변경사항 리뷰 실패 테스트"""
-        # Mock 설정
+    def test_unstaged_mode_failure(self, mock_workflow: Mock) -> None:
+        """unstaged mode 리뷰 실패 테스트"""
         mock_result = ReviewResult(
             success=False,
             model_used="claude-sonnet-4.5",
@@ -80,116 +75,127 @@ class TestReviewCurrentChanges:
         )
         mock_workflow.return_value = mock_result
 
-        # 실행
-        result = review_current_changes(
+        result = review_changes(
             model="claude-sonnet-4.5",
             repo_path="/empty/repo",
         )
 
-        # 검증
         assert result.success is False
         assert result.error_message == "No changes found"
 
-    def test_review_current_changes_parameter_validation(self) -> None:
-        """파라미터 검증 테스트"""
-        # model은 필수 파라미터
-        with pytest.raises(TypeError):
-            review_current_changes()  # model 누락
-
-        # repo_path는 기본값이 있음
-        with patch(
-            "selvage.src.mcp.tools.review_tools._execute_review_workflow"
-        ) as mock_workflow:
-            mock_workflow.return_value = ReviewResult(
-                success=True,
-                model_used="test-model",
-            )
-            result = review_current_changes(model="test-model")
-            assert result.success is True
-
-
-class TestReviewStagedChanges:
-    """review_staged_changes 도구 테스트"""
-
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_staged_changes_calls_workflow_with_staged_true(
-        self, mock_workflow: Mock
-    ) -> None:
-        """스테이징된 변경사항 리뷰가 staged=True로 호출되는지 테스트"""
+    def test_staged_mode(self, mock_workflow: Mock) -> None:
+        """staged mode 리뷰 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
             model_used="claude-sonnet-4.5",
         )
 
-        review_staged_changes(model="claude-sonnet-4.5", repo_path="/test/repo")
+        review_changes(
+            model="claude-sonnet-4.5",
+            repo_path="/test/repo",
+            diff_scope="staged",
+        )
 
         mock_workflow.assert_called_once_with(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
             staged=True,
+            target_branch=None,
+            target_commit=None,
         )
 
-
-class TestReviewAgainstBranch:
-    """review_against_branch 도구 테스트"""
-
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_against_branch_calls_workflow_with_target_branch(
-        self, mock_workflow: Mock
-    ) -> None:
-        """브랜치 대비 리뷰가 target_branch 파라미터로 호출되는지 테스트"""
+    def test_branch_mode(self, mock_workflow: Mock) -> None:
+        """branch mode 리뷰 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
             model_used="claude-sonnet-4.5",
         )
 
-        review_against_branch(
+        review_changes(
             model="claude-sonnet-4.5",
-            target_branch="main",
             repo_path="/test/repo",
+            diff_scope="branch",
+            target_branch="main",
         )
 
         mock_workflow.assert_called_once_with(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
+            staged=False,
             target_branch="main",
+            target_commit=None,
         )
 
-    def test_review_against_branch_requires_target_branch(self) -> None:
-        """target_branch 파라미터가 필수인지 테스트"""
-        with pytest.raises(TypeError):
-            review_against_branch(model="claude-sonnet-4.5")  # target_branch 누락
-
-
-class TestReviewAgainstCommit:
-    """review_against_commit 도구 테스트"""
-
     @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
-    def test_review_against_commit_calls_workflow_with_target_commit(
-        self, mock_workflow: Mock
-    ) -> None:
-        """커밋 대비 리뷰가 target_commit 파라미터로 호출되는지 테스트"""
+    def test_commit_mode(self, mock_workflow: Mock) -> None:
+        """commit mode 리뷰 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
             model_used="claude-sonnet-4.5",
         )
 
-        review_against_commit(
+        review_changes(
             model="claude-sonnet-4.5",
-            target_commit="abc1234",
             repo_path="/test/repo",
+            diff_scope="commit",
+            target_commit="abc1234",
         )
 
         mock_workflow.assert_called_once_with(
             model="claude-sonnet-4.5",
             repo_path="/test/repo",
+            staged=False,
+            target_branch=None,
             target_commit="abc1234",
         )
 
-    def test_review_against_commit_requires_target_commit(self) -> None:
-        """target_commit 파라미터가 필수인지 테스트"""
+    def test_invalid_mode_returns_error(self) -> None:
+        """잘못된 mode가 에러를 반환하는지 테스트"""
+        result = review_changes(
+            model="claude-sonnet-4.5",
+            diff_scope="invalid",
+        )
+
+        assert result.success is False
+        assert "Invalid diff_scope" in result.error_message
+        assert "invalid" in result.error_message
+
+    def test_branch_mode_without_target_branch_returns_error(self) -> None:
+        """branch mode에서 target_branch 누락 시 에러 반환 테스트"""
+        result = review_changes(
+            model="claude-sonnet-4.5",
+            diff_scope="branch",
+        )
+
+        assert result.success is False
+        assert "target_branch" in result.error_message
+
+    def test_commit_mode_without_target_commit_returns_error(self) -> None:
+        """commit mode에서 target_commit 누락 시 에러 반환 테스트"""
+        result = review_changes(
+            model="claude-sonnet-4.5",
+            diff_scope="commit",
+        )
+
+        assert result.success is False
+        assert "target_commit" in result.error_message
+
+    def test_model_is_required(self) -> None:
+        """model은 필수 파라미터"""
         with pytest.raises(TypeError):
-            review_against_commit(model="claude-sonnet-4.5")  # target_commit 누락
+            review_changes()
+
+    @patch("selvage.src.mcp.tools.review_tools._execute_review_workflow")
+    def test_repo_path_has_default(self, mock_workflow: Mock) -> None:
+        """repo_path는 기본값이 있음"""
+        mock_workflow.return_value = ReviewResult(
+            success=True,
+            model_used="test-model",
+        )
+        result = review_changes(model="test-model")
+        assert result.success is True
 
 
 class TestExecuteReviewWorkflow:

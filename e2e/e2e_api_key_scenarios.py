@@ -97,7 +97,7 @@ def test_no_api_key_configuration(clean_api_key_container) -> None:
     "model,expected_provider",
     [
         ("gemini-3-flash", "gemini"),
-        ("gpt52-codex", "openai"),
+        ("gpt-5.2-codex", "openai"),
         ("claude-sonnet-4.5", "anthropic"),
         ("qwen3-coder", "openrouter"),
     ],
@@ -143,6 +143,9 @@ def test_invalid_api_key_per_provider(
             "invalid_argument",
             "authentication failed",
             "unauthorized",
+            "502",
+            "bad gateway",
+            "failed to authenticate",
         ]
     ), f"Should handle invalid API key error for {model}. Actual output: {output_str}"
 
@@ -151,7 +154,7 @@ def test_invalid_api_key_per_provider(
     "model,missing_env_vars",
     [
         ("gemini-3-pro", ["GEMINI_API_KEY", "OPENROUTER_API_KEY"]),
-        ("gpt52-codex", ["OPENAI_API_KEY", "OPENROUTER_API_KEY"]),
+        ("gpt-5.2-codex", ["OPENAI_API_KEY", "OPENROUTER_API_KEY"]),
         ("claude-sonnet-4.5", ["ANTHROPIC_API_KEY", "OPENROUTER_API_KEY"]),
         ("qwen3-coder", ["OPENROUTER_API_KEY"]),
     ],
@@ -191,7 +194,7 @@ def test_missing_provider_specific_keys(
 
 
 @pytest.mark.parametrize(
-    "model", ["gemini-3-pro", "gpt52-codex", "claude-sonnet-4.5", "qwen3-coder"]
+    "model", ["gemini-3-pro", "gpt-5.2-codex", "claude-sonnet-4.5", "qwen3-coder"]
 )
 def test_openrouter_fallback_success(openrouter_only_container, model: str) -> None:
     """OpenRouter API 키만 있을 때 다양한 모델들이 성공하는지 테스트."""

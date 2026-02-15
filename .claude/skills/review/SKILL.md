@@ -1,0 +1,1 @@
+../../../plugin/skills/review/SKILL.md

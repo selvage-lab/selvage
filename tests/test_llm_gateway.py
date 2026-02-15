@@ -111,14 +111,14 @@ class TestClaudeGateway(unittest.TestCase):
         mock_get_api_key.return_value = "fake-api-key"
 
         # Claude Opus 4.5 모델 가져오기
-        model_info = get_model_info("claude-opus-4.5")
+        model_info = get_model_info("claude-opus-4.6")
         self.assertIsNotNone(model_info)
 
         # 게이트웨이 생성
         gateway = ClaudeGateway(model_info)
 
         # 검증 (get_model_name은 full_name을 반환)
-        self.assertEqual(gateway.get_model_name(), "claude-opus-4.5-20251101")
+        self.assertEqual(gateway.get_model_name(), "claude-opus-4-6-20260204")
         self.assertEqual(gateway.model, model_info)
         # Opus 모델의 pricing 검증
         self.assertEqual(model_info["pricing"]["input"], 5.0)
@@ -325,20 +325,20 @@ class TestOpenRouterGateway(unittest.TestCase):
         from selvage.src.llm_gateway.openrouter_gateway import OpenRouterGateway
 
         # MiniMax M2.1 테스트
-        model_info = get_model_info("minimax-m2.1")
+        model_info = get_model_info("minimax-m2.5")
         self.assertIsNotNone(model_info)
         gateway = OpenRouterGateway(model_info)
-        self.assertEqual(gateway.get_model_name(), "minimax-m2.1")
-        result = gateway._convert_to_openrouter_model_name("minimax-m2.1")
-        self.assertEqual(result, "minimax/minimax-m2.1")
+        self.assertEqual(gateway.get_model_name(), "minimax-m2.5")
+        result = gateway._convert_to_openrouter_model_name("minimax-m2.5")
+        self.assertEqual(result, "minimax/minimax-m2.5")
 
         # GLM-4.7 테스트
-        model_info = get_model_info("glm-4.7")
+        model_info = get_model_info("glm-5")
         self.assertIsNotNone(model_info)
         gateway = OpenRouterGateway(model_info)
-        self.assertEqual(gateway.get_model_name(), "glm-4.7")
-        result = gateway._convert_to_openrouter_model_name("glm-4.7")
-        self.assertEqual(result, "z-ai/glm-4.7")
+        self.assertEqual(gateway.get_model_name(), "glm-5")
+        result = gateway._convert_to_openrouter_model_name("glm-5")
+        self.assertEqual(result, "z-ai/glm-5")
 
 
 class TestCreateLLMGateway(unittest.TestCase):

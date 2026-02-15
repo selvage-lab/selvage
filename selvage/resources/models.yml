@@ -4,8 +4,8 @@
 models:
   gpt-5.2-codex:
     full_name: "gpt-5.2-codex"
-    aliases: ["gpt-5.2-codex", "gpt52-codex"]
-    description: "(recommend) OpenAI's most advanced agentic coding model optimized for software engineering (SWE-bench Pro 56.4%)"
+    aliases: ["gpt-5.2-codex"]
+    description: "(recommend) OpenAI's most capable agentic coding model with stronger reasoning (SWE-Lancer IC Diamond 81.4%)"
     provider: "openai"
     params:
       reasoning_effort: "high"
@@ -20,10 +20,10 @@ models:
       reasoning:
         effort: "high"
 
-  claude-opus-4.5:
-    full_name: "claude-opus-4.5-20251101"
-    aliases: ["claude-opus-4.5"]
-    description: "(recommend) Anthropic's frontier reasoning model with extended thinking for complex software engineering"
+  claude-opus-4.6:
+    full_name: "claude-opus-4-6-20260204"
+    aliases: ["claude-opus-4.6"]
+    description: "(recommend) Anthropic's frontier reasoning model with 1M context and extended thinking"
     provider: "anthropic"
     params:
       temperature: 1
@@ -36,8 +36,8 @@ models:
       input: 5.0
       output: 25.0
       description: "$5.00/$25.00 per 1M tokens"
-    context_limit: 200000
-    openrouter_name: "anthropic/claude-opus-4.5"
+    context_limit: 1000000
+    openrouter_name: "anthropic/claude-opus-4.6"
     openrouter_params:
       temperature: 1
       reasoning:
@@ -100,10 +100,10 @@ models:
     openrouter_params:
       temperature: 0.0
 
-  minimax-m2.1:
-    full_name: "minimax-m2.1"
-    aliases: ["minimax-m2.1", "minimax-m2"]
-    description: "(recommend) State-of-the-art open-source model optimized for coding and agentic workflows (SWE-bench 74.0%)"
+  minimax-m2.5:
+    full_name: "minimax-m2.5"
+    aliases: ["minimax-m2.5", "minimax-m2"]
+    description: "(recommend) State-of-the-art open-source model for coding and agentic workflows (SWE-bench 80.2%)"
     provider: "openrouter"
     params:
       temperature: 0.0
@@ -112,53 +112,53 @@ models:
       input: 0.3
       output: 1.2
       description: "$0.30/$1.20 per 1M tokens"
-    context_limit: 1000000
-    openrouter_name: "minimax/minimax-m2.1"
+    context_limit: 204800
+    openrouter_name: "minimax/minimax-m2.5"
     openrouter_params:
       temperature: 0.0
       reasoning:
         max_tokens: 16000
 
-  glm-4.7:
-    full_name: "glm-4.7"
-    aliases: ["glm-4.7"]
-    description: "(recommend) Zhipu AI's flagship open-source model with strong coding capabilities (SWE-bench 73.8%)"
+  glm-5:
+    full_name: "glm-5"
+    aliases: ["glm-5"]
+    description: "(recommend) Zhipu AI's flagship open-source 745B MoE model for complex systems and long-horizon agent tasks"
     provider: "openrouter"
     params:
       temperature: 0.0
     thinking_mode: false
     pricing:
-      input: 0.5
-      output: 2.0
-      description: "$0.50/$2.00 per 1M tokens"
-    context_limit: 200000
-    openrouter_name: "z-ai/glm-4.7"
+      input: 0.8
+      output: 2.56
+      description: "$0.80/$2.56 per 1M tokens"
+    context_limit: 202752
+    openrouter_name: "z-ai/glm-5"
     openrouter_params:
       temperature: 0.0
       thinking:
         type: "enabled"
         max_tokens: 16000
 
-  kimi-k2:
-    full_name: "kimi-k2"
-    aliases: ["kimi-k2"]
+  kimi-k2.5:
+    full_name: "kimi-k2.5"
+    aliases: ["kimi-k2.5"]
     description: "Moonshot AI's large context processing model"
     provider: "openrouter"
     params:
       temperature: 0.0
     thinking_mode: false
     pricing:
-      input: 0.14
-      output: 2.49
-      description: "$0.14/$2.49 per 1M tokens"
-    context_limit: 131000
-    openrouter_name: "moonshotai/kimi-k2"
+      input: 0.45
+      output: 2.25
+      description: "$0.45/$2.25 per 1M tokens"
+    context_limit: 262144
+    openrouter_name: "moonshotai/kimi-k2.5"
     openrouter_params:
       temperature: 0.0
 
-  kimi-k2-free:
-    full_name: "kimi-k2-free"
-    aliases: ["kimi-k2-free"]
+  kimi-k2.5-free:
+    full_name: "kimi-k2.5-free"
+    aliases: ["kimi-k2.5-free"]
     description: "Moonshot AI's large context processing model (free)"
     provider: "openrouter"
     params:
@@ -169,7 +169,7 @@ models:
       output: 0.0
       description: "Free tier"
     context_limit: 32768
-    openrouter_name: "moonshotai/kimi-k2:free"
+    openrouter_name: "moonshotai/kimi-k2.5:free"
     openrouter_params:
       temperature: 0.0
 

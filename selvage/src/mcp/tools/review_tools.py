@@ -1,5 +1,6 @@
 """MCP review tools implementation"""
 
+import logging
 from dataclasses import dataclass
 
 from fastmcp import FastMCP
@@ -7,6 +8,7 @@ from fastmcp import FastMCP
 from selvage.src.config import get_api_key, has_openrouter_api_key
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
+from selvage.src.mcp.tools.context_tools import VALID_DIFF_SCOPES
 from selvage.src.model_config import get_model_info
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_status import ReviewStatus
@@ -16,6 +18,8 @@ from selvage.src.utils.prompts.prompt_generator import PromptGenerator
 from selvage.src.utils.token.models import EstimatedCost, ReviewRequest, ReviewResponse
 
 from ..models.responses import DiffContentResult, ReviewResult, ValidationResult
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -191,6 +195,7 @@ def _execute_review_workflow(
         )
 
     except Exception as e:
+        logger.exception("Unexpected error in _execute_review_workflow")
         return ReviewResult(
             success=False,
             model_used=model,
@@ -198,70 +203,25 @@ def _execute_review_workflow(
         )
 
 
-def review_current_changes(model: str, repo_path: str = ".") -> ReviewResult:
-    """
-    Review unstaged changes in the repository with AI.
-
-    Args:
-        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-        repo_path: Git repository path (default: current directory)
-
-    Returns:
-        ReviewResult:
-            - success: bool
-            - response: ReviewResponse | None
-            - estimated_cost: float (USD)
-            - model_used: str
-            - files_reviewed: list[str]
-            - log_id: str | None
-            - log_path: str | None
-            - timestamp: str (ISO 8601)
-            - error_message: str | None
-    """
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        staged=False,
-    )
-
-
-def review_staged_changes(model: str, repo_path: str = ".") -> ReviewResult:
-    """
-    Review staged changes with AI.
-
-    Args:
-        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-        repo_path: Git repository path (default: current directory)
-
-    Returns:
-        ReviewResult:
-            - success: bool
-            - response: ReviewResponse | None
-            - estimated_cost: float (USD)
-            - model_used: str
-            - files_reviewed: list[str]
-            - log_id: str | None
-            - log_path: str | None
-            - timestamp: str (ISO 8601)
-            - error_message: str | None
-    """
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        staged=True,
-    )
-
-
-def review_against_branch(
-    model: str, target_branch: str, repo_path: str = "."
+def review_changes(
+    model: str,
+    repo_path: str = ".",
+    diff_scope: str = "unstaged",
+    target_branch: str | None = None,
+    target_commit: str | None = None,
 ) -> ReviewResult:
     """
-    Review differences between current branch and specified branch with AI.
+    Review code changes using an independent LLM API call.
+    Requires an API key (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.).
+    If no API key is available, use get_review_context instead
+    to let the agent perform the review directly.
 
     Args:
         model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-        target_branch: Target branch to compare (e.g., main, develop)
         repo_path: Git repository path (default: current directory)
+        diff_scope: Diff scope - "unstaged" (default), "staged", "branch", or "commit"
+        target_branch: Target branch for "branch" scope (e.g., "main")
+        target_commit: Target commit hash for "commit" scope (e.g., "abc1234")
 
     Returns:
         ReviewResult:
@@ -275,46 +235,39 @@ def review_against_branch(
             - timestamp: str (ISO 8601)
             - error_message: str | None
     """
+    if diff_scope not in VALID_DIFF_SCOPES:
+        return ReviewResult(
+            success=False,
+            model_used=model,
+            error_message=(
+                f"Invalid diff_scope: {diff_scope}. "
+                f"Supported: {', '.join(VALID_DIFF_SCOPES)}"
+            ),
+        )
+
+    if diff_scope == "branch" and not target_branch:
+        return ReviewResult(
+            success=False,
+            model_used=model,
+            error_message='target_branch is required when diff_scope is "branch".',
+        )
+
+    if diff_scope == "commit" and not target_commit:
+        return ReviewResult(
+            success=False,
+            model_used=model,
+            error_message='target_commit is required when diff_scope is "commit".',
+        )
+
     return _execute_review_workflow(
         model=model,
         repo_path=repo_path,
-        target_branch=target_branch,
-    )
-
-
-def review_against_commit(
-    model: str, target_commit: str, repo_path: str = "."
-) -> ReviewResult:
-    """
-    Review changes from specified commit to HEAD with AI.
-
-    Args:
-        model: AI model to use (e.g., claude-sonnet-4, gpt-4o)
-        target_commit: Base commit hash (e.g., abc1234)
-        repo_path: Git repository path (default: current directory)
-
-    Returns:
-        ReviewResult:
-            - success: bool
-            - response: ReviewResponse | None
-            - estimated_cost: float (USD)
-            - model_used: str
-            - files_reviewed: list[str]
-            - log_id: str | None
-            - log_path: str | None
-            - timestamp: str (ISO 8601)
-            - error_message: str | None
-    """
-    return _execute_review_workflow(
-        model=model,
-        repo_path=repo_path,
-        target_commit=target_commit,
+        staged=(diff_scope == "staged"),
+        target_branch=target_branch if diff_scope == "branch" else None,
+        target_commit=target_commit if diff_scope == "commit" else None,
     )
 
 
 def register_review_tools(mcp: FastMCP) -> None:
     """리뷰 관련 MCP 도구들을 등록합니다."""
-    mcp.tool()(review_current_changes)
-    mcp.tool()(review_staged_changes)
-    mcp.tool()(review_against_branch)
-    mcp.tool()(review_against_commit)
+    mcp.tool()(review_changes)

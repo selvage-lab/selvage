@@ -1,0 +1,17 @@
+{
+  "name": "selvage-marketplace",
+  "owner": {
+    "name": "Selvage Team"
+  },
+  "metadata": {
+    "description": "Official Selvage plugins for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "selvage",
+      "source": "./plugin",
+      "description": "AST-based smart context code review engine",
+      "version": "0.4.0"
+    }
+  ]
+}
