@@ -74,7 +74,12 @@ class DelegatedContextStore:
                 parsed = json.loads(content)
                 if parsed.get("file_name") == file_path:
                     return target
-            except (json.JSONDecodeError, TypeError, AttributeError):
+            except (json.JSONDecodeError, TypeError, AttributeError) as e:
+                logger.warning(
+                    "Failed to parse review target content in context %s: %s",
+                    context_id,
+                    e,
+                )
                 continue
 
         return None
@@ -122,6 +127,7 @@ class DelegatedContextStore:
             return None
         file_path = self.store_dir / f"{context_id}.json"
         if not file_path.exists():
+            logger.info("Context file not found: %s (may have expired)", context_id)
             return None
         try:
             return json.loads(file_path.read_text(encoding="utf-8"))

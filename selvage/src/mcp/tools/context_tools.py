@@ -6,6 +6,7 @@ import logging
 from fastmcp import FastMCP
 
 from selvage.src.diff_parser import parse_git_diff
+from selvage.src.diff_parser.models.diff_result import DiffResult
 from selvage.src.mcp.context_store import DelegatedContextStore
 from selvage.src.utils.git_utils import get_diff_content
 from selvage.src.utils.prompts.prompt_generator import PromptGenerator
@@ -19,7 +20,7 @@ VALID_DIFF_SCOPES = ("unstaged", "staged", "branch", "commit")
 CONTEXT_SIZE_LIMIT = 50_000  # 문자 수 기준
 
 # NOTE: delegated 모드에서는 output_format=None으로 반환하므로 현재 미사용.
-# independent 모드 구현 시 활용 예정이므로 유지.
+# 향후 구조화된 출력이 필요한 경우를 위해 스키마 정의를 유지.
 REVIEW_OUTPUT_SCHEMA: dict = {
     "type": "json_schema",
     "schema": {
@@ -233,41 +234,61 @@ def get_file_review_context(
             - review_target: dict (the file's review context with role + content)
             - error_message: str | None
     """
-    store = DelegatedContextStore()
-    target = store.load_file_context(context_id, file_path)
-    if target is None:
+    try:
+        store = DelegatedContextStore()
+        target = store.load_file_context(context_id, file_path)
+        if target is None:
+            return FileReviewContextResult(
+                success=False,
+                file_path=file_path,
+                error_message=f"File '{file_path}' not found in context '{context_id}'",
+            )
+        return FileReviewContextResult(
+            success=True,
+            file_path=file_path,
+            review_target=target,
+        )
+    except Exception as e:
+        logger.exception("Unexpected error in get_file_review_context")
         return FileReviewContextResult(
             success=False,
             file_path=file_path,
-            error_message=f"File '{file_path}' not found in context '{context_id}'",
+            error_message=f"An error occurred: {e}",
         )
-    return FileReviewContextResult(
-        success=True,
-        file_path=file_path,
-        review_target=target,
-    )
 
 
 def _extract_file_list(messages: list[dict]) -> list[str]:
     """to_messages() 결과에서 user role 메시지의 file_name을 추출합니다."""
     file_list: list[str] = []
-    for msg in messages:
+    for idx, msg in enumerate(messages):
         if msg.get("role") != "user":
             continue
         content = msg.get("content", "")
         if not isinstance(content, str):
+            logger.warning(
+                "Non-string content at message index %d (type=%s), skipping",
+                idx,
+                type(content).__name__,
+            )
             continue
         try:
             data = json.loads(content)
             file_name = data.get("file_name")
             if file_name:
                 file_list.append(file_name)
-        except (json.JSONDecodeError, TypeError, AttributeError):
+        except (json.JSONDecodeError, TypeError, AttributeError) as e:
+            logger.warning(
+                "Failed to extract file_name from message at index %d: %s "
+                "(content preview: %.100s)",
+                idx,
+                e,
+                content,
+            )
             continue
     return file_list
 
 
-def _get_language_stats(diff_result: object) -> dict[str, int]:
+def _get_language_stats(diff_result: DiffResult) -> dict[str, int]:
     """파일 언어별 통계를 반환합니다."""
     stats: dict[str, int] = {}
     for f in diff_result.files:

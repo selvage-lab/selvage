@@ -8,19 +8,15 @@
 
 **핵심 변경사항**
 
-- **get_review_context 도구 추가**: 호스트 에이전트(Claude Code, Cursor, Antigravity 등)가 자체 LLM으로 코드 리뷰를 수행할 수 있도록, diff + Smart Context + 시스템 프롬프트를 구조화된 컨텍스트로 반환하는 MCP 도구 추가
-- **서버 모드 시스템**: `--mode auto|delegated|independent` 옵션으로 도구 등록 전략 제어
-  - `auto` (기본값): API 키 자동 감지로 context + review 도구 동적 등록
-  - `delegated`: context 도구만 등록 (API 키 불필요)
-  - `independent`: review 도구만 등록 (API 키 필수)
+- **get_review_context 도구 추가**: 호스트 에이전트(Claude Code, Cursor, Antigravity 등)가 자체 LLM으로 코드 리뷰를 수행할 수 있도록, diff + Smart Context + 시스템 프롬프트를 구조화된 컨텍스트로 반환하는 MCP 도구 추가 (API 키 불필요)
+- **대규모 컨텍스트 분할**: 리뷰 컨텍스트가 크기 제한을 초과하면 로컬에 저장 후 `get_file_review_context`로 파일별 조회 지원
 - **Claude Code 플러그인**: `.claude/skills/review/SKILL.md` 스킬 및 `.claude/agents/selvage-reviewer.md` 에이전트 추가
 
 **세부 구현사항**
 
 - **ReviewContextResult 모델**: system_prompt, review_targets, output_format, metadata를 포함하는 Pydantic 응답 모델
 - **컨텍스트 엔진 분리**: 기존 LLM 호출 파이프라인에서 프롬프트 생성/컨텍스트 추출 로직을 분리하여 재사용
-- **API 키 자동 감지**: `_has_any_api_key()` 함수로 OPENAI/ANTHROPIC/GEMINI/OPENROUTER 키 존재 여부에 따라 도구 자동 결정
-- **CLI 통합**: `selvage mcp --mode delegated` 명령으로 위임 모드 실행 지원
+- **DelegatedContextStore**: 대규모 diff 컨텍스트를 로컬 파일에 저장하고 파일별 분할 조회 기능 제공 (TTL 60분)
 - **review 도구 docstring 개선**: API 키 없을 시 `get_review_context` 대안 안내 추가
 
 ## [0.3.0] - 2026-01-28

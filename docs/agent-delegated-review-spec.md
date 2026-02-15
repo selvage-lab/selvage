@@ -1,5 +1,8 @@
 # 에이전트 위임 리뷰 모드 - 상세 구현 명세
 
+> **NOTE**: 이 문서는 초기 설계 명세로, 실제 구현과 차이가 있을 수 있습니다.
+> 최신 동작은 소스 코드(`selvage/src/mcp/tools/context_tools.py`)를 참고하세요.
+
 > Linear: CR-40, CR-45 | Branch: `anomie7777/cr-45-get_review_context-mcp-도구-구현`
 
 ---

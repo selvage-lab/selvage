@@ -18,7 +18,7 @@ You are a specialized code review agent powered by Selvage's AST-based smart con
 ## Workflow
 
 1. **Collect context**: Call `mcp__selvage__get_review_context` to get structured review context with AST-analyzed code.
-2. **Handle split context**: If the response contains a `context_id` (large diff), call `mcp__selvage__get_file_review_context` for each file in `file_list` in parallel.
+2. **Handle split context**: If the response contains a `context_id` (large diff), call `mcp__selvage__get_file_review_context` for each file in `file_list` in parallel. The `system_prompt` is still included in the initial response - combine it with each file's `review_target` when performing the review.
 3. **Analyze changes**: Review each file's hunks using the system_prompt as your review criteria.
 4. **Verify uncertain findings**: Use Read/Grep/Glob to confirm issues before reporting them.
 

@@ -78,14 +78,9 @@ def get_available_models() -> list[ModelInfo]:
             model_list.append(model_info)
 
         return model_list
-    except (ImportError, AttributeError, KeyError) as e:
-        # 예상 가능한 설정 관련 오류만 처리
-        logging.warning(f"Failed to load model configuration: {e}")
-        return []
     except Exception as e:
-        # 예상치 못한 오류는 로깅 후 재발생
-        logging.error(f"Unexpected error in get_available_models: {e}")
-        raise
+        logging.error("Failed to load model configuration: %s", e, exc_info=True)
+        raise RuntimeError(f"Failed to load model configuration: {e}") from e
 
 
 def get_review_history(
@@ -178,6 +173,7 @@ def get_review_details(log_id: str) -> ReviewDetailsResult:
             error_message=None,
         )
     except Exception as e:
+        logging.exception("Failed to retrieve review details for log_id=%s", log_id)
         return ReviewDetailsResult(
             success=False,
             data=None,
@@ -245,6 +241,7 @@ def validate_model_support(model: str) -> ModelValidationResult:
             provider=provider.get_display_name(),
         )
     except Exception as e:
+        logging.exception("Failed to validate model support for model=%s", model)
         return ModelValidationResult(
             valid=False,
             error_message=f"An error occurred while validating model support: {str(e)}",
@@ -312,6 +309,7 @@ def validate_api_key_for_provider(model: str) -> ApiKeyValidationResult:
             api_key_configured=True,
         )
     except Exception as e:
+        logging.exception("Failed to validate API key for model=%s", model)
         return ApiKeyValidationResult(
             valid=False,
             error_message=f"An error occurred while validating API key: {str(e)}",

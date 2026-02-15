@@ -13,6 +13,8 @@ from selvage.src.mcp.models.responses import (
 from selvage.src.mcp.tools.context_tools import (
     CONTEXT_SIZE_LIMIT,
     REVIEW_OUTPUT_SCHEMA,
+    _extract_file_list,
+    _get_language_stats,
     get_file_review_context,
     get_review_context,
     register_context_tools,
@@ -294,6 +296,148 @@ class TestGetReviewContext:
         assert result.success is False
         assert "Git repository not found" in result.error_message
 
+    @patch("selvage.src.mcp.tools.context_tools.PromptGenerator")
+    @patch("selvage.src.mcp.tools.context_tools.parse_git_diff")
+    @patch("selvage.src.mcp.tools.context_tools.get_diff_content")
+    def test_unstaged_mode_ignores_target_branch(
+        self,
+        mock_get_diff: MagicMock,
+        mock_parse: MagicMock,
+        mock_prompt_gen_cls: MagicMock,
+    ) -> None:
+        """unstaged 모드에서 target_branch가 전달되어도 무시되는지 확인 (파라미터 가드 회귀 테스트)"""
+        mock_get_diff.return_value = "diff --git a/app.py b/app.py\n..."
+        mock_parse.return_value = _make_diff_result()
+
+        mock_prompt = MagicMock()
+        mock_prompt.system_prompt = MagicMock(content="prompt")
+        mock_prompt.to_messages.return_value = [
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+        mock_prompt_gen_cls.return_value.create_code_review_prompt.return_value = (
+            mock_prompt
+        )
+
+        get_review_context(
+            repo_path="/test/repo",
+            diff_scope="unstaged",
+            target_branch="main",
+        )
+
+        mock_get_diff.assert_called_once_with(
+            repo_path="/test/repo",
+            staged=False,
+            target_commit=None,
+            target_branch=None,
+        )
+
+    @patch("selvage.src.mcp.tools.context_tools.PromptGenerator")
+    @patch("selvage.src.mcp.tools.context_tools.parse_git_diff")
+    @patch("selvage.src.mcp.tools.context_tools.get_diff_content")
+    def test_staged_mode_ignores_target_commit(
+        self,
+        mock_get_diff: MagicMock,
+        mock_parse: MagicMock,
+        mock_prompt_gen_cls: MagicMock,
+    ) -> None:
+        """staged 모드에서 target_commit이 전달되어도 무시되는지 확인 (파라미터 가드 회귀 테스트)"""
+        mock_get_diff.return_value = "diff --git a/app.py b/app.py\n..."
+        mock_parse.return_value = _make_diff_result()
+
+        mock_prompt = MagicMock()
+        mock_prompt.system_prompt = MagicMock(content="prompt")
+        mock_prompt.to_messages.return_value = [
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+        mock_prompt_gen_cls.return_value.create_code_review_prompt.return_value = (
+            mock_prompt
+        )
+
+        get_review_context(
+            repo_path="/test/repo",
+            diff_scope="staged",
+            target_commit="abc1234",
+        )
+
+        mock_get_diff.assert_called_once_with(
+            repo_path="/test/repo",
+            staged=True,
+            target_commit=None,
+            target_branch=None,
+        )
+
+    @patch("selvage.src.mcp.tools.context_tools.PromptGenerator")
+    @patch("selvage.src.mcp.tools.context_tools.parse_git_diff")
+    @patch("selvage.src.mcp.tools.context_tools.get_diff_content")
+    def test_branch_mode_ignores_target_commit(
+        self,
+        mock_get_diff: MagicMock,
+        mock_parse: MagicMock,
+        mock_prompt_gen_cls: MagicMock,
+    ) -> None:
+        """branch 모드에서 target_commit이 전달되어도 무시되는지 확인 (파라미터 가드 회귀 테스트)"""
+        mock_get_diff.return_value = "diff --git a/app.py b/app.py\n..."
+        mock_parse.return_value = _make_diff_result()
+
+        mock_prompt = MagicMock()
+        mock_prompt.system_prompt = MagicMock(content="prompt")
+        mock_prompt.to_messages.return_value = [
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+        mock_prompt_gen_cls.return_value.create_code_review_prompt.return_value = (
+            mock_prompt
+        )
+
+        get_review_context(
+            repo_path="/test/repo",
+            diff_scope="branch",
+            target_branch="main",
+            target_commit="abc1234",
+        )
+
+        mock_get_diff.assert_called_once_with(
+            repo_path="/test/repo",
+            staged=False,
+            target_commit=None,
+            target_branch="main",
+        )
+
+    @patch("selvage.src.mcp.tools.context_tools.PromptGenerator")
+    @patch("selvage.src.mcp.tools.context_tools.parse_git_diff")
+    @patch("selvage.src.mcp.tools.context_tools.get_diff_content")
+    def test_commit_mode_ignores_target_branch(
+        self,
+        mock_get_diff: MagicMock,
+        mock_parse: MagicMock,
+        mock_prompt_gen_cls: MagicMock,
+    ) -> None:
+        """commit 모드에서 target_branch가 전달되어도 무시되는지 확인 (파라미터 가드 회귀 테스트)"""
+        mock_get_diff.return_value = "diff --git a/app.py b/app.py\n..."
+        mock_parse.return_value = _make_diff_result()
+
+        mock_prompt = MagicMock()
+        mock_prompt.system_prompt = MagicMock(content="prompt")
+        mock_prompt.to_messages.return_value = [
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+        mock_prompt_gen_cls.return_value.create_code_review_prompt.return_value = (
+            mock_prompt
+        )
+
+        get_review_context(
+            repo_path="/test/repo",
+            diff_scope="commit",
+            target_commit="abc1234",
+            target_branch="main",
+        )
+
+        mock_get_diff.assert_called_once_with(
+            repo_path="/test/repo",
+            staged=False,
+            target_commit="abc1234",
+            target_branch=None,
+        )
+
     def test_output_format_contains_schema(self) -> None:
         """output_format에 리뷰 스키마가 포함되는지 테스트"""
         assert "issues" in REVIEW_OUTPUT_SCHEMA["schema"]["properties"]
@@ -536,3 +680,103 @@ class TestDelegatedPrompt:
 
         assert result.success is True
         assert result.output_format is None
+
+
+class TestExtractFileList:
+    """_extract_file_list 헬퍼 함수 테스트"""
+
+    def test_extracts_file_names_from_user_messages(self) -> None:
+        """user 메시지에서 file_name 추출"""
+        messages = [
+            {"role": "system", "content": "system prompt"},
+            {"role": "user", "content": '{"file_name": "app.py", "diff": "..."}'},
+            {"role": "user", "content": '{"file_name": "utils.py", "diff": "..."}'},
+        ]
+        assert _extract_file_list(messages) == ["app.py", "utils.py"]
+
+    def test_ignores_system_role_messages(self) -> None:
+        """system role 메시지는 무시"""
+        messages = [
+            {"role": "system", "content": '{"file_name": "system.py"}'},
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+        assert _extract_file_list(messages) == ["app.py"]
+
+    def test_handles_non_json_content(self) -> None:
+        """비-JSON content 처리"""
+        messages = [
+            {"role": "user", "content": "plain text without json"},
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+        assert _extract_file_list(messages) == ["app.py"]
+
+    def test_handles_json_without_file_name_key(self) -> None:
+        """file_name 키 없는 JSON 처리"""
+        messages = [
+            {"role": "user", "content": '{"other_key": "value"}'},
+        ]
+        assert _extract_file_list(messages) == []
+
+    def test_empty_messages_returns_empty_list(self) -> None:
+        """빈 메시지 목록"""
+        assert _extract_file_list([]) == []
+
+    def test_handles_non_string_content(self) -> None:
+        """비-문자열 content 처리"""
+        messages = [
+            {"role": "user", "content": 12345},
+            {"role": "user", "content": '{"file_name": "app.py"}'},
+        ]
+        assert _extract_file_list(messages) == ["app.py"]
+
+
+class TestGetLanguageStats:
+    """_get_language_stats 헬퍼 함수 테스트"""
+
+    def test_single_language(self) -> None:
+        """단일 언어 통계"""
+        diff = _make_diff_result()
+        assert _get_language_stats(diff) == {"python": 1}
+
+    def test_none_language_mapped_to_unknown(self) -> None:
+        """language가 None인 파일은 unknown으로 매핑"""
+        files = [
+            FileDiff(
+                filename="Makefile",
+                file_content="",
+                language=None,
+                additions=1,
+                deletions=0,
+            )
+        ]
+        diff = DiffResult(files=files)
+        assert _get_language_stats(diff) == {"unknown": 1}
+
+    def test_multiple_languages(self) -> None:
+        """다수 언어 혼합 통계"""
+        files = [
+            FileDiff(
+                filename="a.py",
+                file_content="",
+                language="python",
+                additions=1,
+                deletions=0,
+            ),
+            FileDiff(
+                filename="b.py",
+                file_content="",
+                language="python",
+                additions=1,
+                deletions=0,
+            ),
+            FileDiff(
+                filename="c.js",
+                file_content="",
+                language="javascript",
+                additions=1,
+                deletions=0,
+            ),
+        ]
+        diff = DiffResult(files=files)
+        stats = _get_language_stats(diff)
+        assert stats == {"python": 2, "javascript": 1}

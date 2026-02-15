@@ -8,6 +8,7 @@ from fastmcp import FastMCP
 from selvage.src.config import get_api_key, has_openrouter_api_key
 from selvage.src.diff_parser import parse_git_diff
 from selvage.src.exceptions.api_key_not_found_error import APIKeyNotFoundError
+from selvage.src.mcp.tools.context_tools import VALID_DIFF_SCOPES
 from selvage.src.model_config import get_model_info
 from selvage.src.models.model_provider import ModelProvider
 from selvage.src.models.review_status import ReviewStatus
@@ -200,9 +201,6 @@ def _execute_review_workflow(
             model_used=model,
             error_message=f"An error occurred during review: {str(e)}",
         )
-
-
-VALID_DIFF_SCOPES = ("unstaged", "staged", "branch", "commit")
 
 
 def review_changes(

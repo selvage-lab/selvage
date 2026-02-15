@@ -14,17 +14,17 @@ argument-hint: "(e.g., 'staged', 'branch main', 'commit abc1234')"
 
 ## Argument Parsing
 
-Parse `$ARGUMENTS` to determine the review mode:
+Parse `$ARGUMENTS` to determine the diff scope:
 
-| Input | mode | target_branch | target_commit |
-|-------|------|---------------|---------------|
+| Input | diff_scope | target_branch | target_commit |
+|-------|------------|---------------|---------------|
 | (empty) | `unstaged` | - | - |
 | `staged` | `staged` | - | - |
 | `branch main` | `branch` | `main` | - |
 | `branch develop` | `branch` | `develop` | - |
 | `commit abc1234` | `commit` | - | `abc1234` |
 
-If `$ARGUMENTS` does not match any pattern above, default to `unstaged` mode.
+If `$ARGUMENTS` does not match any pattern above, default to `unstaged` diff_scope.
 
 ## Workflow
 

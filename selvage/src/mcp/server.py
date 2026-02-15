@@ -87,14 +87,7 @@ class SelvageMCPServer:
             "tools_registered": True,
             "review_tools": self._registered_review_tools,
             "context_tools": self._registered_context_tools,
-            "utility_tools": [
-                "get_available_models",
-                "get_review_history",
-                "get_review_details",
-                "get_server_status",
-                "validate_model_support",
-                "validate_api_key_for_provider",
-            ],
+            "utility_tools": list(UTILITY_TOOL_NAMES),
         }
 
 
