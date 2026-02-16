@@ -145,10 +145,10 @@ Selvage is an LLM-based code review tool with a modular architecture:
 
 The tool supports multiple AI providers:
 
-- **OpenAI**: GPT-5, GPT-5-mini variants
-- **Anthropic**: Claude Sonnet-4, Claude Sonnet-4-thinking
-- **Google**: Gemini 2.5 Pro, Gemini 2.5 Flash
-- **OpenRouter**: Gateway for accessing various models through OpenRouter API
+- **OpenAI**: GPT-5.2 Codex
+- **Anthropic**: Claude Opus 4.6, Claude Sonnet 4.5
+- **Google**: Gemini 3 Pro, Gemini 3 Flash
+- **OpenRouter**: MiniMax M2.5, GLM-5, Qwen3 Coder, Kimi K2.5, DeepSeek R1/V3 and more
 
 Model configuration is centralized in `selvage/resources/models.yml` with provider-specific settings.
 

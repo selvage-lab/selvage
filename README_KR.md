@@ -8,7 +8,7 @@
   <a href="https://pypi.org/project/selvage/"><img alt="PyPI" src="https://img.shields.io/pypi/v/selvage"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.10+-blue">
-  <img alt="AI Models" src="https://img.shields.io/badge/AI-GPT--5%20%7C%20Claude%20%7C%20Gemini-green">
+  <img alt="AI Models" src="https://img.shields.io/badge/AI-GPT--5.2%20%7C%20Claude%20%7C%20Gemini-green">
 </p>
 
 <!-- TODO: 데모 GIF 추가 -->
@@ -421,25 +421,28 @@ Selvage는 파일 크기와 변경 범위를 분석하여 **가장 효율적인 
 
 #### OpenAI 모델 (OpenRouter 또는 OpenAI API 키)
 
-- **gpt-5**: 최신 고급 추론 모델 (400K 컨텍스트)
-- **gpt-5-high**: ⭐ **추천** - 높은 정확도의 추론 모델 (400K 컨텍스트)
-- **gpt-5-mini**: 경량화된 빠른 응답 모델 (400K 컨텍스트)
+- **gpt-5.2-codex**: ⭐ **추천** - 가장 강력한 에이전틱 코딩 모델, 강화된 추론 (400K 컨텍스트)
 
 #### Anthropic 모델 (OpenRouter 또는 Anthropic API 키)
 
-- **claude-sonnet-4.5**: 최신 Sonnet 계열 모델로 향상된 추론 품질 제공 (200K 컨텍스트, Large Context 모드 선제 트리거)
-- **claude-sonnet-4**: 하이브리드 추론 모델로 고급 코딩 최적화 (200K 컨텍스트)
-- **claude-sonnet-4-thinking**: ⭐ **추천** - 확장 사고 프로세스 지원 (200K 컨텍스트)
+- **claude-opus-4.6**: ⭐ **추천** - 확장 사고 기반 프론티어 추론 모델 (1M 컨텍스트)
+- **claude-sonnet-4.5**: 하이브리드 추론 모델로 고급 코딩 최적화 (1M 컨텍스트)
 
 #### Google 모델 (OpenRouter 또는 Google API 키)
 
-- **gemini-2.5-pro**: 대용량 컨텍스트 및 고급 추론 (1M+ 토큰)
-- **gemini-2.5-flash**: 응답 속도와 비용 효율성 최적화 (1M+ 토큰)
+- **gemini-3-pro**: ⭐ **추천** - 가장 진보된 추론 모델 (1M+ 토큰)
+- **gemini-3-flash**: 에이전틱 워크플로우를 위한 고속 고가치 모델 (1M+ 토큰)
 
 #### 🌟 OpenRouter 제공 모델 (OpenRouter API 키만 필요)
 
-- **qwen3-coder** (Qwen): ⭐ **추천** - 480B 파라미터 MoE 코딩 특화 모델 (1M+ 토큰)
-- **kimi-k2** (Moonshot AI): 1T 파라미터 MoE 대용량 추론 모델 (128K 토큰)
+- **minimax-m2.5** (MiniMax): ⭐ **추천** - 최첨단 오픈소스 코딩 모델 (SWE-bench 80.2%, 200K 컨텍스트)
+- **glm-5** (Zhipu AI): 745B MoE 플래그십 모델, 복잡한 시스템 처리 (200K 컨텍스트)
+- **qwen3-coder** (Qwen): 코딩 특화 모델 (262K 컨텍스트)
+- **kimi-k2.5** (Moonshot AI): 대용량 컨텍스트 처리 모델 (262K 컨텍스트)
+- **deepseek-r1-0528** (DeepSeek): 추론 특화 모델 (163K 컨텍스트)
+- **deepseek-v3-0324** (DeepSeek): 고급 대화 모델 (163K 컨텍스트)
+
+> 무료 모델 제공: qwen3-coder-free, kimi-k2.5-free, deepseek-v3-0324-free, deepseek-r1-0528-free
 
 ## 📄 리뷰 결과 저장 형식
 
