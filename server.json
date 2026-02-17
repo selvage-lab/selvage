@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.selvage-lab/selvage",
   "description": "An LLM-based code review MCP server with AST-powered smart context extraction",
   "repository": {
@@ -9,9 +9,12 @@
   "version": "0.4.1",
   "packages": [
     {
-      "registry_type": "pypi",
+      "registryType": "pypi",
       "identifier": "selvage",
-      "version": "0.4.1"
+      "version": "0.4.1",
+      "transport": {
+        "type": "stdio"
+      }
     }
   ]
 }
