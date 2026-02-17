@@ -1,0 +1,13 @@
+startCommand:
+  type: stdio
+configSchema:
+  type: object
+  properties:
+    mode:
+      type: string
+      description: "MCP server mode: 'delegated' (no API key) or 'independent' (requires API key)"
+      default: "auto"
+commandFunction: |-
+  (config) => ({ command: 'selvage', args: ['mcp', '--mode', config.mode || 'auto'] })
+exampleConfig:
+  mode: "auto"
