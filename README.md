@@ -621,3 +621,5 @@ You can find detailed changes for each version, including new features, bug fixe
   <strong>Write better code with Selvage! 🚀</strong><br>
   ⭐ If this project helped you, please give us a Star on GitHub!
 </p>
+
+<!-- mcp-name: io.github.selvage-lab/selvage -->

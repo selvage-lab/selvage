@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.4.1] - 2026-02-18
+
+### Added
+
+#### feat: MCP Marketplace Registration Preparation (server.json, smithery.yaml)
+
+**Core Changes**
+- **server.json added**: Server metadata file for official MCP Registry publication
+- **smithery.yaml added**: Smithery marketplace integration configuration
+- **MCP keywords added**: Added `mcp`, `mcp-server` keywords to `pyproject.toml` for better package discoverability
+- **mcp-name metadata added**: MCP Registry identifier (`io.github.selvage-lab/selvage`) comment added to `README.md`
+- **Logo added**: `assets/logo-400x400.png` — 400×400 logo image for marketplace submissions
+
 ## [0.4.0] - 2026-02-13
 
 ### Added

@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.4.1] - 2026-02-18
+
+### Added
+
+#### feat: MCP 마켓플레이스 등록 준비 (server.json, smithery.yaml)
+
+**핵심 변경사항**
+- **server.json 추가**: 공식 MCP Registry 퍼블리시를 위한 서버 메타데이터 파일
+- **smithery.yaml 추가**: Smithery 마켓플레이스 통합 설정 파일
+- **MCP 키워드 추가**: `pyproject.toml`에 `mcp`, `mcp-server` 키워드 추가로 패키지 검색성 향상
+- **mcp-name 메타데이터 추가**: `README.md` 하단에 MCP Registry 식별자(`io.github.selvage-lab/selvage`) 주석 추가
+- **로고 추가**: `assets/logo-400x400.png` — 마켓플레이스 제출용 400×400 로고 이미지
+
 ## [0.4.0] - 2026-02-13
 
 ### Added
