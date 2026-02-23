@@ -4,6 +4,8 @@
 
 <p align="center"><strong>A modern CLI tool that helps AI analyze Git diffs to improve code quality, find bugs, and identify security vulnerabilities.</strong></p>
 
+<p align="center">🤖 <strong>AI Agents</strong>: Read our documentation at <code>https://selvage.ai/llms.txt</code></p>
+
 <p align="center">
   <a href="https://pypi.org/project/selvage/"><img alt="PyPI" src="https://img.shields.io/pypi/v/selvage"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>

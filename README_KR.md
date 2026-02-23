@@ -4,6 +4,8 @@
 
 <p align="center"><strong>Git diff를 AI가 분석하여 코드 품질 향상, 버그 발견, 보안 취약점 식별을 도와주는 현대적인 CLI 도구입니다.</strong></p>
 
+<p align="center">🤖 <strong>AI Agents</strong>: Read our documentation at <code>https://selvage.ai/llms.txt</code></p>
+
 <p align="center">
   <a href="https://pypi.org/project/selvage/"><img alt="PyPI" src="https://img.shields.io/pypi/v/selvage"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
