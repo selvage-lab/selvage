@@ -625,3 +625,8 @@ You can find detailed changes for each version, including new features, bug fixe
 </p>
 
 <!-- mcp-name: io.github.selvage-lab/selvage -->
+
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/selvage-lab-selvage).
+
