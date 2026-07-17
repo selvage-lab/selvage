@@ -53,6 +53,7 @@ dev = [
     "twine==6.1.0",
     "wheel==0.43.0",
     "pre-commit==4.2.0",
+    "commitizen==4.1.0",
 ]
 e2e = [
     "testcontainers>=4.0.0",
@@ -88,3 +89,16 @@ Homepage = "https://selvage.me"
 Repository = "https://github.com/selvage-lab/selvage/"
 Documentation = "https://github.com/selvage-lab/selvage/#readme"
 "Bug Tracker" = "https://github.com/selvage-lab/selvage//issues"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.4.1"
+version_files = [
+    "selvage/__version__.py:__version__",
+    "pyproject.toml:version",
+]
+tag_format = "v$version"
+update_changelog_on_bump = true
+changelog_file = "CHANGELOG.md"
+changelog_incremental = true
+annotated_tag = true
