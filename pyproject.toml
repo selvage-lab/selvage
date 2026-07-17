@@ -48,7 +48,9 @@ dependencies = [
 dev = [
     "pytest==8.3.5",
     "pytest-cov==4.1.0",
-    "pytest-asyncio>=0.23.0",
+    "pytest-asyncio==0.24.0",
+    "pytest-env==1.1.3",
+    "pytest-timeout>=2.0.0",
     "build==1.0.3",
     "twine==6.1.0",
     "wheel==0.43.0",
@@ -82,6 +84,35 @@ select = ["E", "F", "I", "B", "C4", "ARG", "N", "UP", "ANN", "S", "A", "ANN401"]
 "tests/**/*.py" = ["S101", "E501", "E712", "B007", "S108", "S607", "ANN101"]
 "llm_eval/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002", "ANN101", "E501", "E712", "B007", "S108", "S607"]
 "e2e/**/*.py" = ["S101", "ANN201", "ANN001", "ARG002", "ANN101", "E501", "E712", "B007", "S108", "S607"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [
+    "-ra",
+    "-q",
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--maxfail=3",
+]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+env = ["DEEPEVAL_RESULTS_FOLDER=./llm_eval/results"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::pytest.PytestDeprecationWarning",
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+]
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+timeout = 300
+markers = [
+    "integration: 통합 테스트 (--integration 옵션 필요)",
+    "slow: 느린 테스트",
+    "unit: 단위 테스트",
+]
 
 [project.urls]
 Homepage = "https://selvage.me"
