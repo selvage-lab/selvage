@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Copy main worktree's .claude/settings.json + settings.local.json to the current worktree.
+# Triggered by git worktree add and branch checkouts. Idempotent: skips if file already exists.
+#
+# Why: orca worktrees are created via git worktree add, which does NOT copy untracked files.
+# .claude/settings.json is untracked (likely contains local env / model config), so without
+# this hook, claude sub-agents in worktrees run without project-level Claude settings.
+
+set -euo pipefail
+
+# Find the main worktree (first listed by git worktree list).
+main_dir="$(git worktree list --porcelain 2>/dev/null | awk '/^worktree / {print $2; exit}')"
+[ -z "$main_dir" ] && exit 0
+[ "$main_dir" = "$(pwd)" ] && exit 0
+
+mkdir -p .claude
+
+for f in settings.json settings.local.json; do
+  src="$main_dir/.claude/$f"
+  if [ -f "$src" ] && [ ! -f ".claude/$f" ]; then
+    cp "$src" ".claude/$f"
+    echo "[post-checkout] copied .claude/$f from main worktree"
+  fi
+done
+
+exit 0
