@@ -1,0 +1,402 @@
+{
+  "$defs": {
+    "Budget": {
+      "additionalProperties": false,
+      "description": "Resource usage for a review run.",
+      "properties": {
+        "cost_usd": {
+          "default": 0,
+          "title": "Cost Usd",
+          "type": "number"
+        },
+        "input_tokens": {
+          "default": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "max_context_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Context Tokens"
+        },
+        "output_tokens": {
+          "default": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        },
+        "wall_time_ms": {
+          "default": 0,
+          "title": "Wall Time Ms",
+          "type": "integer"
+        }
+      },
+      "title": "Budget",
+      "type": "object"
+    },
+    "ContextChunk": {
+      "additionalProperties": false,
+      "description": "A context fragment made available to the reviewer.",
+      "properties": {
+        "chunk_id": {
+          "title": "Chunk Id",
+          "type": "string"
+        },
+        "content_sha256": {
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "end_line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Line"
+        },
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "start_line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Line"
+        },
+        "strategy": {
+          "title": "Strategy",
+          "type": "string"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "required": [
+        "chunk_id",
+        "file",
+        "content_sha256",
+        "strategy"
+      ],
+      "title": "ContextChunk",
+      "type": "object"
+    },
+    "DiffSnapshot": {
+      "additionalProperties": false,
+      "description": "Immutable diff material captured for a review run.",
+      "properties": {
+        "base_sha": {
+          "title": "Base Sha",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "head_sha": {
+          "title": "Head Sha",
+          "type": "string"
+        },
+        "patch": {
+          "title": "Patch",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "base_sha",
+        "head_sha",
+        "patch",
+        "sha256",
+        "files"
+      ],
+      "title": "DiffSnapshot",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "description": "Normalized issue emitted by a review run.",
+      "properties": {
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "end_line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Line"
+        },
+        "evidence": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "finding_id": {
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "severity": {
+          "title": "Severity",
+          "type": "string"
+        },
+        "start_line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Line"
+        },
+        "target_symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Symbol"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "finding_id",
+        "file",
+        "category",
+        "severity",
+        "title",
+        "description"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "ToolCall": {
+      "additionalProperties": false,
+      "description": "A tool invocation observed during a review.",
+      "properties": {
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "call_id": {
+          "title": "Call Id",
+          "type": "string"
+        },
+        "duration_ms": {
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "result_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Sha256"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "call_id",
+        "name",
+        "arguments",
+        "status",
+        "duration_ms"
+      ],
+      "title": "ToolCall",
+      "type": "object"
+    },
+    "VersionRef": {
+      "additionalProperties": false,
+      "description": "Reference to a versioned review component.",
+      "properties": {
+        "digest": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Digest"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "VersionRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Replayable manifest for one code review execution.",
+  "properties": {
+    "budgets": {
+      "$ref": "#/$defs/Budget"
+    },
+    "context_chunks": {
+      "items": {
+        "$ref": "#/$defs/ContextChunk"
+      },
+      "title": "Context Chunks",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "diff": {
+      "$ref": "#/$defs/DiffSnapshot"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "model": {
+      "$ref": "#/$defs/VersionRef"
+    },
+    "prompt": {
+      "$ref": "#/$defs/VersionRef"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": "review-run/v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "skills": {
+      "items": {
+        "$ref": "#/$defs/VersionRef"
+      },
+      "title": "Skills",
+      "type": "array"
+    },
+    "source": {
+      "additionalProperties": true,
+      "title": "Source",
+      "type": "object"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "tool_calls": {
+      "items": {
+        "$ref": "#/$defs/ToolCall"
+      },
+      "title": "Tool Calls",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "created_at",
+    "source",
+    "diff",
+    "model",
+    "prompt",
+    "budgets",
+    "status"
+  ],
+  "title": "ReviewRun",
+  "type": "object"
+}
