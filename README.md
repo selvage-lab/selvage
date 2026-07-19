@@ -10,7 +10,7 @@
   <a href="https://pypi.org/project/selvage/"><img alt="PyPI" src="https://img.shields.io/pypi/v/selvage"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.10+-blue">
-  <img alt="AI Models" src="https://img.shields.io/badge/AI-GPT--5.2%20%7C%20Claude%20%7C%20Gemini-green">
+  <img alt="AI Models" src="https://img.shields.io/badge/AI-GPT--5.3%20Codex%20%7C%20Claude%20%7C%20Gemini-green">
 </p>
 
 <!-- TODO: Add demo GIF -->
@@ -423,28 +423,25 @@ Selvage analyzes file size and change scope to **automatically select the most e
 
 #### OpenAI Models (OpenRouter or OpenAI API Key)
 
-- **gpt-5.2-codex**: ⭐ **Recommended** - Most capable agentic coding model with stronger reasoning (400K context)
+- **gpt-5.3-codex**: ⭐ **Recommended** - Latest Codex model for long-running agentic coding (400K context)
 
 #### Anthropic Models (OpenRouter or Anthropic API Key)
 
-- **claude-opus-4.6**: ⭐ **Recommended** - Frontier reasoning model with extended thinking (1M context)
-- **claude-sonnet-4.5**: Hybrid reasoning model with extended thinking for advanced coding (1M context)
+- **claude-opus-4.8**: ⭐ **Recommended** - Most capable generally available Opus model with adaptive thinking (1M context)
+- **claude-sonnet-5**: Frontier intelligence at Sonnet speed with adaptive thinking (1M context)
+- **claude-haiku-4.5**: Fastest Claude model with near-frontier intelligence (200K context)
 
 #### Google Models (OpenRouter or Google API Key)
 
-- **gemini-3-pro**: ⭐ **Recommended** - Most advanced reasoning model (1M+ tokens)
-- **gemini-3-flash**: High speed, high value model for agentic workflows (1M+ tokens)
+- **gemini-3.1-pro**: ⭐ **Recommended** - Latest Pro reasoning model for multimodal and agentic workflows (1M+ tokens)
 
 #### 🌟 OpenRouter Provided Models (OpenRouter API Key Only)
 
-- **minimax-m2.5** (MiniMax): ⭐ **Recommended** - State-of-the-art open-source model for coding (SWE-bench 80.2%, 200K context)
-- **glm-5** (Zhipu AI): Flagship 745B MoE model for complex systems (200K context)
-- **qwen3-coder** (Qwen): Coding-specialized model (262K context)
-- **kimi-k2.5** (Moonshot AI): Large context processing model (262K context)
-- **deepseek-r1-0528** (DeepSeek): Reasoning-specialized model (163K context)
-- **deepseek-v3-0324** (DeepSeek): Advanced conversation model (163K context)
-
-> Free tier models available: qwen3-coder-free, kimi-k2.5-free, deepseek-v3-0324-free, deepseek-r1-0528-free
+- **minimax-m3** (MiniMax): ⭐ **Recommended** - Multimodal long-context model for coding and agentic work (1M context)
+- **glm-5.2** (Z.ai): Large-scale reasoning model for project-level software engineering (1M context)
+- **qwen3.7-max** (Qwen): Flagship model for coding and long-horizon autonomous execution (1M context)
+- **kimi-k3** (Moonshot AI): Multimodal reasoning model for complex coding and agentic workflows (1M context)
+- **deepseek-v4-pro** (DeepSeek): Flagship reasoning and coding model (1M context)
 
 ## 📄 Review Result Storage Format
 

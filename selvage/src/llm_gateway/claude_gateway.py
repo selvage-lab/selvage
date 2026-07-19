@@ -81,7 +81,7 @@ class ClaudeGateway(BaseGateway):
             params = {
                 "model": self.get_model_name(),
                 "messages": user_messages,
-                "max_tokens": 48000,
+                "max_tokens": self.model.get("max_output_tokens", 48000),
             }
 
             # system 메시지가 있으면 별도 파라미터로 추가
@@ -92,10 +92,14 @@ class ClaudeGateway(BaseGateway):
             thinking_config = self.model.get("params", {}).get("thinking")
             if thinking_config:
                 params["thinking"] = thinking_config
-                console.log_info(
-                    f"확장 사고 모드 활성화: "
-                    f"budget_tokens={thinking_config.get('budget_tokens', 'N/A')}"
-                )
+                thinking_type = thinking_config.get("type", "enabled")
+                if thinking_type == "adaptive":
+                    console.log_info("적응형 사고 모드 활성화")
+                else:
+                    console.log_info(
+                        f"확장 사고 모드 활성화: "
+                        f"budget_tokens={thinking_config.get('budget_tokens', 'N/A')}"
+                    )
         else:
             # 일반 모드 (instructor 사용)
             params = {

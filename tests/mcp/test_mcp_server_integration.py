@@ -84,10 +84,10 @@ class TestMCPServerIntegration:
         from selvage.src.mcp.models.responses import ModelValidationResult
 
         # 실제 존재하는 모델로 테스트
-        result = validate_model_support("claude-sonnet-4.5")
+        result = validate_model_support("claude-sonnet-5")
 
         assert isinstance(result, ModelValidationResult)
-        assert result.model == "claude-sonnet-4.5"
+        assert result.model == "claude-sonnet-5"
 
         if result.valid:
             assert result.provider is not None
@@ -106,7 +106,7 @@ class TestMCPServerIntegration:
         """API 키 검증 함수 테스트"""
         from selvage.src.mcp.models.responses import ApiKeyValidationResult
 
-        result = validate_api_key_for_provider("claude-sonnet-4.5")
+        result = validate_api_key_for_provider("claude-sonnet-5")
 
         assert isinstance(result, ApiKeyValidationResult)
         # API 키가 있든 없든 올바른 구조로 반환되어야 함
@@ -143,21 +143,21 @@ class TestMCPServerIntegration:
         mock_result = ReviewResult(
             success=True,
             estimated_cost=0.05,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
             files_reviewed=["test.py"],
         )
         mock_workflow.return_value = mock_result
 
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
         )
 
         assert result.success is True
-        assert result.model_used == "claude-sonnet-4.5"
+        assert result.model_used == "claude-sonnet-5"
         assert result.response is None
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=False,
             target_branch=None,
@@ -171,18 +171,18 @@ class TestMCPServerIntegration:
 
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
         )
 
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             diff_scope="staged",
         )
 
         assert result.success is True
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=True,
             target_branch=None,
@@ -196,11 +196,11 @@ class TestMCPServerIntegration:
 
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
         )
 
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             diff_scope="branch",
             target_branch="main",
             repo_path="/test/repo",
@@ -208,7 +208,7 @@ class TestMCPServerIntegration:
 
         assert result.success is True
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=False,
             target_branch="main",
@@ -222,11 +222,11 @@ class TestMCPServerIntegration:
 
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
         )
 
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             diff_scope="commit",
             target_commit="abc1234",
             repo_path="/test/repo",
@@ -234,7 +234,7 @@ class TestMCPServerIntegration:
 
         assert result.success is True
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=False,
             target_branch=None,

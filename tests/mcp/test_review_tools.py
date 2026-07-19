@@ -44,21 +44,21 @@ class TestReviewChanges:
         mock_result = ReviewResult(
             success=True,
             estimated_cost=0.05,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
             files_reviewed=["test.py"],
         )
         mock_workflow.return_value = mock_result
 
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
         )
 
         assert result.success is True
-        assert result.model_used == "claude-sonnet-4.5"
+        assert result.model_used == "claude-sonnet-5"
         assert result.response is None
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=False,
             target_branch=None,
@@ -70,13 +70,13 @@ class TestReviewChanges:
         """unstaged mode 리뷰 실패 테스트"""
         mock_result = ReviewResult(
             success=False,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
             error_message="No changes found",
         )
         mock_workflow.return_value = mock_result
 
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/empty/repo",
         )
 
@@ -88,17 +88,17 @@ class TestReviewChanges:
         """staged mode 리뷰 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
         )
 
         review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             diff_scope="staged",
         )
 
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=True,
             target_branch=None,
@@ -110,18 +110,18 @@ class TestReviewChanges:
         """branch mode 리뷰 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
         )
 
         review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             diff_scope="branch",
             target_branch="main",
         )
 
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=False,
             target_branch="main",
@@ -133,18 +133,18 @@ class TestReviewChanges:
         """commit mode 리뷰 테스트"""
         mock_workflow.return_value = ReviewResult(
             success=True,
-            model_used="claude-sonnet-4.5",
+            model_used="claude-sonnet-5",
         )
 
         review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             diff_scope="commit",
             target_commit="abc1234",
         )
 
         mock_workflow.assert_called_once_with(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=False,
             target_branch=None,
@@ -154,7 +154,7 @@ class TestReviewChanges:
     def test_invalid_mode_returns_error(self) -> None:
         """잘못된 mode가 에러를 반환하는지 테스트"""
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             diff_scope="invalid",
         )
 
@@ -165,7 +165,7 @@ class TestReviewChanges:
     def test_branch_mode_without_target_branch_returns_error(self) -> None:
         """branch mode에서 target_branch 누락 시 에러 반환 테스트"""
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             diff_scope="branch",
         )
 
@@ -175,7 +175,7 @@ class TestReviewChanges:
     def test_commit_mode_without_target_commit_returns_error(self) -> None:
         """commit mode에서 target_commit 누락 시 에러 반환 테스트"""
         result = review_changes(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             diff_scope="commit",
         )
 
@@ -222,7 +222,7 @@ class TestExecuteReviewWorkflow:
         # Mock 설정
         mock_get_model_info.return_value = {
             "provider": "anthropic",
-            "name": "claude-sonnet-4.5",
+            "name": "claude-sonnet-5",
         }
         mock_get_api_key.return_value = "test-api-key"
         mock_get_diff.return_value = "diff content"
@@ -253,14 +253,14 @@ class TestExecuteReviewWorkflow:
 
         # 실행
         result = _execute_review_workflow(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
             staged=False,
         )
 
         # 검증
         assert result.success is True
-        assert result.model_used == "claude-sonnet-4.5"
+        assert result.model_used == "claude-sonnet-5"
         assert result.estimated_cost == 0.05
         assert result.log_id == "log-123"
 
@@ -298,7 +298,7 @@ class TestExecuteReviewWorkflow:
 
         # 실행
         result = _execute_review_workflow(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
         )
 
@@ -322,7 +322,7 @@ class TestExecuteReviewWorkflow:
 
         # 실행
         result = _execute_review_workflow(
-            model="claude-sonnet-4.5",
+            model="claude-sonnet-5",
             repo_path="/test/repo",
         )
 
