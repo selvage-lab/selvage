@@ -116,7 +116,7 @@ def test_openai_context_limit_workflow():
     if not os.getenv("OPENAI_API_KEY"):
         pytest.skip("OPENAI_API_KEY not found")
 
-    model_name = "gpt-5.2-codex"
+    model_name = "gpt-5.3-codex"
     context_limit = 1000000
 
     print("\\n=== OpenAI Context Limit 워크플로우 테스트 ===")
@@ -224,8 +224,8 @@ def test_anthropic_context_limit_workflow():
 @pytest.mark.parametrize(
     "model_name,context_limit",
     [
-        ("qwen3-coder", 1000000),
-        ("kimi-k2.5", 200000),
+        ("qwen3.7-max", 1000000),
+        ("kimi-k3", 200000),
     ],
 )
 def test_openrouter_context_limit_workflow(model_name, context_limit):
@@ -285,7 +285,7 @@ def test_google_context_limit_workflow():
     if not os.getenv("GEMINI_API_KEY"):
         pytest.skip("GEMINI_API_KEY not found")
 
-    model_name = "gemini-3-flash"
+    model_name = "gemini-3.1-pro"
     context_limit = 1048576  # Gemini의 높은 context limit
 
     print("\\n=== Google Gemini Context Limit 워크플로우 테스트 ===")

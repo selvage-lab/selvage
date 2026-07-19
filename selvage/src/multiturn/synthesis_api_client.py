@@ -299,8 +299,15 @@ class SynthesisAPIClient:
                 "model": model_info["full_name"],
                 "messages": anthropic_messages,
                 "max_tokens": SynthesisConfig.MAX_TOKENS,
-                "temperature": SynthesisConfig.TEMPERATURE,
             }
+
+            thinking_config = model_info.get("params", {}).get("thinking")
+            if thinking_config:
+                params["thinking"] = thinking_config
+
+            # Adaptive-thinking Claude models reject non-default sampling values.
+            if not thinking_config or thinking_config.get("type") != "adaptive":
+                params["temperature"] = SynthesisConfig.TEMPERATURE
 
             if system_content:
                 params["system"] = system_content

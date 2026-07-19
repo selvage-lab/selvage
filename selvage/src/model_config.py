@@ -45,7 +45,9 @@ class ModelInfoDict(TypedDict):
     thinking_mode: bool
     pricing: PricingDict
     context_limit: int
+    max_output_tokens: NotRequired[int]
     openrouter_name: NotRequired[str]
+    openrouter_params: NotRequired[dict[str, Any]]
 
 
 class ModelConfig:
