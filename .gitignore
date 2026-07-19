@@ -220,3 +220,7 @@ scripts/prepare_integration_test_data.py
 
 # 개인 데모/테스트 워크스페이스
 demo_workspace/
+
+
+# User-local Claude config (GLM endpoint etc.)
+.claude/settings.json
