@@ -1,0 +1,299 @@
+{
+  "$defs": {
+    "DiffSource": {
+      "additionalProperties": false,
+      "description": "Synthetic inline diff or metadata-only external OSS diff.\n\nExternal source code is never stored in a fixture. It is resolved at runtime\nfrom the repository metadata after its license has passed the allowlist.",
+      "properties": {
+        "commit_sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit Sha"
+        },
+        "diff_range": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diff Range"
+        },
+        "inline_patch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inline Patch"
+        },
+        "kind": {
+          "enum": [
+            "synthetic",
+            "external"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "license_attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Attribution"
+        },
+        "license_kind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Kind"
+        },
+        "repo_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repo Url"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DiffSource",
+      "type": "object"
+    },
+    "ExpectedFinding": {
+      "additionalProperties": false,
+      "description": "A positively labelled finding in a golden fixture.",
+      "properties": {
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "categories": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Categories",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "locations": {
+          "items": {
+            "$ref": "#/$defs/Location"
+          },
+          "title": "Locations",
+          "type": "array"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "severity": {
+          "title": "Severity",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "locations",
+        "categories",
+        "severity"
+      ],
+      "title": "ExpectedFinding",
+      "type": "object"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "description": "An expected finding location or symbol.",
+      "properties": {
+        "end_line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Line"
+        },
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "start_line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Line"
+        },
+        "symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Symbol"
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "NegativeExpectation": {
+      "additionalProperties": false,
+      "description": "A finding category that must not be emitted.",
+      "properties": {
+        "forbidden_categories": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden Categories",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Location"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "NegativeExpectation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Versioned deterministic ground truth for a diff.",
+  "properties": {
+    "case_id": {
+      "title": "Case Id",
+      "type": "string"
+    },
+    "diff_sha256": {
+      "title": "Diff Sha256",
+      "type": "string"
+    },
+    "diff_source": {
+      "$ref": "#/$defs/DiffSource"
+    },
+    "expected": {
+      "items": {
+        "$ref": "#/$defs/ExpectedFinding"
+      },
+      "title": "Expected",
+      "type": "array"
+    },
+    "negatives": {
+      "items": {
+        "$ref": "#/$defs/NegativeExpectation"
+      },
+      "title": "Negatives",
+      "type": "array"
+    },
+    "provenance": {
+      "additionalProperties": true,
+      "title": "Provenance",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "golden/v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stack": {
+      "title": "Stack",
+      "type": "string"
+    },
+    "thresholds": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Thresholds",
+      "type": "object"
+    }
+  },
+  "required": [
+    "case_id",
+    "diff_source",
+    "diff_sha256",
+    "stack",
+    "expected",
+    "thresholds",
+    "provenance"
+  ],
+  "title": "GoldenFixture",
+  "type": "object"
+}
